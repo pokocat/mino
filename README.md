@@ -2,13 +2,15 @@
 
 跟军师（LLM）对话 → 军师越来越懂你 → 产出 Markdown 报告。微信小程序 + 轻后端 + FastGPT。
 
-当前处于 **V3（精简版）实现阶段**，已完成 M0 地基（monorepo 脚手架 + 数据模型 + 编排 + CI）。
+当前处于 **V3（精简版）实现阶段**：里程碑 M0–M6 已全部完成（地基 → 鉴权/入局 → 对话代理 → 记忆知识库 → 报告体系 → 回访 streak → 送审合规），「我的」tab 已补齐（底部 3 tab：军师 / 报告库 / 我），整体进入 **联调 / 送审准备** 阶段。
 
 ## 文档
 
 - [`docs/plan/V3-设计与规划方案.md`](docs/plan/V3-设计与规划方案.md) — **主方案**：范围、技术选型、架构、数据模型、API、前端组件、FastGPT 集成、风险与里程碑
 - [`docs/research/design-analysis.md`](docs/research/design-analysis.md) — 设计稿逐屏分析报告
 - [`docs/design-handoff/`](docs/design-handoff/) — 设计交接包副本（交接文档 + 主设计参考稿 `米诺 V3 · 精简版.dc.html`）
+- [`docs/release-checklist.md`](docs/release-checklist.md) — **送审清单**（M6）：微信类目资质、生成式 AI 合规、隐私协议、域名备案、订阅消息、真机回归、FastGPT 生产部署逐项核对
+- [`docs/dev-setup.md`](docs/dev-setup.md) — 本地开发环境搭建（双端 + 依赖服务 + 迁移）
 
 设计权威来源为 claude.ai/design 项目「mino小程序设计方案」。
 
@@ -37,6 +39,7 @@ docker compose up -d postgres redis     # 仅业务依赖；FastGPT 起法见 do
 cd server
 npm install
 npx prisma generate
+npx prisma migrate deploy                 # 应用迁移基线建表（开发改 schema 用 migrate dev）
 npm run start:dev                        # http://localhost:3000/health → {"status":"ok"}
 
 # 3) 小程序
@@ -44,6 +47,7 @@ cd miniprogram
 npm install
 npx tsc --noEmit                         # 类型检查
 # 用微信开发者工具打开 miniprogram/ 目录（appid 占位 touristappid）
+# 底部自定义 3 tab：军师 / 报告库 / 我
 ```
 
 详细的 FastGPT 自托管说明、环境变量与常见问题见 [`docs/dev-setup.md`](docs/dev-setup.md)。

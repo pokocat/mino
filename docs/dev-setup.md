@@ -88,11 +88,20 @@ curl http://localhost:3000/health
 # {"status":"ok"}
 ```
 
-数据库迁移（需 postgres 已起）：
+数据库迁移（需 postgres 已起）：迁移基线已纳入版本库（`server/prisma/migrations/`，首条 `..._init` 建全部 6 张表 + 枚举 + 索引），按环境二选一：
 
 ```bash
-npx prisma migrate dev --name init
+# 生产 / CI / 联调：只应用已有迁移，不改 schema、不需要 shadow database
+npx prisma migrate deploy
+
+# 开发：改了 schema.prisma 后生成并应用新迁移（会用到 shadow database，
+# 故连接用户需有 CREATEDB 权限）
+npx prisma migrate dev --name <改动说明>
 ```
+
+> 快速原型 / 一次性本地起库时，也可用 `npx prisma db push` 直接把 schema 推进库里
+> （不生成迁移文件、不留历史），适合还没定型的调试。但**入库前与生产务必走 `migrate deploy`**
+> 以保留可回溯、可复现的迁移历史；同一套库上不要把 `db push` 与 `migrate` 两条路线混用。
 
 常用脚本：`npm run build` / `npm run lint` / `npm test`。
 
@@ -101,7 +110,7 @@ npx prisma migrate dev --name init
 `.env` 里置 `WX_MOCK=true` 后，`POST /auth/wx-login` 不请求微信 `jscode2session`，
 而是用 `openid = mock_<code 的 sha256 前缀>` 造一个稳定用户 —— 同一 `code` 恒等同一用户，
 方便本地把「登录 → 入局 → /me」闭环跑通。示例（先 `docker compose up -d postgres`
-或本地起 PostgreSQL，再 `npx prisma db push`）：
+或本地起 PostgreSQL，再 `npx prisma migrate deploy` 建表；急着调试也可 `npx prisma db push`）：
 
 ```bash
 # 1) 登录拿 token（新用户 isNewUser=true）
@@ -172,7 +181,7 @@ npx tsc --noEmit              # 类型检查
 用微信开发者工具「导入项目」，目录选 `miniprogram/`，AppID 使用占位 `touristappid`
 （无需真实 AppID 即可预览；正式联调时替换为真实 AppID）。
 
-- 底部为自定义 2 tab（军师 / 报告库），见 `custom-tab-bar/`。
+- 底部为自定义 3 tab（军师 / 报告库 / 我），见 `custom-tab-bar/`。
 - 设计 token 统一在 `styles/tokens.wxss`，`app.wxss` 引入并铺纸底背景。
 
 ## 5. 提前并行事项（方案 §10）

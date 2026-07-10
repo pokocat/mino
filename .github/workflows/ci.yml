@@ -15,6 +15,21 @@ jobs:
     env:
       # Prisma 校验 / 生成需要该变量存在（不连真实库）
       DATABASE_URL: postgresql://mino:mino@localhost:5432/mino?schema=public
+    services:
+      # 仅供 prisma migrate diff 回放迁移用的 shadow database（drift 校验，见下）
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mino
+          POSTGRES_PASSWORD: mino
+          POSTGRES_DB: mino
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mino"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,6 +40,9 @@ jobs:
       - run: npm ci
       - run: npx prisma validate
       - run: npx prisma generate
+      # 迁移基线与 schema.prisma 一致性守卫：把 prisma/migrations 回放进 shadow database，
+      # 与当前 schema 对比；若改了 schema 却没生成迁移（漂移）则 --exit-code 令 CI 失败。
+      - run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --shadow-database-url "postgresql://mino:mino@localhost:5432/mino?schema=public" --exit-code
       - run: npm run lint
       - run: npm run build
       - run: npm test
