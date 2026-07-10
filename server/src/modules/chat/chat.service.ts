@@ -9,6 +9,7 @@ import {
 } from '../fastgpt/fastgpt-chat.service';
 import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { KbIngestQueue } from '../queue/kb-ingest.queue';
+import { ReportService } from '../report/report.service';
 import { JUNSHI_OPENING } from './junshi-constants';
 import { ReportMarker, ReportMarkerStream } from './report-marker';
 
@@ -24,7 +25,11 @@ export interface Suggestion {
 export type SseEvent =
   | { event: 'token'; data: { t: string } }
   | { event: 'suggestions'; data: { items: Suggestion[] } }
-  | { event: 'reportOffer'; data: { reportType: ReportType; topic: string } }
+  | {
+      event: 'reportOffer';
+      // 军师主动建了报告则带 reportId；命中每日上限（只发事件不建报告）则无该字段
+      data: { reportType: ReportType; topic: string; reportId?: string };
+    }
   | { event: 'done'; data: { messageId: string; conversationId: string } }
   | { event: 'error'; data: { code: number; message: string } };
 
@@ -38,6 +43,7 @@ export class ChatService {
     private readonly config: ConfigService,
     private readonly kb: FastgptKbService,
     private readonly kbIngest: KbIngestQueue,
+    private readonly reports: ReportService,
   ) {}
 
   /**
@@ -124,6 +130,13 @@ export class ChatService {
       orderBy: { createdAt: 'asc' },
       select: { role: true, content: true },
     });
+    // 「跟军师聊这份报告」新建的会话：首轮把源报告全文作为附加 system 上下文拼入
+    // （与 kb 检索注入同源；只在首个用户回合注入一次，不落 messages、不下发端上）
+    const userTurns = history.filter((m) => m.role === 'user').length;
+    if (conv.seedReportId && userTurns <= 1) {
+      const seed = await this.loadSeedReportContext(conv.seedReportId);
+      if (seed) messages.push({ role: 'system', content: seed });
+    }
     for (const m of history) {
       messages.push({ role: m.role, content: m.content });
     }
@@ -179,12 +192,30 @@ export class ChatService {
       data: { items: this.buildSuggestions(content) },
     };
 
-    // 6) reportOffer：拦到标记才发（只发事件，不建报告 —— 报告生成属 M3+）
+    // 6) reportOffer（§8.4 军师主动触发）：拦到标记 → origin=agent 建报告并入队；
+    //    每用户每日 origin=agent 上限 1 份，超限只发事件不建报告（无 reportId 字段）。
     if (markers.length > 0) {
       const first = markers[0];
+      let reportId: string | undefined;
+      try {
+        const created = await this.reports.createAgentReport(
+          conv.userId,
+          conversationId,
+          first.type,
+          first.topic,
+        );
+        reportId = created?.reportId;
+      } catch (err) {
+        // 军师主动建报告失败绝不打断对话，仅告警后照常发事件（无 reportId）
+        this.logger.warn(`军师主动建报告失败（已忽略）：${String(err)}`);
+      }
       yield {
         event: 'reportOffer',
-        data: { reportType: first.type, topic: first.topic },
+        data: {
+          reportType: first.type,
+          topic: first.topic,
+          ...(reportId ? { reportId } : {}),
+        },
       };
     }
 
@@ -228,6 +259,26 @@ export class ChatService {
       return `【你对这位老板的了解（战略档案摘录）】\n${lines}`;
     } catch (err) {
       this.logger.warn(`知识库检索失败，跳过上下文注入：${String(err)}`);
+      return null;
+    }
+  }
+
+  /**
+   * 加载源报告全文，拼成首轮附加 system 上下文（供「跟军师聊这份报告」回流）。
+   * 报告不存在 / 无正文 / 异常 → null（静默跳过）。此上下文不落 messages、不下发端上。
+   */
+  private async loadSeedReportContext(
+    reportId: string,
+  ): Promise<string | null> {
+    try {
+      const report = await this.prisma.report.findUnique({
+        where: { id: reportId },
+        select: { title: true, bodyMd: true },
+      });
+      if (!report?.bodyMd) return null;
+      return `【这份报告的全文，供你回答时参考（老板正想跟你聊它）】\n《${report.title}》\n${report.bodyMd}`;
+    } catch (err) {
+      this.logger.warn(`加载源报告上下文失败，跳过：${String(err)}`);
       return null;
     }
   }

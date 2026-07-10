@@ -5,6 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { FastgptChatService } from '../fastgpt/fastgpt-chat.service';
 import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { KbIngestQueue } from '../queue/kb-ingest.queue';
+import { ReportService } from '../report/report.service';
 import { ChatService, inferReportType, SseEvent } from './chat.service';
 import { JUNSHI_OPENING } from './junshi-constants';
 
@@ -22,6 +23,15 @@ function stubQueue(): KbIngestQueue & { enqueue: jest.Mock } {
   } as unknown as KbIngestQueue & { enqueue: jest.Mock };
 }
 
+/** ReportService 桩：默认军师主动建报告成功返回 reportId（可覆写为 null 模拟每日上限）。 */
+function stubReports(
+  result: { reportId: string } | null = { reportId: 'rpt-agent' },
+): ReportService & { createAgentReport: jest.Mock } {
+  return {
+    createAgentReport: jest.fn().mockResolvedValue(result),
+  } as unknown as ReportService & { createAgentReport: jest.Mock };
+}
+
 function buildConversation(
   overrides: Partial<Conversation> = {},
 ): Conversation {
@@ -32,6 +42,7 @@ function buildConversation(
     title: null,
     lastMessageAt: null,
     createdAt: new Date(),
+    seedReportId: null,
     ...overrides,
   };
 }
@@ -58,6 +69,7 @@ describe('ChatService', () => {
         mockConfig,
         stubKb(),
         stubQueue(),
+        stubReports(),
       );
 
       const result = await service.createConversation('user-1');
@@ -84,6 +96,7 @@ describe('ChatService', () => {
       user: { findUnique: jest.Mock };
     };
     let queue: KbIngestQueue & { enqueue: jest.Mock };
+    let reports: ReportService & { createAgentReport: jest.Mock };
     let service: ChatService;
 
     beforeEach(() => {
@@ -102,12 +115,14 @@ describe('ChatService', () => {
       };
       const fastgpt = new FastgptChatService(mockConfig);
       queue = stubQueue();
+      reports = stubReports();
       service = new ChatService(
         prisma as unknown as PrismaService,
         fastgpt,
         mockConfig,
         stubKb(),
         queue,
+        reports,
       );
     });
 
@@ -136,12 +151,20 @@ describe('ChatService', () => {
       expect(full).not.toContain('mino:report');
       expect(full.startsWith('兄弟')).toBe(true);
 
-      // reportOffer 携带 mock 标记的 type=review
+      // reportOffer 携带 mock 标记的 type=review，且军师主动建了报告 → 带 reportId
       const offer = events.find((e) => e.event === 'reportOffer');
       expect(offer?.data).toEqual({
         reportType: 'review',
         topic: '留住回头客的复盘',
+        reportId: 'rpt-agent',
       });
+      // 军师主动触发：以会话归属信息调 createAgentReport
+      expect(reports.createAgentReport).toHaveBeenCalledWith(
+        'user-1',
+        'conv-1',
+        'review',
+        '留住回头客的复盘',
+      );
 
       // suggestions：primary 生成报告项 + mock 两条追问
       const sug = events.find((e) => e.event === 'suggestions');
@@ -181,6 +204,23 @@ describe('ChatService', () => {
       expect(updateArg.data.title).toBeUndefined();
     });
 
+    it('军师主动命中每日上限（createAgentReport 返回 null）时 reportOffer 不带 reportId', async () => {
+      // 覆写 reports 桩为 null（模拟已达当日 origin=agent 上限）
+      reports.createAgentReport.mockResolvedValue(null);
+      const conv = buildConversation();
+      const events: SseEvent[] = [];
+      for await (const evt of service.streamReply(conv, '帮我复盘一下')) {
+        events.push(evt);
+      }
+      const offer = events.find((e) => e.event === 'reportOffer');
+      // 事件仍发，但无 reportId 字段
+      expect(offer?.data).toEqual({
+        reportType: 'review',
+        topic: '留住回头客的复盘',
+      });
+      expect('reportId' in (offer!.data as object)).toBe(false);
+    });
+
     it('检索命中时把战略档案摘录作为 system 上下文拼进 FastGPT 入参（不落库/不下发）', async () => {
       // kb 有命中 → user.findUnique 返回 kbId，kb.search 返回两条片段
       prisma.user.findUnique.mockResolvedValue({ kbId: 'mock_kb_user-1' });
@@ -201,6 +241,7 @@ describe('ChatService', () => {
         mockConfig,
         kb,
         queue,
+        reports,
       );
 
       const conv = buildConversation();
@@ -256,6 +297,7 @@ describe('ChatService', () => {
         mockConfig,
         stubKb(),
         stubQueue(),
+        stubReports(),
       );
       await expect(
         service.getOwnedConversation('user-x', 'conv-1'),

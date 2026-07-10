@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ReportType } from '@prisma/client';
 
 /** 传给 FastGPT 的单条消息（OpenAI 兼容）。 */
 export interface ChatMessage {
@@ -13,6 +14,11 @@ export interface StreamChatParams {
   userId: string;
   messages?: ChatMessage[];
   prompt?: string;
+  /**
+   * 仅 FASTGPT_MOCK：给定报告类型时 complete() 返回该类型的固定报告 JSON（供 M4 报告链路联调/测试）；
+   * 真实模式忽略此字段（报告结构由 messages 中的提示词决定）。
+   */
+  reportType?: ReportType;
 }
 
 /**
@@ -41,7 +47,10 @@ export class FastgptChatService {
   async complete(params: StreamChatParams): Promise<string> {
     const messages = this.normalizeMessages(params);
     if (this.config.get<boolean>('fastgpt.mock')) {
-      return MOCK_EXTRACTION;
+      // 报告链路：按类型返回固定报告 JSON；其余（如 kb.ingest 要点提取）返回固定要点串
+      return params.reportType
+        ? MOCK_REPORTS[params.reportType]
+        : MOCK_EXTRACTION;
     }
 
     const baseUrl = (this.config.get<string>('fastgpt.baseUrl') ?? '').replace(
@@ -167,6 +176,42 @@ const DONE = Symbol('done');
 /** Mock 模式下要点提取的固定返回（两条要点，供 kb.ingest 联调/测试）。 */
 const MOCK_EXTRACTION =
   '1. 这位老板做宠物殡葬生意\n2. 当前最大关切是获客渠道断裂、怕客源断掉';
+
+/**
+ * Mock 模式下四类报告工作流的固定 JSON 返回（符合受限 Markdown 规范，供 M4 报告链路联调/测试）。
+ * strategy 那份即设计稿《战略分析》全文「你的护城河：把信任做成根据地」。
+ */
+const MOCK_REPORTS: Record<ReportType, string> = {
+  strategy: JSON.stringify({
+    title: '你的护城河：把信任做成根据地',
+    bodyMd:
+      '## 主要矛盾\n\n你想扩张，但你真正的家底——客户信任——是慢功夫攒出来的，快不得。**扩张的速度 vs 信任的沉淀速度**，这是当前最主要的矛盾。\n\n## 定位\n\n不做「更多」，做「更被信任」。你的根据地是老客户的口碑，别人拿钱砸半年也砸不动。\n\n## 三步走\n\n1. **守。**先把现有老客户的复购和转介绍做到极致，别分心。\n2. **攒。**把「凭什么被信任」拆成可复制的动作，写成手册。\n3. **扩。**手册跑通后再开第二家，让信任可迁移，而非从零再来。',
+    annotation: '别急着摊大。风来了先把帆张稳，扩张是水到渠成的事。',
+    wordCount: 0,
+  }),
+  resume: JSON.stringify({
+    title: '起势：我为什么下海',
+    bodyMd:
+      '二〇一七年冬天，牧之在一家国企干到第七个年头，忽然觉得日子像一潭静水。\n\n他辞职那天没跟任何人商量。不是冲动——是攒了太久的一口气。他想验证一件事：离开体系的庇护，自己那点本事还值不值钱。\n\n头半年很苦。可他发现，真正让客户留下来的，从来不是价格，是那种「交给他放心」的踏实感。这后来成了他整盘生意的底色。',
+    annotation:
+      '你说是赌一口气，其实是你早就看清了自己的牌。下海不是冲动，是时势到了。',
+    wordCount: 0,
+  }),
+  review: JSON.stringify({
+    title: '留住回头客的复盘',
+    bodyMd:
+      '## 打得怎么样\n\n这一仗你把新客拉进来了，声量也起来了。但**回头率没跟上**，等于前面攻下的阵地没守住。\n\n## 关键失手\n\n只顾着往前冲，忘了给老客一个「再来一次」的由头。热闹是别人的，复购才是你的。\n\n## 下一仗\n\n1. **盘。**把来过三次以上的老客拉一张名单。\n2. **勾。**给他们一个只有熟客才有的由头再进店。\n3. **问。**每天花十分钟亲自问一句「今天哪儿不满意」。',
+    annotation: '仗要一场一场打穿。别摊开五个战场，先把回头客这块根据地站稳。',
+    wordCount: 0,
+  }),
+  decision: JSON.stringify({
+    title: '要不要接这单大客户',
+    bodyMd:
+      '## 要决的事\n\n一个大客户抛来长期订单，量大、能撑营收，但要你几乎押上全部产能。接，还是不接。\n\n## 两条路\n\n1. **接。**营收立刻上台阶，但你被一家攥住命门，议价权拱手让人。\n2. **不接。**保住盘子的均衡与主动，增长慢一些，睡得踏实。\n\n## 军师建议\n\n若这单让单一客户占比超过四成，**宁可慢，不可险**。先谈一个能退的短约试水，别一次把身家压上去。',
+    annotation: '把命门交给别人换来的增长，不是你的势，是你的债。',
+    wordCount: 0,
+  }),
+};
 
 /** 40–80ms 延迟。 */
 function delay(ms: number): Promise<void> {

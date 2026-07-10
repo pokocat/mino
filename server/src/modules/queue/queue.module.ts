@@ -3,16 +3,28 @@ import { FastgptModule } from '../fastgpt/fastgpt.module';
 import { KbIngestProcessor } from './kb-ingest.processor';
 import { KbIngestQueue } from './kb-ingest.queue';
 import { KbIngestWorker } from './kb-ingest.worker';
+import { ReportGenerateProcessor } from './report-generate.processor';
+import { ReportGenerateQueue } from './report-generate.queue';
+import { ReportGenerateWorker } from './report-generate.worker';
 
 /**
- * 队列模块（M3）：BullMQ + ioredis 承载 kb.ingest（对话要点写入用户知识库）。
+ * 队列模块（M3 kb.ingest + M4 report-generate）：BullMQ + ioredis。
  *
- * 容错原则（方案 R9）：Redis 不可达时整个队列层降级为空操作，应用照常启动、对话不受影响。
- * KbIngestQueue 供业务侧入队；KbIngestWorker 常驻消费；KbIngestProcessor 承载处理逻辑（可单测）。
+ * 容错原则（方案 R9）：Redis 不可达时——
+ *  - kb.ingest（记忆旁路）整体降级为空操作；
+ *  - report-generate（唯一交付物）入队返回 false，由业务侧降级为同步执行，保证功能可用。
+ * 两者的 Queue 供业务侧入队，Worker 常驻消费，Processor 承载可单测的处理逻辑。
  */
 @Module({
   imports: [FastgptModule],
-  providers: [KbIngestQueue, KbIngestWorker, KbIngestProcessor],
-  exports: [KbIngestQueue],
+  providers: [
+    KbIngestQueue,
+    KbIngestWorker,
+    KbIngestProcessor,
+    ReportGenerateQueue,
+    ReportGenerateWorker,
+    ReportGenerateProcessor,
+  ],
+  exports: [KbIngestQueue, ReportGenerateQueue, ReportGenerateProcessor],
 })
 export class QueueModule {}
