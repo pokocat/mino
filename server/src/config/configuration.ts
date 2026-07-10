@@ -25,5 +25,7 @@ export default () => ({
     baseUrl: process.env.FASTGPT_BASE_URL,
     appKey: process.env.FASTGPT_APP_KEY,
     openApiKey: process.env.FASTGPT_OPENAPI_KEY,
+    // Mock 模式：FASTGPT_MOCK=true 时不调外部 FastGPT，按固定军师风格吐假流（供联调/测试）
+    mock: process.env.FASTGPT_MOCK === 'true',
   },
 });

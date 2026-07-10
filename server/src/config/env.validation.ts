@@ -24,6 +24,8 @@ export const envValidationSchema = Joi.object({
   FASTGPT_BASE_URL: Joi.string().uri().allow('').default(''),
   FASTGPT_APP_KEY: Joi.string().allow('').default(''),
   FASTGPT_OPENAPI_KEY: Joi.string().allow('').default(''),
+  // FastGPT Mock 开关（本地/联调/CI 无真实 FastGPT 时置 true）
+  FASTGPT_MOCK: Joi.boolean().truthy('true').falsy('false').default(false),
 })
   // 测试环境放宽：允许仅提供部分变量
   .options({ allowUnknown: true, abortEarly: false });
