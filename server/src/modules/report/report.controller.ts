@@ -57,6 +57,12 @@ export class ReportController {
     return this.reportService.getDetail(user.id, id);
   }
 
+  /** GET /reports/:id/export → 分享图绘制所需结构化数据（仅 ready，决策 5） */
+  @Get(':id/export')
+  async export(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.reportService.getExport(user.id, id);
+  }
+
   /** POST /reports/:id/read → {ok:true} */
   @Post(':id/read')
   async read(@CurrentUser() user: User, @Param('id') id: string) {

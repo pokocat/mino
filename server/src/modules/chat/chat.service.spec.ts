@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Conversation } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -6,9 +6,22 @@ import { FastgptChatService } from '../fastgpt/fastgpt-chat.service';
 import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { KbIngestQueue } from '../queue/kb-ingest.queue';
 import { ReportService } from '../report/report.service';
+import { WxSecService } from '../safety/wx-sec.service';
 import { StreakService } from '../streak/streak.service';
-import { ChatService, inferReportType, SseEvent } from './chat.service';
+import {
+  ChatService,
+  inferReportType,
+  RETRACT_TEXT,
+  SseEvent,
+} from './chat.service';
 import { JUNSHI_OPENING } from './junshi-constants';
+
+/** 内容安全桩：默认全部 pass（可覆写 checkText 模拟命中）。 */
+function stubSafety(): WxSecService & { checkText: jest.Mock } {
+  return {
+    checkText: jest.fn().mockResolvedValue({ risky: false }),
+  } as unknown as WxSecService & { checkText: jest.Mock };
+}
 
 /** streak 结算桩（旁路，不触 DB）。 */
 function stubStreak(): StreakService & { settleOnMessage: jest.Mock } {
@@ -80,6 +93,7 @@ describe('ChatService', () => {
         stubQueue(),
         stubReports(),
         stubStreak(),
+        stubSafety(),
       );
 
       const result = await service.createConversation('user-1');
@@ -101,12 +115,13 @@ describe('ChatService', () => {
 
   describe('streamReply（mock 流端到端）', () => {
     let prisma: {
-      message: { create: jest.Mock; findMany: jest.Mock };
+      message: { create: jest.Mock; findMany: jest.Mock; update: jest.Mock };
       conversation: { update: jest.Mock };
       user: { findUnique: jest.Mock };
     };
     let queue: KbIngestQueue & { enqueue: jest.Mock };
     let reports: ReportService & { createAgentReport: jest.Mock };
+    let safety: WxSecService & { checkText: jest.Mock };
     let service: ChatService;
 
     beforeEach(() => {
@@ -118,6 +133,7 @@ describe('ChatService', () => {
               Promise.resolve({ id: `msg-${data.role}`, ...data }),
             ),
           findMany: jest.fn().mockResolvedValue([]),
+          update: jest.fn().mockResolvedValue({}),
         },
         conversation: { update: jest.fn().mockResolvedValue({}) },
         // 默认无 kb → 检索跳过，保留既有断言（全文以「兄弟」开头）
@@ -126,6 +142,7 @@ describe('ChatService', () => {
       const fastgpt = new FastgptChatService(mockConfig);
       queue = stubQueue();
       reports = stubReports();
+      safety = stubSafety();
       service = new ChatService(
         prisma as unknown as PrismaService,
         fastgpt,
@@ -134,6 +151,7 @@ describe('ChatService', () => {
         queue,
         reports,
         stubStreak(),
+        safety,
       );
     });
 
@@ -254,6 +272,7 @@ describe('ChatService', () => {
         queue,
         reports,
         stubStreak(),
+        stubSafety(),
       );
 
       const conv = buildConversation();
@@ -296,6 +315,78 @@ describe('ChatService', () => {
       ).resolves.toBeUndefined();
       expect(events.map((e) => e.event)).toContain('done');
     });
+
+    it('军师输出命中内容安全：撤回落库替换 + 发 retract → done，且跳过 suggestions/reportOffer', async () => {
+      // 输出审核判 risky（输入审核走 assertInputSafe，此处不触发）
+      safety.checkText.mockResolvedValue({ risky: true, label: 'label:20001' });
+      const conv = buildConversation();
+      const events: SseEvent[] = [];
+      for await (const evt of service.streamReply(
+        conv,
+        '帮我复盘一下',
+        'openid-1',
+      )) {
+        events.push(evt);
+      }
+
+      const names = events.map((e) => e.event);
+      // 尾部硬契约：retract 紧接 done，且本轮不再发 suggestions / reportOffer
+      expect(names.slice(-2)).toEqual(['retract', 'done']);
+      expect(names).not.toContain('suggestions');
+      expect(names).not.toContain('reportOffer');
+
+      // retract 携带被撤回的 assistant messageId
+      const retract = events.find((e) => e.event === 'retract');
+      expect(retract?.data).toEqual({ messageId: 'msg-assistant' });
+
+      // 落库内容被替换为撤回文案
+      const updateCall = prisma.message.update.mock.calls.find(
+        (c) => c[0].where.id === 'msg-assistant',
+      );
+      expect(updateCall?.[0].data.content).toBe(RETRACT_TEXT);
+
+      // 不据风险内容建报告、不回喂知识库
+      expect(reports.createAgentReport).not.toHaveBeenCalled();
+      expect(queue.enqueue).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('assertInputSafe（发消息入口审用户输入 · R7 接线 a）', () => {
+    function build(
+      safety: WxSecService & { checkText: jest.Mock },
+    ): ChatService {
+      return new ChatService(
+        {} as PrismaService,
+        {} as FastgptChatService,
+        mockConfig,
+        stubKb(),
+        stubQueue(),
+        stubReports(),
+        stubStreak(),
+        safety,
+      );
+    }
+
+    it('命中风险 → 抛 400（含契约文案）', async () => {
+      const safety = stubSafety();
+      safety.checkText.mockResolvedValue({ risky: true, label: '违禁词' });
+      const service = build(safety);
+      await expect(
+        service.assertInputSafe('openid-1', '这句话含违禁词'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(safety.checkText).toHaveBeenCalledWith(
+        'openid-1',
+        '这句话含违禁词',
+        3,
+      );
+    });
+
+    it('审核通过 → 不抛出', async () => {
+      const service = build(stubSafety());
+      await expect(
+        service.assertInputSafe('openid-1', '正常的一句话'),
+      ).resolves.toBeUndefined();
+    });
   });
 
   describe('getOwnedConversation（归属校验）', () => {
@@ -311,6 +402,7 @@ describe('ChatService', () => {
         stubQueue(),
         stubReports(),
         stubStreak(),
+        stubSafety(),
       );
       await expect(
         service.getOwnedConversation('user-x', 'conv-1'),

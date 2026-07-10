@@ -143,6 +143,36 @@ export class FastgptKbService {
       .slice(0, limit);
   }
 
+  /**
+   * 删除知识库（合规 · DELETE /me 级联）。best-effort：失败只记日志、不抛出，保证账号删除幂等可完成。
+   * mock 清内存；真实走 DELETE /api/core/dataset/delete?id={kbId}（v4.9.x）。
+   */
+  async deleteKb(kbId: string): Promise<void> {
+    if (!kbId) return;
+
+    if (this.mock) {
+      this.mockStore.delete(kbId);
+      this.logger.debug(`[mock] 删除知识库 ${kbId}`);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/api/core/dataset/delete?id=${encodeURIComponent(kbId)}`,
+        { method: 'DELETE', headers: this.jsonAuthHeaders() },
+      );
+      if (!res.ok) {
+        this.logger.warn(`FastGPT 删除知识库 ${kbId} 失败：HTTP ${res.status}`);
+        return;
+      }
+      this.logger.log(`已删除知识库 ${kbId}`);
+    } catch (err) {
+      this.logger.warn(
+        `FastGPT 删除知识库 ${kbId} 异常（已忽略）：${String(err)}`,
+      );
+    }
+  }
+
   /** 真实建库：POST /api/core/dataset/create，返回 datasetId。 */
   private async createDataset(userId: string): Promise<string> {
     const res = await fetch(`${this.baseUrl}/api/core/dataset/create`, {

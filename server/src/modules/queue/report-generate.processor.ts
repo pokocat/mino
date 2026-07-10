@@ -4,6 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { FastgptChatService } from '../fastgpt/fastgpt-chat.service';
 import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { WxPushService } from '../push/wx-push.service';
+import { WxSecService } from '../safety/wx-sec.service';
 import {
   buildReportMessages,
   countWords,
@@ -32,6 +33,7 @@ export class ReportGenerateProcessor {
     private readonly fastgptChat: FastgptChatService,
     private readonly kb: FastgptKbService,
     private readonly push: WxPushService,
+    private readonly safety: WxSecService,
   ) {}
 
   async process(data: ReportGenerateJobData): Promise<void> {
@@ -69,6 +71,20 @@ export class ReportGenerateProcessor {
       const parsed = await this.generateBody(report);
       if (!parsed) {
         await this.markFailed(report.id, '解析报告 JSON 失败（重试后仍失败）');
+        return;
+      }
+
+      // 内容安全审报告正文（R7 接线 b）：ready 前审 bodyMd（连标题一起），命中风险置 failed。
+      const verdict = await this.safety.checkText(
+        report.user.wxOpenid,
+        `${parsed.title}\n${parsed.bodyMd}`,
+        2,
+      );
+      if (verdict.risky) {
+        await this.markFailed(
+          report.id,
+          `内容安全审核未通过（label=${verdict.label}）`,
+        );
         return;
       }
 

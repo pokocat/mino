@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { FastgptModule } from '../fastgpt/fastgpt.module';
 import { PushModule } from '../push/push.module';
+import { SafetyModule } from '../safety/safety.module';
 import { KbIngestProcessor } from './kb-ingest.processor';
 import { KbIngestQueue } from './kb-ingest.queue';
 import { KbIngestWorker } from './kb-ingest.worker';
@@ -17,7 +18,7 @@ import { ReportGenerateWorker } from './report-generate.worker';
  * 两者的 Queue 供业务侧入队，Worker 常驻消费，Processor 承载可单测的处理逻辑。
  */
 @Module({
-  imports: [FastgptModule, PushModule],
+  imports: [FastgptModule, PushModule, SafetyModule],
   providers: [
     KbIngestQueue,
     KbIngestWorker,

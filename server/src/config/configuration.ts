@@ -31,6 +31,10 @@ export default () => ({
     pushPageChat: process.env.WX_PUSH_PAGE_CHAT ?? 'pages/chat/chat',
     pushPageReports: process.env.WX_PUSH_PAGE_REPORTS ?? 'pages/reports/list',
   },
+  safety: {
+    // 内容安全审核失败策略：默认 fail-open（放行），置 true 切严格模式（审核不可用即拦截）
+    failClosed: process.env.SAFETY_FAIL_CLOSED === 'true',
+  },
   fastgpt: {
     baseUrl: process.env.FASTGPT_BASE_URL,
     appKey: process.env.FASTGPT_APP_KEY,

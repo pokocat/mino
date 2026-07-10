@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { Conversation, ReportType } from '@prisma/client';
@@ -10,6 +15,7 @@ import {
 import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { KbIngestQueue } from '../queue/kb-ingest.queue';
 import { ReportService } from '../report/report.service';
+import { WxSecService } from '../safety/wx-sec.service';
 import { StreakService } from '../streak/streak.service';
 import { JUNSHI_OPENING } from './junshi-constants';
 import { ReportMarker, ReportMarkerStream } from './report-marker';
@@ -31,8 +37,19 @@ export type SseEvent =
       // 军师主动建了报告则带 reportId；命中每日上限（只发事件不建报告）则无该字段
       data: { reportType: ReportType; topic: string; reportId?: string };
     }
+  // R7 内容安全撤回：流式无法逐 token 审，流结束后对 assistant 全文审核命中风险时下发。
+  // 端上契约：收到 retract 后把 messageId 对应的那条 assistant 气泡整条替换为撤回文案
+  //   （落库内容已同步替换为 RETRACT_TEXT）。retract 出现时本轮不再发 suggestions / reportOffer，
+  //   紧随其后即 done。前面已流出的 token 均作废，以 retract 为准。
+  | { event: 'retract'; data: { messageId: string } }
   | { event: 'done'; data: { messageId: string; conversationId: string } }
   | { event: 'error'; data: { code: number; message: string } };
+
+/** assistant 输出被内容安全撤回后的占位文案（落库 + 端上气泡替换共用）。 */
+export const RETRACT_TEXT = '（这段话军师收回了）';
+
+/** 用户输入命中内容安全时的 400 文案。 */
+export const INPUT_REJECTED_MESSAGE = '这段话我不能收，换个说法';
 
 @Injectable()
 export class ChatService {
@@ -46,7 +63,25 @@ export class ChatService {
     private readonly kbIngest: KbIngestQueue,
     private readonly reports: ReportService,
     private readonly streak: StreakService,
+    private readonly safety: WxSecService,
   ) {}
+
+  /**
+   * 发消息入口：先审用户输入（R7 接线 a）。命中风险抛 400（不落库、不调 LLM）。
+   * 由 controller 在切换 SSE 流之前调用（此时尚未写响应头，异常走全局过滤器返回 JSON 400）。
+   */
+  async assertInputSafe(openid: string, content: string): Promise<void> {
+    const verdict = await this.safety.checkText(openid, content, 3);
+    if (verdict.risky) {
+      this.logger.warn(
+        `用户输入命中内容安全（label=${verdict.label}），已拦截`,
+      );
+      throw new BadRequestException({
+        code: 400,
+        message: INPUT_REJECTED_MESSAGE,
+      });
+    }
+  }
 
   /**
    * 新建会话：生成 fastgptChatId（uuid），并同步落一条军师开场白（assistant）——
@@ -113,6 +148,7 @@ export class ChatService {
   async *streamReply(
     conv: Conversation,
     content: string,
+    openid = '',
   ): AsyncIterable<SseEvent> {
     const conversationId = conv.id;
 
@@ -191,6 +227,26 @@ export class ChatService {
         ...(conv.title ? {} : { title: content.slice(0, 20) }),
       },
     });
+
+    // 4.5) LLM 输出审核（R7 接线 b）：流式无法逐 token 审，流结束后对 assistant 全文审核。
+    //   命中风险 → 落库内容替换为撤回文案 → 发 retract → 直接 done（跳过 suggestions/reportOffer/kb.ingest，
+    //   不把风险内容回喂知识库、不据其建报告）。
+    const outVerdict = await this.safety.checkText(openid, fullText, 3);
+    if (outVerdict.risky) {
+      this.logger.warn(
+        `军师输出命中内容安全（label=${outVerdict.label}），撤回消息 ${assistant.id}`,
+      );
+      await this.prisma.message.update({
+        where: { id: assistant.id },
+        data: { content: RETRACT_TEXT },
+      });
+      yield { event: 'retract', data: { messageId: assistant.id } };
+      yield {
+        event: 'done',
+        data: { messageId: assistant.id, conversationId },
+      };
+      return;
+    }
 
     // 5) suggestions（done 前必发，可空数组之外本期固定注入 primary 项）
     yield {

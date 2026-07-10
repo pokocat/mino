@@ -1,10 +1,26 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Prisma, ReportOrigin, ReportType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReportGenerateProcessor } from '../queue/report-generate.processor';
 import { ReportGenerateQueue } from '../queue/report-generate.queue';
+import {
+  ExportParagraph,
+  parseBodyToParagraphs,
+  reportTypeLabel,
+} from './report-export';
 import { buildSummary } from './report-prompt';
+
+/** 分享图品牌署名（硬契约，端上绘制直接取用）。 */
+const BRAND = {
+  name: '米诺战略参谋部',
+  slogan: '对话产出报告，报告喂养对话',
+} as const;
 
 /** 生成中占位标题（端上列表可直接展示「军师正在执笔…」）。 */
 const PLACEHOLDER_TITLE = '军师正在执笔…';
@@ -239,6 +255,44 @@ export class ReportService {
     };
   }
 
+  /**
+   * 导出（决策 5）：分享图绘制所需结构化数据（硬契约）。仅 ready 报告可导出。
+   * 归属校验失败 → 403；报告非 ready（generating/failed）→ 404。
+   * paragraphs 由 bodyMd 经受限 Markdown 解析生成（服务端简版解析，绘制在端上完成）。
+   */
+  async getExport(userId: string, id: string): Promise<ReportExport> {
+    const r = await this.prisma.report.findFirst({
+      where: { id, userId },
+      select: {
+        type: true,
+        status: true,
+        title: true,
+        bodyMd: true,
+        annotation: true,
+        origin: true,
+        wordCount: true,
+        createdAt: true,
+      },
+    });
+    if (!r) {
+      throw new ForbiddenException({ code: 403, message: '无权访问该报告' });
+    }
+    if (r.status !== 'ready') {
+      throw new NotFoundException({ code: 404, message: '报告尚未就绪' });
+    }
+    return {
+      title: r.title,
+      type: r.type,
+      typeLabel: reportTypeLabel(r.type),
+      createdAt: r.createdAt,
+      wordCount: r.wordCount,
+      origin: r.origin,
+      paragraphs: parseBodyToParagraphs(r.bodyMd),
+      annotation: r.annotation,
+      brand: BRAND,
+    };
+  }
+
   /** 置已读（isRead/readAt）。 */
   async markRead(userId: string, id: string): Promise<{ ok: true }> {
     await this.assertOwnedReport(userId, id);
@@ -323,6 +377,18 @@ export interface ReportStats {
   total: number;
   byType: Record<ReportType, number>;
   unread: number;
+}
+
+export interface ReportExport {
+  title: string;
+  type: ReportType;
+  typeLabel: string;
+  createdAt: Date;
+  wordCount: number;
+  origin: ReportOrigin;
+  paragraphs: ExportParagraph[];
+  annotation: string | null;
+  brand: { name: string; slogan: string };
 }
 
 export interface ReportDetail {

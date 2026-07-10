@@ -1,5 +1,11 @@
 import { ConfigService } from '@nestjs/config';
+import { WxAccessTokenService } from '../wx/wx-access-token.service';
 import { WxPushService } from './wx-push.service';
+
+/** 用给定 config 组装 WxPushService（含共享 access_token 服务）。 */
+function buildPush(config: ConfigService): WxPushService {
+  return new WxPushService(config, new WxAccessTokenService(config));
+}
 
 /** 造 config 桩。 */
 function buildConfig(overrides: Record<string, unknown> = {}): ConfigService {
@@ -21,7 +27,7 @@ describe('WxPushService', () => {
   const user = { wxOpenid: 'openid-1', nickname: '牧之' };
 
   it('WX_MOCK=true：sendDailyQuestion 只打印 [mock push]，不触网、不抛出', async () => {
-    const svc = new WxPushService(buildConfig({ 'wx.mock': true }));
+    const svc = buildPush(buildConfig({ 'wx.mock': true }));
     const spy = jest
       .spyOn(svc['logger'], 'log')
       .mockImplementation(() => undefined);
@@ -42,7 +48,7 @@ describe('WxPushService', () => {
   });
 
   it('WX_MOCK=true：sendReportReady 只打印 [mock push]，不抛出', async () => {
-    const svc = new WxPushService(buildConfig({ 'wx.mock': true }));
+    const svc = buildPush(buildConfig({ 'wx.mock': true }));
     const spy = jest
       .spyOn(svc['logger'], 'log')
       .mockImplementation(() => undefined);
@@ -54,7 +60,7 @@ describe('WxPushService', () => {
   });
 
   it('真实模式发送失败（fetch 抛出）不抛出，仅告警', async () => {
-    const svc = new WxPushService(
+    const svc = buildPush(
       buildConfig({ 'wx.mock': false, 'wx.appId': 'a', 'wx.secret': 's' }),
     );
     const warn = jest
@@ -72,7 +78,7 @@ describe('WxPushService', () => {
   });
 
   it('真实模式：微信返回 errcode=43101（用户未授权）只记日志不抛出', async () => {
-    const svc = new WxPushService(
+    const svc = buildPush(
       buildConfig({ 'wx.mock': false, 'wx.appId': 'a', 'wx.secret': 's' }),
     );
     const warn = jest
@@ -101,7 +107,7 @@ describe('WxPushService', () => {
   });
 
   it('真实模式缺模板 id：直接跳过，不换 token', async () => {
-    const svc = new WxPushService(
+    const svc = buildPush(
       buildConfig({
         'wx.mock': false,
         'wx.tmplDailyQ': '',

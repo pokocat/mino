@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { MeController } from './me.controller';
 
@@ -24,19 +25,27 @@ function buildUser(overrides: Partial<User> = {}): User {
 describe('MeController', () => {
   let controller: MeController;
   let prisma: {
-    user: { update: jest.Mock };
+    user: { update: jest.Mock; deleteMany: jest.Mock };
     report: { groupBy: jest.Mock; count: jest.Mock };
   };
+  let kb: { deleteKb: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
-      user: { update: jest.fn() },
+      user: {
+        update: jest.fn(),
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
       report: { groupBy: jest.fn(), count: jest.fn() },
     };
+    kb = { deleteKb: jest.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MeController],
-      providers: [{ provide: PrismaService, useValue: prisma }],
+      providers: [
+        { provide: PrismaService, useValue: prisma },
+        { provide: FastgptKbService, useValue: kb },
+      ],
     }).compile();
 
     controller = module.get<MeController>(MeController);
@@ -102,5 +111,33 @@ describe('MeController', () => {
   it('GET /me/streak 直接读 users.streakDays', () => {
     const user = buildUser({ streakDays: 7 });
     expect(controller.streak(user)).toEqual({ streakDays: 7 });
+  });
+
+  it('DELETE /me 有 kbId：先删知识库再级联删用户，返回 {ok:true}', async () => {
+    const user = buildUser({ kbId: 'mock_kb_user-1' });
+    const result = await controller.deleteAccount(user);
+
+    expect(kb.deleteKb).toHaveBeenCalledWith('mock_kb_user-1');
+    expect(prisma.user.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+    });
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('DELETE /me 无 kbId：不调用 deleteKb，仍删用户并返回 {ok:true}', async () => {
+    const user = buildUser({ kbId: null });
+    const result = await controller.deleteAccount(user);
+
+    expect(kb.deleteKb).not.toHaveBeenCalled();
+    expect(prisma.user.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+    });
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('DELETE /me 幂等：用户已不存在（count=0）仍返回 {ok:true}', async () => {
+    prisma.user.deleteMany.mockResolvedValue({ count: 0 });
+    const user = buildUser({ kbId: null });
+    await expect(controller.deleteAccount(user)).resolves.toEqual({ ok: true });
   });
 });

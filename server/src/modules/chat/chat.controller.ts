@@ -62,12 +62,19 @@ export class ChatController {
     // 归属校验在写响应头之前完成，非法访问统一走全局异常过滤器（JSON 403）
     const conv = await this.chatService.getOwnedConversation(user.id, id);
 
+    // 内容安全审用户输入（R7 接线 a）：命中风险抛 400，此时尚未写响应头，走全局过滤器返回 JSON
+    await this.chatService.assertInputSafe(user.wxOpenid, dto.content);
+
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
-    for await (const evt of this.chatService.streamReply(conv, dto.content)) {
+    for await (const evt of this.chatService.streamReply(
+      conv,
+      dto.content,
+      user.wxOpenid,
+    )) {
       res.write(serializeSse(evt));
     }
     res.end();

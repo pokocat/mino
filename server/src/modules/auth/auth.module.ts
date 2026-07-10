@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { FastgptModule } from '../fastgpt/fastgpt.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
@@ -12,6 +13,7 @@ import { WxApiService } from './wx-api.service';
 @Module({
   imports: [
     PassportModule,
+    FastgptModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

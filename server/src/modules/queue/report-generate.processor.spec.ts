@@ -2,7 +2,17 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { FastgptChatService } from '../fastgpt/fastgpt-chat.service';
 import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { WxPushService } from '../push/wx-push.service';
+import { WxSecService } from '../safety/wx-sec.service';
 import { ReportGenerateProcessor } from './report-generate.processor';
+
+/** 内容安全桩：默认全部 pass（可覆写为 risky）。 */
+function stubSafety(
+  verdict: { risky: boolean; label?: string } = { risky: false },
+): WxSecService & { checkText: jest.Mock } {
+  return {
+    checkText: jest.fn().mockResolvedValue(verdict),
+  } as unknown as WxSecService & { checkText: jest.Mock };
+}
 
 /** 推送桩（旁路，不触网）。 */
 function stubPush(): WxPushService & { sendReportReady: jest.Mock } {
@@ -77,6 +87,7 @@ describe('ReportGenerateProcessor', () => {
       chat,
       kb,
       push,
+      stubSafety(),
     );
     await proc.process({ reportId: 'rpt-1' });
 
@@ -119,6 +130,7 @@ describe('ReportGenerateProcessor', () => {
       chat,
       kb,
       stubPush(),
+      stubSafety(),
     );
     void config;
     await proc.process({ reportId: 'rpt-1' });
@@ -131,6 +143,40 @@ describe('ReportGenerateProcessor', () => {
     expect(failedCall).toBeDefined();
   });
 
+  it('内容安全审 bodyMd 命中风险：置 failed，不 ready、不回喂知识库、不推送', async () => {
+    const prisma = setup(buildReport());
+    const config = {
+      get: (k: string) => (k === 'fastgpt.mock' ? true : undefined),
+    } as never;
+    const chat = new FastgptChatService(config);
+    const kb = {
+      ensureUserKb: jest.fn(),
+      pushText: jest.fn(),
+      search: jest.fn().mockResolvedValue([]),
+    } as unknown as FastgptKbService;
+    const push = stubPush();
+
+    const proc = new ReportGenerateProcessor(
+      prisma as unknown as PrismaService,
+      chat,
+      kb,
+      push,
+      stubSafety({ risky: true, label: 'label:20001' }),
+    );
+    await proc.process({ reportId: 'rpt-1' });
+
+    const failedCall = prisma.report.update.mock.calls.find(
+      (c) => c[0].data.status === 'failed',
+    );
+    expect(failedCall).toBeDefined();
+    const readyCall = prisma.report.update.mock.calls.find(
+      (c) => c[0].data.status === 'ready',
+    );
+    expect(readyCall).toBeUndefined();
+    expect(kb.pushText).not.toHaveBeenCalled();
+    expect(push.sendReportReady).not.toHaveBeenCalled();
+  });
+
   it('报告不存在：直接跳过，不更新', async () => {
     const prisma = setup(null);
     const chat = { complete: jest.fn() } as unknown as FastgptChatService;
@@ -140,6 +186,7 @@ describe('ReportGenerateProcessor', () => {
       chat,
       kb,
       stubPush(),
+      stubSafety(),
     );
     await proc.process({ reportId: 'nope' });
     expect(prisma.report.update).not.toHaveBeenCalled();

@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReportGenerateProcessor } from '../queue/report-generate.processor';
 import { ReportGenerateQueue } from '../queue/report-generate.queue';
@@ -273,6 +273,73 @@ describe('ReportService', () => {
       );
       await expect(svc.markRead('user-x', 'r1')).rejects.toBeInstanceOf(
         ForbiddenException,
+      );
+    });
+  });
+
+  describe('getExport（导出结构化数据 · 决策 5）', () => {
+    function svcWith(reportRow: Record<string, unknown> | null): ReportService {
+      const prisma = {
+        report: { findFirst: jest.fn().mockResolvedValue(reportRow) },
+      };
+      return new ReportService(
+        prisma as unknown as PrismaService,
+        stubQueue(true),
+        stubProcessor(),
+      );
+    }
+
+    it('ready 报告 → 硬契约结构（typeLabel/paragraphs/brand 等）', async () => {
+      const svc = svcWith({
+        type: 'strategy',
+        status: 'ready',
+        title: '你的护城河',
+        bodyMd:
+          '## 主要矛盾\n\n扩张 vs **信任**。\n\n## 三步走\n\n1. **守。**先守。',
+        annotation: '别急着摊大。',
+        origin: 'user',
+        wordCount: 42,
+        createdAt: new Date('2026-07-01T00:00:00Z'),
+      });
+
+      const out = await svc.getExport('user-1', 'r1');
+      expect(out.title).toBe('你的护城河');
+      expect(out.type).toBe('strategy');
+      expect(out.typeLabel).toBe('战略分析');
+      expect(out.wordCount).toBe(42);
+      expect(out.origin).toBe('user');
+      expect(out.annotation).toBe('别急着摊大。');
+      expect(out.brand).toEqual({
+        name: '米诺战略参谋部',
+        slogan: '对话产出报告，报告喂养对话',
+      });
+      expect(out.paragraphs).toEqual([
+        { kind: 'heading', text: '主要矛盾' },
+        { kind: 'text', text: '扩张 vs 信任。' },
+        { kind: 'heading', text: '三步走' },
+        { kind: 'item', text: '守。先守。' },
+      ]);
+    });
+
+    it('非本人/不存在 → 403', async () => {
+      await expect(
+        svcWith(null).getExport('user-x', 'r1'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('非 ready（generating/failed）→ 404', async () => {
+      const svc = svcWith({
+        type: 'strategy',
+        status: 'generating',
+        title: '军师正在执笔…',
+        bodyMd: '',
+        annotation: null,
+        origin: 'user',
+        wordCount: 0,
+        createdAt: new Date(),
+      });
+      await expect(svc.getExport('user-1', 'r1')).rejects.toBeInstanceOf(
+        NotFoundException,
       );
     });
   });

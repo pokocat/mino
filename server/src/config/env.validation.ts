@@ -28,6 +28,12 @@ export const envValidationSchema = Joi.object({
   WX_PUSH_PAGE_CHAT: Joi.string().allow('').default('pages/chat/chat'),
   WX_PUSH_PAGE_REPORTS: Joi.string().allow('').default('pages/reports/list'),
 
+  // 内容安全审核失败策略：默认 false（fail-open 放行），true 切严格模式（fail-closed）
+  SAFETY_FAIL_CLOSED: Joi.boolean()
+    .truthy('true')
+    .falsy('false')
+    .default(false),
+
   FASTGPT_BASE_URL: Joi.string().uri().allow('').default(''),
   FASTGPT_APP_KEY: Joi.string().allow('').default(''),
   FASTGPT_OPENAPI_KEY: Joi.string().allow('').default(''),

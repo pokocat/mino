@@ -1,6 +1,15 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ReportType, User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { CurrentUser } from './current-user.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -26,7 +35,12 @@ interface MeResponse {
 @Controller('me')
 @UseGuards(JwtAuthGuard)
 export class MeController {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(MeController.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly kb: FastgptKbService,
+  ) {}
 
   /** 入局 / 编辑资料：更新昵称、行业、生意背景。 */
   @Post('profile')
@@ -63,6 +77,24 @@ export class MeController {
   @Get('streak')
   streak(@CurrentUser() user: User): { streakDays: number } {
     return { streakDays: user.streakDays };
+  }
+
+  /**
+   * 账号与数据删除（合规 · 用户删除权）：级联删除该用户全部数据（Prisma onDelete:Cascade
+   * 连带清 conversations/messages/reports/report_sources/tasks）+ 删除 FastGPT 知识库。
+   * 幂等：先删知识库（best-effort），再以 deleteMany 删用户（已删除则 count=0 不报错），恒返回 {ok:true}。
+   */
+  @Delete()
+  async deleteAccount(@CurrentUser() user: User): Promise<{ ok: true }> {
+    // 先删外部知识库（deleteKb 内部已吞异常），再删本地数据；顺序保证 kbId 仍可读
+    if (user.kbId) {
+      await this.kb.deleteKb(user.kbId);
+    }
+    const { count } = await this.prisma.user.deleteMany({
+      where: { id: user.id },
+    });
+    this.logger.log(`账号删除：user=${user.id} 级联删除完成（count=${count}）`);
+    return { ok: true };
   }
 
   /** 用 Prisma groupBy 聚合报告计数（当前自然全 0）。 */
