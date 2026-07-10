@@ -87,6 +87,11 @@ model Conversation {
   // （附加 system 机制，与 M3 知识库检索注入同源；不落 messages 表、不下发端上）
   seedReportId String? @map("seed_report_id")
 
+  // 「跟军师补充」续写会话记录目标报告 id：非空时该会话 suggestions 的 primary 换成
+  // appendCommit（把这段织进报告），且不触发军师主动建 origin=agent 报告。commit 后
+  // 把本会话织入目标报告并追加 report_source。无需 FK 关系（软引用），不建索引。
+  appendReportId String? @map("append_report_id")
+
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages Message[]
   tasks    Task[]

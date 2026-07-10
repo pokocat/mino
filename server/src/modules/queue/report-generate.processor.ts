@@ -6,8 +6,10 @@ import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { WxPushService } from '../push/wx-push.service';
 import { WxSecService } from '../safety/wx-sec.service';
 import {
+  buildAppendMessages,
   buildReportMessages,
   countWords,
+  parseAppendReportJson,
   parseReportJson,
   ParsedReport,
 } from '../report/report-prompt';
@@ -62,6 +64,13 @@ export class ReportGenerateProcessor {
       this.logger.warn(`report-generate：报告 ${data.reportId} 不存在，跳过`);
       return;
     }
+
+    // 续写（append）分支：报告本是 ready，commit 已置 generating；走独立修订流程。
+    if (data.mode === 'append') {
+      await this.processAppend(report, data.conversationId);
+      return;
+    }
+
     if (report.status === 'ready') {
       this.logger.debug(`report-generate：报告 ${report.id} 已 ready，跳过`);
       return;
@@ -119,6 +128,149 @@ export class ReportGenerateProcessor {
       );
       await this.markFailed(report.id, String(err));
     }
+  }
+
+  /**
+   * 续写（append）处理：以原报告全文 + 批注 + 续写会话对话调 complete()，产出修订版正文，
+   * 织回原报告并置 ready、追加 report_source、重置 isRead、回喂知识库、推送。
+   *
+   * 失败回滚取舍（#4-5）：generating 期间**不清空 bodyMd**（仅 status 变化），
+   * 因此解析失败/内容安全命中/异常时只需把 status 恢复 ready，报告即回到「原内容 + ready」，
+   * 绝不因续写失败丢掉老板已有的报告正文。
+   */
+  private async processAppend(
+    report: {
+      id: string;
+      userId: string;
+      type: import('@prisma/client').ReportType;
+      title: string;
+      bodyMd: string;
+      annotation: string | null;
+      meta: unknown;
+      user: { wxOpenid: string; nickname: string | null };
+    },
+    conversationId?: string,
+  ): Promise<void> {
+    if (!conversationId) {
+      await this.rollbackToReady(report.id, '续写缺少会话 id');
+      return;
+    }
+    try {
+      const conv = await this.prisma.conversation.findUnique({
+        where: { id: conversationId },
+        select: { id: true, fastgptChatId: true, userId: true },
+      });
+      if (!conv) {
+        await this.rollbackToReady(
+          report.id,
+          `续写会话 ${conversationId} 不存在`,
+        );
+        return;
+      }
+
+      const dialogue = await this.loadDialogue(conversationId);
+      const messages = buildAppendMessages({
+        type: report.type,
+        originalTitle: report.title,
+        originalBodyMd: report.bodyMd,
+        originalAnnotation: report.annotation,
+        dialogue,
+      });
+
+      // 解析失败重试 1 次（共 2 次），再失败回滚为原内容 ready。
+      let parsed: { bodyMd: string; annotation: string } | null = null;
+      for (let attempt = 1; attempt <= 2 && !parsed; attempt++) {
+        const raw = await this.fastgptChat.complete({
+          chatId: conv.fastgptChatId,
+          userId: conv.userId,
+          messages,
+          appendOriginalBody: report.bodyMd, // 仅 mock 用：据此织入可辨识新段落
+        });
+        parsed = parseAppendReportJson(raw);
+        if (!parsed) {
+          this.logger.warn(
+            `report-append：报告 ${report.id} 第 ${attempt} 次解析失败`,
+          );
+        }
+      }
+      if (!parsed) {
+        await this.rollbackToReady(report.id, '续写解析失败（重试后仍失败）');
+        return;
+      }
+
+      // 内容安全审修订版正文（连原标题一起）；命中风险回滚为原内容 ready。
+      const verdict = await this.safety.checkText(
+        report.user.wxOpenid,
+        `${report.title}\n${parsed.bodyMd}`,
+        2,
+      );
+      if (verdict.risky) {
+        await this.rollbackToReady(
+          report.id,
+          `续写内容安全未通过（label=${verdict.label}）`,
+        );
+        return;
+      }
+
+      // 织回：title/type 不变，仅更新 bodyMd/annotation/wordCount；重置未读、置回 ready。
+      const wordCount = countWords(parsed.bodyMd);
+      const meta = mergeMeta(report.meta, { kb_synced: false });
+      await this.prisma.report.update({
+        where: { id: report.id },
+        data: {
+          status: 'ready',
+          bodyMd: parsed.bodyMd,
+          annotation: parsed.annotation || null,
+          wordCount,
+          isRead: false,
+          readAt: null,
+          meta,
+        },
+      });
+      this.logger.log(
+        `report-append：报告 ${report.id} 已续好（${wordCount} 字）`,
+      );
+
+      // 追加 report_source（若尚未关联该会话）——「N 段织成」计数据此增长。
+      await this.prisma.reportSource.createMany({
+        data: [{ reportId: report.id, conversationId }],
+        skipDuplicates: true,
+      });
+
+      // 回喂知识库（标题 + 首段）+ 推送「续好了」（复用报告完成推送，文案区分可选）。
+      await this.syncToKb(report.id, report.userId, {
+        title: report.title,
+        bodyMd: parsed.bodyMd,
+        annotation: parsed.annotation,
+      });
+      await this.push.sendReportReady(
+        { wxOpenid: report.user.wxOpenid, nickname: report.user.nickname },
+        { id: report.id, title: report.title },
+      );
+    } catch (err) {
+      this.logger.error(
+        `report-append：报告 ${report.id} 续写异常：${String(err)}`,
+      );
+      await this.rollbackToReady(report.id, String(err));
+    }
+  }
+
+  /**
+   * 续写失败回滚：把 status 恢复 ready（bodyMd 全程未动 → 报告回到原内容），仅记日志。
+   * 与首次生成的 markFailed 不同——续写失败绝不能让已有报告变 failed 而「丢内容」。
+   */
+  private async rollbackToReady(
+    reportId: string,
+    reason: string,
+  ): Promise<void> {
+    this.logger.warn(
+      `report-append：报告 ${reportId} 续写失败，回滚为原内容 ready：${reason}`,
+    );
+    await this.prisma.report
+      .update({ where: { id: reportId }, data: { status: 'ready' } })
+      .catch((e) =>
+        this.logger.error(`report-append：回滚 ready 也失败：${String(e)}`),
+      );
   }
 
   /** 组装素材调工作流并解析；解析失败重试 1 次（共 2 次尝试）。 */

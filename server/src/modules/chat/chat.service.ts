@@ -24,8 +24,10 @@ import { ReportMarker, ReportMarkerStream } from './report-marker';
 export interface Suggestion {
   text: string;
   primary: boolean;
-  action: 'generateReport' | 'chat';
+  // generateReport：让军师写报告；chat：追问气泡；appendCommit：把续写会话织进目标报告
+  action: 'generateReport' | 'chat' | 'appendCommit';
   reportType?: ReportType;
+  reportId?: string; // action=appendCommit 时携带目标报告 id
 }
 
 /** SSE 结构化事件（由 controller 序列化为线协议帧）。 */
@@ -248,15 +250,16 @@ export class ChatService {
       return;
     }
 
-    // 5) suggestions（done 前必发，可空数组之外本期固定注入 primary 项）
+    // 5) suggestions（done 前必发）：primary 项（写报告 / 续写会话则换 appendCommit）+ 追问两条。
     yield {
       event: 'suggestions',
-      data: { items: this.buildSuggestions(content) },
+      data: { items: await this.buildSuggestions(conv, content) },
     };
 
     // 6) reportOffer（§8.4 军师主动触发）：拦到标记 → origin=agent 建报告并入队；
     //    每用户每日 origin=agent 上限 1 份，超限只发事件不建报告（无 reportId 字段）。
-    if (markers.length > 0) {
+    //    续写会话（appendReportId 非空）标记仍被拦截剥离，但不建 origin=agent 报告、不发 reportOffer。
+    if (markers.length > 0 && !conv.appendReportId) {
       const first = markers[0];
       let reportId: string | undefined;
       try {
@@ -346,25 +349,129 @@ export class ChatService {
   }
 
   /**
-   * 本期 suggestions 规则：固定注入一条 primary「让军师写报告」（reportType 走启发式）；
-   * FASTGPT_MOCK 时附两条固定追问；真实模式两条追问暂缺省（M3/M4 再优化，接口已留）。
+   * suggestions 规则：primary 项 + 两条追问。
+   * - primary：普通会话为「让军师写报告」（reportType 走启发式）；续写会话（appendReportId 非空）
+   *   换成「把这段织进报告」（action=appendCommit，携带目标报告 id），不再出现写报告项。
+   * - 追问两条：mock 时用固定两条；真实模式调 complete() 生成（4 秒超时/解析失败 → 空数组）。
    */
-  private buildSuggestions(content: string): Suggestion[] {
-    const items: Suggestion[] = [
-      {
-        text: '好，帮我写一份《…》报告',
-        primary: true,
-        action: 'generateReport',
-        reportType: inferReportType(content),
-      },
-    ];
+  private async buildSuggestions(
+    conv: Conversation,
+    content: string,
+  ): Promise<Suggestion[]> {
+    const primary: Suggestion = conv.appendReportId
+      ? {
+          text: '好，把这段织进报告',
+          primary: true,
+          action: 'appendCommit',
+          reportId: conv.appendReportId,
+        }
+      : {
+          text: '好，帮我写一份《…》报告',
+          primary: true,
+          action: 'generateReport',
+          reportType: inferReportType(content),
+        };
+    const followups = await this.buildFollowups(conv);
+    return [primary, ...followups];
+  }
+
+  /**
+   * 追问两条（action=chat）：mock 返回固定两条；真实模式以军师视角调 complete() 生成
+   * 「老板此刻最想追问的话」。4 秒超时（Promise.race）或解析失败 → 空数组回退，错误只记日志。
+   */
+  private async buildFollowups(conv: Conversation): Promise<Suggestion[]> {
     if (this.config.get<boolean>('fastgpt.mock')) {
-      items.push(
+      return [
         { text: '那本周我该先动哪一件？', primary: false, action: 'chat' },
         { text: '帮我把这事再拆细一点', primary: false, action: 'chat' },
-      );
+      ];
     }
-    return items;
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      const dialogue = await this.loadRecentDialogue(conv.id, 3);
+      if (!dialogue) return [];
+      const questions = await Promise.race([
+        this.completeFollowups(conv, dialogue).catch(() => [] as string[]),
+        new Promise<string[]>((resolve) => {
+          timer = setTimeout(() => resolve([]), FOLLOWUP_TIMEOUT_MS);
+        }),
+      ]);
+      return questions
+        .slice(0, 2)
+        .map((text) => ({ text, primary: false, action: 'chat' as const }));
+    } catch (err) {
+      this.logger.warn(`追问 suggestions 生成失败，回退空数组：${String(err)}`);
+      return [];
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  /** 调 complete() 生成两条追问并解析出字符串数组（失败/异常抛出，由调用方兜底为空）。 */
+  private async completeFollowups(
+    conv: Conversation,
+    dialogue: string,
+  ): Promise<string[]> {
+    const raw = await this.fastgpt.complete({
+      chatId: conv.fastgptChatId,
+      userId: conv.userId,
+      messages: [
+        { role: 'system', content: FOLLOWUP_PROMPT },
+        { role: 'user', content: dialogue },
+      ],
+    });
+    return parseFollowups(raw);
+  }
+
+  /** 取最近至多 rounds 轮对话（每条截断 200 字），拼成「老板/军师」文本供追问提示词使用。 */
+  private async loadRecentDialogue(
+    conversationId: string,
+    rounds: number,
+  ): Promise<string> {
+    const rows = await this.prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'desc' },
+      take: rounds * 2, // 一轮≈一问一答
+      select: { role: true, content: true },
+    });
+    return rows
+      .reverse()
+      .map(
+        (m) =>
+          `${m.role === 'user' ? '老板' : '军师'}：${m.content.slice(0, 200)}`,
+      )
+      .join('\n');
+  }
+}
+
+/** 追问 suggestions 生成的 4 秒超时。 */
+const FOLLOWUP_TIMEOUT_MS = 4000;
+
+/** 追问 suggestions 的 system 提示词（真实模式）。 */
+const FOLLOWUP_PROMPT =
+  '以军师视角，为老板生成 2 条他此刻最想追问的话（每条不超过 14 字，口语，不用序号），' +
+  '只输出 JSON：{"questions":["…","…"]}，不要任何解释文字或代码围栏。';
+
+/** 解析 complete() 返回的追问 JSON：取 questions 数组中至多 2 条非空字符串；失败返回空数组。 */
+function parseFollowups(raw: string): string[] {
+  const text = (raw ?? '')
+    .replace(/```json\s*/gi, '')
+    .replace(/```/g, '')
+    .trim();
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end === -1 || end <= start) return [];
+  try {
+    const obj = JSON.parse(text.slice(start, end + 1)) as {
+      questions?: unknown;
+    };
+    if (!Array.isArray(obj.questions)) return [];
+    return obj.questions
+      .filter((q): q is string => typeof q === 'string' && q.trim().length > 0)
+      .map((q) => q.trim())
+      .slice(0, 2);
+  } catch {
+    return [];
   }
 }
 

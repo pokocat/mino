@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -327,6 +328,91 @@ export class ReportService {
       select: { id: true },
     });
     return { conversationId: conv.id };
+  }
+
+  // ============ 续写（append） ============
+
+  /**
+   * 「跟军师补充」：仅 ready 报告可续。新建一条 appendReportId=报告 id 的会话，
+   * 落一条引用标题的军师开场（assistant），返回 {conversationId}。
+   * 报告不存在/非本人 → 404；报告非 ready → 409（沿用错误体 {code,message} 风格）。
+   */
+  async append(
+    userId: string,
+    id: string,
+  ): Promise<{ conversationId: string }> {
+    const report = await this.assertReadyReport(userId, id);
+    const opening = `《${report.title}》这篇我随时可以续。你想补充什么？聊完我把这段织进去。`;
+    const conv = await this.prisma.conversation.create({
+      data: {
+        userId,
+        fastgptChatId: randomUUID(),
+        lastMessageAt: new Date(),
+        appendReportId: report.id,
+        messages: { create: { role: 'assistant', content: opening } },
+      },
+      select: { id: true },
+    });
+    return { conversationId: conv.id };
+  }
+
+  /**
+   * 续写提交：校验会话属于该用户且 appendReportId===reportId、报告须 ready →
+   * 报告置 generating → 入队（mode='append'，带续写会话 id；Redis 不可用则同步降级）。
+   * 契约固定返回 {reportId, status:'generating'}。
+   * 会话不匹配/非本人 → 403；报告非 ready → 409；报告不存在 → 404。
+   */
+  async appendCommit(
+    userId: string,
+    reportId: string,
+    conversationId: string,
+  ): Promise<{ reportId: string; status: 'generating' }> {
+    const conv = await this.prisma.conversation.findFirst({
+      where: { id: conversationId, userId },
+      select: { id: true, appendReportId: true },
+    });
+    if (!conv || conv.appendReportId !== reportId) {
+      throw new ForbiddenException({
+        code: 403,
+        message: '该会话与报告不匹配',
+      });
+    }
+    // 报告须存在、属于该用户、且当前 ready（防重复提交/并发）
+    await this.assertReadyReport(userId, reportId);
+
+    await this.prisma.report.update({
+      where: { id: reportId },
+      data: { status: 'generating' },
+    });
+
+    const job = { reportId, mode: 'append' as const, conversationId };
+    const enqueued = await this.queue.enqueue(job);
+    if (!enqueued) {
+      // 同步降级：就地跑续写逻辑（Processor 内部自消化异常并落最终态/回滚）
+      await this.processor.process(job);
+    }
+    return { reportId, status: 'generating' };
+  }
+
+  /** 取该用户的 ready 报告；不存在/非本人 → 404，非 ready → 409。 */
+  private async assertReadyReport(
+    userId: string,
+    id: string,
+  ): Promise<{ id: string; title: string }> {
+    const report = await this.prisma.report.findFirst({
+      where: { id, userId },
+      select: { id: true, title: true, status: true },
+    });
+    if (!report) {
+      throw new NotFoundException({ code: 404, message: '报告不存在' });
+    }
+    if (report.status !== 'ready') {
+      throw new ConflictException({
+        code: 409,
+        message: '报告尚未就绪，暂不能续写',
+      });
+    }
+    return { id: report.id, title: report.title };
   }
 
   // ============ 归属校验 ============

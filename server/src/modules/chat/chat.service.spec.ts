@@ -65,6 +65,7 @@ function buildConversation(
     lastMessageAt: null,
     createdAt: new Date(),
     seedReportId: null,
+    appendReportId: null,
     ...overrides,
   };
 }
@@ -348,6 +349,173 @@ describe('ChatService', () => {
       // 不据风险内容建报告、不回喂知识库
       expect(reports.createAgentReport).not.toHaveBeenCalled();
       expect(queue.enqueue).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('真实模式追问 suggestions（#3）', () => {
+    const realConfig = {
+      get: (key: string) => (key === 'fastgpt.mock' ? false : undefined),
+    } as unknown as ConfigService;
+
+    /** 造真实模式 ChatService：streamChat 吐一段无标记文本，complete 由入参控制。 */
+    function build(complete: jest.Mock) {
+      const prisma = {
+        message: {
+          create: jest
+            .fn()
+            .mockImplementation(({ data }) =>
+              Promise.resolve({ id: `msg-${data.role}`, ...data }),
+            ),
+          // history + loadRecentDialogue 共用：返回一轮对话，令续写有素材
+          findMany: jest.fn().mockResolvedValue([
+            { role: 'user', content: '我想复盘' },
+            { role: 'assistant', content: '好，我们来复盘' },
+          ]),
+          update: jest.fn().mockResolvedValue({}),
+        },
+        conversation: { update: jest.fn().mockResolvedValue({}) },
+        user: { findUnique: jest.fn().mockResolvedValue({ kbId: null }) },
+      };
+      const fastgpt = {
+        streamChat: jest.fn(
+          () =>
+            (async function* () {
+              yield '兄弟，我听明白了。';
+            })() as AsyncIterable<string>,
+        ),
+        complete,
+      } as unknown as FastgptChatService;
+      const service = new ChatService(
+        prisma as unknown as PrismaService,
+        fastgpt,
+        realConfig,
+        stubKb(),
+        stubQueue(),
+        stubReports(),
+        stubStreak(),
+        stubSafety(),
+      );
+      return { service, complete };
+    }
+
+    it('complete 生成两条 → suggestions 追加两条 chat 项', async () => {
+      const complete = jest
+        .fn()
+        .mockResolvedValue('{"questions":["下一步先干嘛？","钱从哪来？"]}');
+      const { service } = build(complete);
+      const events: SseEvent[] = [];
+      for await (const evt of service.streamReply(
+        buildConversation(),
+        '帮我复盘',
+      )) {
+        events.push(evt);
+      }
+      const sug = events.find((e) => e.event === 'suggestions');
+      const items = (sug?.data as { items: any[] }).items;
+      // primary 写报告 + 两条追问
+      expect(items[0].action).toBe('generateReport');
+      expect(items).toHaveLength(3);
+      expect(items[1]).toEqual({
+        text: '下一步先干嘛？',
+        primary: false,
+        action: 'chat',
+      });
+      expect(items[2].text).toBe('钱从哪来？');
+      expect(complete).toHaveBeenCalledTimes(1);
+    });
+
+    it('complete 返回垃圾（解析失败）→ 追问回退空，仅 primary', async () => {
+      const { service } = build(jest.fn().mockResolvedValue('不是 JSON'));
+      const events: SseEvent[] = [];
+      for await (const evt of service.streamReply(
+        buildConversation(),
+        '帮我复盘',
+      )) {
+        events.push(evt);
+      }
+      const sug = events.find((e) => e.event === 'suggestions');
+      const items = (sug?.data as { items: any[] }).items;
+      expect(items).toHaveLength(1);
+      expect(items[0].action).toBe('generateReport');
+    });
+
+    it('complete 超时（4s）→ 追问回退空，仅 primary', async () => {
+      jest.useFakeTimers();
+      // complete 永不 resolve，触发 4s 超时兜底
+      const { service } = build(jest.fn(() => new Promise<string>(() => {})));
+      const events: SseEvent[] = [];
+      const run = (async () => {
+        for await (const evt of service.streamReply(
+          buildConversation(),
+          '帮我复盘',
+        )) {
+          events.push(evt);
+        }
+      })();
+      // 推进到超时点，flush 微任务
+      await jest.advanceTimersByTimeAsync(4100);
+      await run;
+      jest.useRealTimers();
+      const sug = events.find((e) => e.event === 'suggestions');
+      const items = (sug?.data as { items: any[] }).items;
+      expect(items).toHaveLength(1);
+      expect(items[0].action).toBe('generateReport');
+    });
+  });
+
+  describe('续写会话 suggestions 与 reportOffer（#4）', () => {
+    const mockConfig2 = {
+      get: (key: string) => (key === 'fastgpt.mock' ? true : undefined),
+    } as unknown as ConfigService;
+
+    it('appendReportId 非空：primary 换成 appendCommit，且不发 reportOffer（标记仍剥离）', async () => {
+      const prisma = {
+        message: {
+          create: jest
+            .fn()
+            .mockImplementation(({ data }) =>
+              Promise.resolve({ id: `msg-${data.role}`, ...data }),
+            ),
+          findMany: jest.fn().mockResolvedValue([]),
+          update: jest.fn().mockResolvedValue({}),
+        },
+        conversation: { update: jest.fn().mockResolvedValue({}) },
+        user: { findUnique: jest.fn().mockResolvedValue({ kbId: null }) },
+      };
+      const reports = stubReports();
+      const service = new ChatService(
+        prisma as unknown as PrismaService,
+        new FastgptChatService(mockConfig2),
+        mockConfig2,
+        stubKb(),
+        stubQueue(),
+        reports,
+        stubStreak(),
+        stubSafety(),
+      );
+      const conv = buildConversation({ appendReportId: 'rpt-x' });
+      const events: SseEvent[] = [];
+      for await (const evt of service.streamReply(conv, '再补充一点')) {
+        events.push(evt);
+      }
+
+      // primary = appendCommit，携带目标报告 id
+      const sug = events.find((e) => e.event === 'suggestions');
+      const items = (sug?.data as { items: any[] }).items;
+      expect(items[0]).toEqual({
+        text: '好，把这段织进报告',
+        primary: true,
+        action: 'appendCommit',
+        reportId: 'rpt-x',
+      });
+      // 续写会话不发 reportOffer、不建 agent 报告
+      expect(events.map((e) => e.event)).not.toContain('reportOffer');
+      expect(reports.createAgentReport).not.toHaveBeenCalled();
+      // 标记仍被剥离：落库全文不含标记
+      const assistantCreate = prisma.message.create.mock.calls.find(
+        (c) => c[0].data.role === 'assistant',
+      );
+      expect(assistantCreate![0].data.content).not.toContain('mino:report');
     });
   });
 

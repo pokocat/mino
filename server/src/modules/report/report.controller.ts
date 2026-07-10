@@ -11,6 +11,7 @@ import {
 import { ReportType, User } from '@prisma/client';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AppendCommitDto } from './dto/append-commit.dto';
 import { GenerateReportDto } from './dto/generate-report.dto';
 import { ReportService } from './report.service';
 
@@ -73,6 +74,22 @@ export class ReportController {
   @Post(':id/chat')
   async chat(@CurrentUser() user: User, @Param('id') id: string) {
     return this.reportService.chatAboutReport(user.id, id);
+  }
+
+  /** POST /reports/:id/append → {conversationId}（新建续写会话；仅 ready 报告可续） */
+  @Post(':id/append')
+  async append(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.reportService.append(user.id, id);
+  }
+
+  /** POST /reports/:id/append/commit {conversationId} → {reportId, status:'generating'} */
+  @Post(':id/append/commit')
+  async appendCommit(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() dto: AppendCommitDto,
+  ) {
+    return this.reportService.appendCommit(user.id, id, dto.conversationId);
   }
 }
 

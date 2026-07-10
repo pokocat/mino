@@ -24,6 +24,11 @@ export interface StreamChatParams {
    * 真实模式忽略此字段（问题由 messages 中的提示词决定）。
    */
   dailyQuestion?: boolean;
+  /**
+   * 仅 FASTGPT_MOCK：报告续写（append）分支——给定原正文时 complete() 返回「原文 + 一段可辨识的
+   * 续写新叙事」的修订版报告 JSON，供 #4 续写链路联调/测试；真实模式忽略此字段（修订版由 messages 提示词决定）。
+   */
+  appendOriginalBody?: string;
 }
 
 /**
@@ -52,8 +57,12 @@ export class FastgptChatService {
   async complete(params: StreamChatParams): Promise<string> {
     const messages = this.normalizeMessages(params);
     if (this.config.get<boolean>('fastgpt.mock')) {
+      // 报告续写：把原文追织一段可辨识的新叙事，返回修订版 JSON（title 交由 Worker 用原标题）；
       // 报告链路：按类型返回固定报告 JSON；今日一问：返回固定问题 JSON；
-      // 其余（如 kb.ingest 要点提取）返回固定要点串
+      // 其余（如 kb.ingest 要点提取 / 追问 suggestions）返回固定要点串
+      if (typeof params.appendOriginalBody === 'string') {
+        return buildMockAppendReport(params.appendOriginalBody);
+      }
       if (params.reportType) return MOCK_REPORTS[params.reportType];
       if (params.dailyQuestion) return MOCK_DAILY_QUESTION;
       return MOCK_EXTRACTION;
@@ -182,6 +191,25 @@ const DONE = Symbol('done');
 /** Mock 模式下要点提取的固定返回（两条要点，供 kb.ingest 联调/测试）。 */
 const MOCK_EXTRACTION =
   '1. 这位老板做宠物殡葬生意\n2. 当前最大关切是获客渠道断裂、怕客源断掉';
+
+/** Mock 续写织入的可辨识新段落标识串（测试/联调据此判定「已织入」）。 */
+export const MOCK_APPEND_MARK = '（这是续写织入的新段落）';
+
+/**
+ * Mock 模式下续写（append）的固定返回：把原正文原样保留、自然织入一段带可辨识标识的新叙事，
+ * 返回修订版 {bodyMd, annotation, wordCount}（title 留空，Worker 用原标题不变）。
+ */
+function buildMockAppendReport(originalBodyMd: string): string {
+  const woven =
+    `${originalBodyMd.trimEnd()}\n\n` +
+    `${MOCK_APPEND_MARK}老板后来又补了一手：把最要紧的那条渠道单独派了个人盯，风险敞口一下小了半截。`;
+  return JSON.stringify({
+    title: '',
+    bodyMd: woven,
+    annotation: '续上这一手，根据地又稳了三分。',
+    wordCount: 0,
+  });
+}
 
 /**
  * Mock 模式下「今日一问」的固定返回（即设计稿那条），供 M5 回访链路联调/测试。
