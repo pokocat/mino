@@ -10,6 +10,7 @@ import { ReportModule } from './modules/report/report.module';
 import { TaskModule } from './modules/task/task.module';
 import { StreakModule } from './modules/streak/streak.module';
 import { SafetyModule } from './modules/safety/safety.module';
+import { QueueModule } from './modules/queue/queue.module';
 
 @Module({
   imports: [
@@ -19,8 +20,9 @@ import { SafetyModule } from './modules/safety/safety.module';
       load: [configuration],
       validationSchema: envValidationSchema,
     }),
-    // 全局基础设施：Prisma（数据库连接）
+    // 全局基础设施：Prisma（数据库连接）+ 队列（BullMQ/kb.ingest，Redis 降级容错）
     PrismaModule,
+    QueueModule,
     // 业务模块骨架（M1+ 逐步实现）
     AuthModule,
     ChatModule,

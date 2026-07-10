@@ -12,6 +12,8 @@ export const envValidationSchema = Joi.object({
 
   DATABASE_URL: Joi.string().uri({ scheme: ['postgresql', 'postgres'] }),
   REDIS_URL: Joi.string().uri({ scheme: ['redis', 'rediss'] }),
+  // 队列开关：置 false 可显式关闭 kb.ingest 队列（无 REDIS_URL 时自动降级）
+  QUEUE_ENABLED: Joi.boolean().truthy('true').falsy('false').default(true),
 
   JWT_SECRET: Joi.string().min(1),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
@@ -26,6 +28,11 @@ export const envValidationSchema = Joi.object({
   FASTGPT_OPENAPI_KEY: Joi.string().allow('').default(''),
   // FastGPT Mock 开关（本地/联调/CI 无真实 FastGPT 时置 true）
   FASTGPT_MOCK: Joi.boolean().truthy('true').falsy('false').default(false),
+  // 每用户知识库建库所需模型名（须与产品方 FastGPT 配置一致）
+  FASTGPT_KB_VECTOR_MODEL: Joi.string()
+    .allow('')
+    .default('text-embedding-3-small'),
+  FASTGPT_KB_AGENT_MODEL: Joi.string().allow('').default('gpt-4o-mini'),
 })
   // 测试环境放宽：允许仅提供部分变量
   .options({ allowUnknown: true, abortEarly: false });

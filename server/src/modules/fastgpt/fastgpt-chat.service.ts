@@ -34,6 +34,44 @@ export class FastgptChatService {
     return this.realStream(params.chatId, messages);
   }
 
+  /**
+   * 非流式一次性补全（M3 用于要点提取等轻量任务）。返回完整文本。
+   * POST /api/v1/chat/completions（stream:false）；FASTGPT_MOCK 时返回固定要点串。
+   */
+  async complete(params: StreamChatParams): Promise<string> {
+    const messages = this.normalizeMessages(params);
+    if (this.config.get<boolean>('fastgpt.mock')) {
+      return MOCK_EXTRACTION;
+    }
+
+    const baseUrl = (this.config.get<string>('fastgpt.baseUrl') ?? '').replace(
+      /\/+$/,
+      '',
+    );
+    const appKey = this.config.get<string>('fastgpt.appKey') ?? '';
+    const res = await fetch(`${baseUrl}/api/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${appKey}`,
+      },
+      body: JSON.stringify({
+        chatId: params.chatId,
+        stream: false,
+        detail: false,
+        messages,
+      }),
+    });
+    if (!res.ok) {
+      this.logger.error(`FastGPT complete 异常：HTTP ${res.status}`);
+      throw new Error(`FastGPT upstream error: ${res.status}`);
+    }
+    const json = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    return json?.choices?.[0]?.message?.content ?? '';
+  }
+
   /** messages 优先；否则用 prompt 包一条 user 消息。 */
   private normalizeMessages(params: StreamChatParams): ChatMessage[] {
     if (params.messages && params.messages.length > 0) {
@@ -125,6 +163,10 @@ export class FastgptChatService {
 
 /** [DONE] 哨兵。 */
 const DONE = Symbol('done');
+
+/** Mock 模式下要点提取的固定返回（两条要点，供 kb.ingest 联调/测试）。 */
+const MOCK_EXTRACTION =
+  '1. 这位老板做宠物殡葬生意\n2. 当前最大关切是获客渠道断裂、怕客源断掉';
 
 /** 40–80ms 延迟。 */
 function delay(ms: number): Promise<void> {

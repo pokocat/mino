@@ -11,6 +11,10 @@ export default () => ({
   redis: {
     url: process.env.REDIS_URL,
   },
+  queue: {
+    // 队列开关：显式 QUEUE_ENABLED=false 或无 REDIS_URL 时关闭（记忆旁路降级，主链路不受影响）
+    enabled: process.env.QUEUE_ENABLED !== 'false' && !!process.env.REDIS_URL,
+  },
   jwt: {
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
@@ -27,5 +31,9 @@ export default () => ({
     openApiKey: process.env.FASTGPT_OPENAPI_KEY,
     // Mock 模式：FASTGPT_MOCK=true 时不调外部 FastGPT，按固定军师风格吐假流（供联调/测试）
     mock: process.env.FASTGPT_MOCK === 'true',
+    // 每用户知识库建库所需模型名（须与产品方 FastGPT config.json 中登记的模型一致）
+    kbVectorModel:
+      process.env.FASTGPT_KB_VECTOR_MODEL ?? 'text-embedding-3-small',
+    kbAgentModel: process.env.FASTGPT_KB_AGENT_MODEL ?? 'gpt-4o-mini',
   },
 });

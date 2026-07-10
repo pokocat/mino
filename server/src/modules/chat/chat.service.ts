@@ -7,6 +7,8 @@ import {
   ChatMessage,
   FastgptChatService,
 } from '../fastgpt/fastgpt-chat.service';
+import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
+import { KbIngestQueue } from '../queue/kb-ingest.queue';
 import { JUNSHI_OPENING } from './junshi-constants';
 import { ReportMarker, ReportMarkerStream } from './report-marker';
 
@@ -34,6 +36,8 @@ export class ChatService {
     private readonly prisma: PrismaService,
     private readonly fastgpt: FastgptChatService,
     private readonly config: ConfigService,
+    private readonly kb: FastgptKbService,
+    private readonly kbIngest: KbIngestQueue,
   ) {}
 
   /**
@@ -104,21 +108,25 @@ export class ChatService {
   ): AsyncIterable<SseEvent> {
     const conversationId = conv.id;
 
-    // 1) 存用户消息
-    await this.prisma.message.create({
+    // 1) 存用户消息（保留 id 供 kb.ingest 定位该轮）
+    const userMsg = await this.prisma.message.create({
       data: { conversationId, role: 'user', content },
     });
 
-    // 2) 组装上下文（该会话历史；知识库检索留待 M3）
+    // 2) 组装上下文：本条消息检索用户知识库（战略档案摘录）→ 附加 system；再接会话历史
+    const messages: ChatMessage[] = [];
+    const kbContext = await this.retrieveKbContext(conv.userId, content);
+    if (kbContext) {
+      messages.push({ role: 'system', content: kbContext });
+    }
     const history = await this.prisma.message.findMany({
       where: { conversationId },
       orderBy: { createdAt: 'asc' },
       select: { role: true, content: true },
     });
-    const messages: ChatMessage[] = history.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    for (const m of history) {
+      messages.push({ role: m.role, content: m.content });
+    }
 
     // 3) 调军师流，边收边发；标记拦截器保证 report_ready 不泄漏（含跨 chunk 拆分）
     const markerStream = new ReportMarkerStream();
@@ -180,11 +188,48 @@ export class ChatService {
       };
     }
 
-    // 7) done
+    // 7) 异步入队 kb.ingest（记忆旁路：入队失败仅告警，绝不影响本轮对话）
+    // 双重兜底：KbIngestQueue.enqueue 自身已吞异常，这里再包一层，确保任何情况都不打断本轮 done。
+    try {
+      await this.kbIngest.enqueue({
+        conversationId,
+        messageIds: [userMsg.id, assistant.id],
+      });
+    } catch (err) {
+      this.logger.warn(
+        `kb.ingest 入队异常（已忽略，不影响对话）：${String(err)}`,
+      );
+    }
+
+    // 8) done
     yield {
       event: 'done',
       data: { messageId: assistant.id, conversationId },
     };
+  }
+
+  /**
+   * 用本条消息检索用户知识库，拼成附加 system 上下文（战略档案摘录，top N）。
+   * 无 kb / 无命中 / 检索异常 → 返回 null（静默跳过）；此上下文不落 messages 表、不下发端上。
+   */
+  private async retrieveKbContext(
+    userId: string,
+    query: string,
+  ): Promise<string | null> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { kbId: true },
+      });
+      if (!user?.kbId) return null;
+      const fragments = await this.kb.search(user.kbId, query, 3);
+      if (fragments.length === 0) return null;
+      const lines = fragments.map((f) => `- ${f}`).join('\n');
+      return `【你对这位老板的了解（战略档案摘录）】\n${lines}`;
+    } catch (err) {
+      this.logger.warn(`知识库检索失败，跳过上下文注入：${String(err)}`);
+      return null;
+    }
   }
 
   /**

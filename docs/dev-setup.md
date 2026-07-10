@@ -117,6 +117,29 @@ curl -s http://localhost:3000/me -H "Authorization: Bearer <token>"
 
 生产/真机联调务必置 `WX_MOCK=false` 并填 `WX_APPID` / `WX_SECRET`。
 
+### 记忆（M3：知识库 + kb.ingest 队列）
+
+M3 让军师「越来越懂你」：每轮对话结束后异步把要点写入该用户的 FastGPT 知识库，
+下一轮用本条消息检索知识库、把命中片段作为附加上下文喂给军师（不落 `messages` 表、不下发端上）。
+
+- **队列（BullMQ + ioredis）**：要点写入是后台 job（`kb-ingest` 队列）。本地起 Redis：
+
+  ```bash
+  docker compose up -d redis          # 推荐
+  # 或宿主已装 redis-server：
+  redis-server --daemonize yes --port 6379 && redis-cli ping   # 期望 PONG
+  ```
+
+- **Redis 降级（记忆是旁路，绝不拖垮对话）**：若无 `REDIS_URL`、置 `QUEUE_ENABLED=false`、
+  或 Redis 不可达，应用**照常启动、对话照常完成**，仅「要点写入」这一后台任务降级为空操作
+  （入队失败/超时仅告警日志）。因此本地只想调对话时，不起 Redis 也能跑。
+
+- **无真实 FastGPT 也能跑通记忆闭环**：置 `FASTGPT_MOCK=true` 时，知识库的建库/写入/检索
+  全走进程内存实现（`kbId=mock_kb_<userId>`，检索为朴素关键词包含匹配），配合本地 Redis 即可
+  端到端验证「第一轮透露事实 → kb.ingest 消费写入 → 第二轮检索命中并拼进上下文」。
+  真实模式下建库/检索所需模型名由 `FASTGPT_KB_VECTOR_MODEL` / `FASTGPT_KB_AGENT_MODEL` 指定，
+  须与产品方 FastGPT `config.json` 登记的模型一致。
+
 ## 4. 小程序（miniprogram/）
 
 ```bash

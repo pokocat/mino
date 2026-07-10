@@ -3,8 +3,24 @@ import { ConfigService } from '@nestjs/config';
 import { Conversation } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FastgptChatService } from '../fastgpt/fastgpt-chat.service';
+import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
+import { KbIngestQueue } from '../queue/kb-ingest.queue';
 import { ChatService, inferReportType, SseEvent } from './chat.service';
 import { JUNSHI_OPENING } from './junshi-constants';
+
+/** 检索无命中的 kb 桩（默认不注入档案上下文）。 */
+function stubKb(fragments: string[] = []): FastgptKbService {
+  return {
+    search: jest.fn().mockResolvedValue(fragments),
+  } as unknown as FastgptKbService;
+}
+
+/** 入队桩。 */
+function stubQueue(): KbIngestQueue & { enqueue: jest.Mock } {
+  return {
+    enqueue: jest.fn().mockResolvedValue(undefined),
+  } as unknown as KbIngestQueue & { enqueue: jest.Mock };
+}
 
 function buildConversation(
   overrides: Partial<Conversation> = {},
@@ -40,6 +56,8 @@ describe('ChatService', () => {
         prisma as unknown as PrismaService,
         {} as FastgptChatService,
         mockConfig,
+        stubKb(),
+        stubQueue(),
       );
 
       const result = await service.createConversation('user-1');
@@ -63,7 +81,9 @@ describe('ChatService', () => {
     let prisma: {
       message: { create: jest.Mock; findMany: jest.Mock };
       conversation: { update: jest.Mock };
+      user: { findUnique: jest.Mock };
     };
+    let queue: KbIngestQueue & { enqueue: jest.Mock };
     let service: ChatService;
 
     beforeEach(() => {
@@ -77,12 +97,17 @@ describe('ChatService', () => {
           findMany: jest.fn().mockResolvedValue([]),
         },
         conversation: { update: jest.fn().mockResolvedValue({}) },
+        // 默认无 kb → 检索跳过，保留既有断言（全文以「兄弟」开头）
+        user: { findUnique: jest.fn().mockResolvedValue({ kbId: null }) },
       };
       const fastgpt = new FastgptChatService(mockConfig);
+      queue = stubQueue();
       service = new ChatService(
         prisma as unknown as PrismaService,
         fastgpt,
         mockConfig,
+        stubKb(),
+        queue,
       );
     });
 
@@ -155,6 +180,69 @@ describe('ChatService', () => {
       const updateArg = prisma.conversation.update.mock.calls[0][0];
       expect(updateArg.data.title).toBeUndefined();
     });
+
+    it('检索命中时把战略档案摘录作为 system 上下文拼进 FastGPT 入参（不落库/不下发）', async () => {
+      // kb 有命中 → user.findUnique 返回 kbId，kb.search 返回两条片段
+      prisma.user.findUnique.mockResolvedValue({ kbId: 'mock_kb_user-1' });
+      const kb = stubKb(['老板做宠物殡葬生意', '最怕获客渠道断掉']);
+      // spy FastGPT 收到的 messages
+      const captured: { messages?: { role: string; content: string }[] } = {};
+      const fastgpt = {
+        streamChat: jest.fn().mockImplementation((params) => {
+          captured.messages = params.messages;
+          return (async function* () {
+            yield '收到';
+          })();
+        }),
+      } as unknown as FastgptChatService;
+      const svc = new ChatService(
+        prisma as unknown as PrismaService,
+        fastgpt,
+        mockConfig,
+        kb,
+        queue,
+      );
+
+      const conv = buildConversation();
+      for await (const _ of svc.streamReply(conv, '我做宠物殡葬，最怕获客断')) {
+        void _;
+      }
+
+      // 第一条必须是 system 且含档案摘录标题 + 命中片段
+      const first = captured.messages?.[0];
+      expect(first?.role).toBe('system');
+      expect(first?.content).toContain(
+        '【你对这位老板的了解（战略档案摘录）】',
+      );
+      expect(first?.content).toContain('老板做宠物殡葬生意');
+      expect(first?.content).toContain('最怕获客渠道断掉');
+      expect(kb.search).toHaveBeenCalledWith(
+        'mock_kb_user-1',
+        '我做宠物殡葬，最怕获客断',
+        3,
+      );
+
+      // 附加上下文不得落 messages 表：assistant 落库正文里不含档案摘录标题
+      const assistantCreate = prisma.message.create.mock.calls.find(
+        (c) => c[0].data.role === 'assistant',
+      );
+      expect(assistantCreate?.[0].data.content).not.toContain('战略档案摘录');
+    });
+
+    it('入队失败（Redis 不可达）不抛出，streamReply 仍产出 done', async () => {
+      // enqueue 拒绝，模拟 Redis 不可达时入队异常
+      queue.enqueue.mockRejectedValue(new Error('Redis unreachable'));
+      const conv = buildConversation();
+      const events: SseEvent[] = [];
+      await expect(
+        (async () => {
+          for await (const evt of service.streamReply(conv, '随便聊聊')) {
+            events.push(evt);
+          }
+        })(),
+      ).resolves.toBeUndefined();
+      expect(events.map((e) => e.event)).toContain('done');
+    });
   });
 
   describe('getOwnedConversation（归属校验）', () => {
@@ -166,6 +254,8 @@ describe('ChatService', () => {
         prisma as unknown as PrismaService,
         {} as FastgptChatService,
         mockConfig,
+        stubKb(),
+        stubQueue(),
       );
       await expect(
         service.getOwnedConversation('user-x', 'conv-1'),
