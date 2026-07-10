@@ -55,8 +55,10 @@ export type ReportType = 'strategy' | 'resume' | 'review' | 'decision';
 export interface SuggestionItem {
   text: string;
   primary?: boolean; // true=深墨底金字主气泡（通常为「写报告」）
-  action?: 'generateReport' | 'chat'; // 点击语义：生成报告 / 作为用户输入直接发送
+  // 点击语义：生成报告 / 作为用户输入直接发送 / 把补充织进原报告（续写会话专属）
+  action?: 'generateReport' | 'chat' | 'appendCommit';
   reportType?: ReportType; // action=generateReport 时的建议类型
+  reportId?: string; // action=appendCommit 时携带：要织入的原报告 id
 }
 
 // 一条会话消息（GET /conversations/:id/messages 返回项）
@@ -306,4 +308,27 @@ export function chatFromReport(id: string): Promise<{ conversationId: string }> 
 // GET /reports/:id/export → 分享图绘制所需结构化数据
 export function exportReport(id: string): Promise<ExportData> {
   return request<ExportData>({ url: `/reports/${id}/export`, method: 'GET' });
+}
+
+// ---------------- 报告续写 / 织入（V3 append）----------------
+
+// POST /reports/:id/append → {conversationId}（仅 ready 报告；服务端建好续写会话，开场引用报告标题）
+export function appendReport(id: string): Promise<{ conversationId: string }> {
+  return request<{ conversationId: string }>({
+    url: `/reports/${id}/append`,
+    method: 'POST',
+  });
+}
+
+// POST /reports/:id/append/commit {conversationId} → {reportId, status:"generating"}
+// 把续写会话里的补充织进原报告（reportId 即原报告 id，随后轮询其详情等 ready）
+export function commitAppend(
+  id: string,
+  conversationId: string
+): Promise<GenerateReportResult> {
+  return request<GenerateReportResult>({
+    url: `/reports/${id}/append/commit`,
+    method: 'POST',
+    data: { conversationId },
+  });
 }

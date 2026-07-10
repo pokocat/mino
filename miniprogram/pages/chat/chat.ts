@@ -7,6 +7,7 @@ import {
   createConversation,
   getMessages,
   generateReport,
+  commitAppend,
   getReport,
   getReportStats,
   getTodayTask,
@@ -446,6 +447,11 @@ Page({
       this._startGenerate(item.reportType || 'strategy');
       return;
     }
+    if (item.action === 'appendCommit') {
+      // 续写会话专属：把补充织进原报告（与 generateReport 互斥，不走生成动线）
+      this._startCommitAppend(item.reportId || '', item.reportType || 'resume');
+      return;
+    }
     // chat 或缺省：作为用户输入直接发送
     const userMsg: UiMessage = { id: `u${++this._seq}`, role: 'user', content: item.text };
     this.setData({ messages: this.data.messages.concat(userMsg), suggestions: [] });
@@ -485,6 +491,29 @@ Page({
     });
     generateReport(this._conversationId, type)
       .then((r) => {
+        this._genReportId = r.reportId;
+        this._genType = type;
+        this._startPolling();
+      })
+      .catch(() => this.setData({ modalVisible: false })); // request 层已 toast
+  },
+
+  // 用户点「织进报告」suggestion（续写会话）：POST /append/commit → 复用生成弹层轮询该报告
+  _startCommitAppend(reportId: string, type: ReportType) {
+    if (!reportId || !this._conversationId) return;
+    // R4 时机 b：织入产出报告同属高意愿点，触发前请求订阅消息授权
+    requestSubscribe('generateReport');
+    // 清续写会话的气泡，避免重复点击
+    this.setData({
+      suggestions: [],
+      modalVisible: true,
+      modalPhase: 'generating',
+      modalTopic: this._lastTopic,
+      modalType: type,
+    });
+    commitAppend(reportId, this._conversationId)
+      .then((r) => {
+        // 织入后 reportId 即原报告；轮询其详情等 ready（正文/来源已更新）
         this._genReportId = r.reportId;
         this._genType = type;
         this._startPolling();

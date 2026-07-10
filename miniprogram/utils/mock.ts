@@ -13,6 +13,7 @@ import type {
   ReportListItem,
   ReportListResult,
   ReportStats,
+  ReportStatus,
   ReportType,
   StartTaskResult,
   TaskStatus,
@@ -239,6 +240,15 @@ function reportStats(): ReportStats {
 const genDeadline: Record<string, number> = {};
 const GEN_MS = 5000; // 约 5s（弹层每 2s 轮询，2~3 次后 ready）
 
+// ---------------- 报告续写 / 织入 mock ----------------
+// commit 后原报告先 generating，到期翻 ready 并把补充「织进」正文；appendApplied 保证只织一次。
+const appendDeadline: Record<string, number> = {};
+const appendApplied: Record<string, boolean> = {};
+const APPEND_MS = 4200; // 约 4.2s（弹层每 2s 轮询，约第 2 次翻 ready）
+// 织入正文段（自传体续写：可辨识文本，走查详情时肉眼可确认）
+const APPEND_PARAGRAPH =
+  '（补记）后来他常跟人说，那年冬天他赌上的从不是运气，是他早看清、却一直没敢承认的那点底气。这一段，是今天他亲口补上的。';
+
 // ---------------- 今日一问 mock（走查整条动线用）----------------
 
 const DAILY_TASK_ID = 'task-today-1';
@@ -302,6 +312,8 @@ export function resolveMock<T>(
   const msgMatch = path.match(/^\/conversations\/([^/]+)\/messages$/);
   const reportReadMatch = path.match(/^\/reports\/([^/]+)\/read$/);
   const reportChatMatch = path.match(/^\/reports\/([^/]+)\/chat$/);
+  const reportAppendCommitMatch = path.match(/^\/reports\/([^/]+)\/append\/commit$/);
+  const reportAppendMatch = path.match(/^\/reports\/([^/]+)\/append$/);
   const reportExportMatch = path.match(/^\/reports\/([^/]+)\/export$/);
   const reportIdMatch = path.match(/^\/reports\/([^/]+)$/);
   const taskStartMatch = path.match(/^\/tasks\/([^/]+)\/start$/);
@@ -311,15 +323,29 @@ export function resolveMock<T>(
     dailyTaskStatus = 'started';
     payload = { conversationId: DAILY_CONV_ID } as StartTaskResult;
   } else if (M === 'GET' && msgMatch) {
-    // 历史消息：给一条军师开场白（首次进入即续聊此开场）
-    payload = [
-      {
-        id: 'mock-msg-opening',
-        role: 'assistant',
-        content: MOCK_OPENING,
-        createdAt: new Date().toISOString(),
-      },
-    ] as ChatMessage[];
+    // 续写会话：开场引用报告标题；否则给通用军师开场白
+    const appendConv = msgMatch[1].match(/^mock-conv-append-(.+)-\d+$/);
+    if (appendConv) {
+      const rep = REPORT_DETAILS[appendConv[1]];
+      const title = rep ? rep.title : '这一篇';
+      payload = [
+        {
+          id: 'mock-msg-append-opening',
+          role: 'assistant',
+          content: `《${title}》这篇我随时可以续。你想往里面再添一笔什么？聊透了我就把它织进去。`,
+          createdAt: new Date().toISOString(),
+        },
+      ] as ChatMessage[];
+    } else {
+      payload = [
+        {
+          id: 'mock-msg-opening',
+          role: 'assistant',
+          content: MOCK_OPENING,
+          createdAt: new Date().toISOString(),
+        },
+      ] as ChatMessage[];
+    }
   } else if (M === 'POST' && path === '/reports/generate') {
     // 受理生成：登记到期时点，返回 generating
     const reportId = `r-gen-${Date.now()}`;
@@ -336,6 +362,15 @@ export function resolveMock<T>(
     payload = { ok: true };
   } else if (M === 'POST' && reportChatMatch) {
     payload = { conversationId: `mock-conv-from-report-${Date.now()}` };
+  } else if (M === 'POST' && reportAppendCommitMatch) {
+    // 织入受理：登记到期时点（原报告先 generating），返回原报告 id + generating
+    const rid = reportAppendCommitMatch[1];
+    appendDeadline[rid] = Date.now() + APPEND_MS;
+    payload = { reportId: rid, status: 'generating' } as GenerateReportResult;
+  } else if (M === 'POST' && reportAppendMatch) {
+    // 建续写会话：会话 id 编码原报告 id，供 getMessages 引用标题 / SSE 派 appendCommit 气泡
+    const rid = reportAppendMatch[1];
+    payload = { conversationId: `mock-conv-append-${rid}-${Date.now()}` };
   } else if (M === 'GET' && reportExportMatch) {
     payload = mockReportExport(reportExportMatch[1]);
   } else if (M === 'GET' && reportIdMatch) {
@@ -477,6 +512,27 @@ function stripBold(s: string): string {
 // GET /reports/:id：固定库命中直接返回；生成态 id 到期翻转为 ready（借战略全文）
 function mockReportDetail(id: string): ReportDetail {
   const fixed = REPORT_DETAILS[id];
+
+  // 续写织入中：commit 后该报告先 generating，到期翻 ready 并追加正文 + 溯源 +1 + 置未读
+  const appendDL = appendDeadline[id];
+  if (appendDL !== undefined && fixed) {
+    if (Date.now() >= appendDL) {
+      if (!appendApplied[id]) {
+        fixed.bodyMd = `${fixed.bodyMd}\n\n${APPEND_PARAGRAPH}`;
+        fixed.sources = fixed.sources.concat({
+          conversationId: `c-append-${id}`,
+          title: '补充对话',
+        });
+        fixed.isRead = false;
+        fixed.wordCount += 120;
+        appendApplied[id] = true;
+      }
+      delete appendDeadline[id];
+      return fixed; // ready + 已织入
+    }
+    return { ...fixed, status: 'generating' as ReportStatus }; // 未到期：轮询见 generating
+  }
+
   if (fixed) return fixed;
 
   const deadline = genDeadline[id];

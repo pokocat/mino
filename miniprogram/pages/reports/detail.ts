@@ -1,6 +1,12 @@
 // 报告详情页（二级页，type 驱动双版式）。对照 03（结构化）/ 04（自传体）屏。
 // 头部 + md-report 正文 + 军师批注 + 溯源标签 + 底部操作条；onShow 未读 → POST /read。
-import { getReport, markReportRead, chatFromReport, exportReport } from '../../utils/api';
+import {
+  getReport,
+  markReportRead,
+  chatFromReport,
+  appendReport,
+  exportReport,
+} from '../../utils/api';
 import type { ReportDetail, ReportType, ApiError } from '../../utils/api';
 import { STORAGE_KEYS } from '../../utils/config';
 import { renderShareCard } from '../../utils/share-card';
@@ -97,27 +103,46 @@ Page({
     };
   },
 
-  // 主按钮：跟军师聊/补充这份报告 → 建/续会话 → 回对话页
+  // 主按钮：resume（自传体）=「跟军师补充这一篇」走续写动线；其余=常规「跟军师聊这份报告」
   onPrimary() {
-    const id = this.data.id;
-    chatFromReport(id)
-      .then((r) => {
-        // 暂存目标会话 id，chat 页 onShow 检查并续该会话
-        wx.setStorageSync(STORAGE_KEYS.pendingConversationId, r.conversationId);
-        wx.switchTab({ url: '/pages/chat/chat' });
-      })
+    if (this.data.narrative) {
+      this._appendThisReport();
+    } else {
+      this._chatThisReport();
+    }
+  },
+
+  // 副按钮：✎ 补充（走续写动线）/ ↧ 导出分享图；按 e.detail.icon 区分
+  onSecondary(e: WechatMiniprogram.CustomEvent<{ icon: string }>) {
+    if (e.detail && e.detail.icon === 'edit') {
+      this._appendThisReport();
+    } else {
+      this._exportShare();
+    }
+  },
+
+  // 常规跟聊：POST /reports/:id/chat 建/续会话 → 回流 chat 页续该会话
+  _chatThisReport() {
+    chatFromReport(this.data.id)
+      .then((r) => this._gotoChatConversation(r.conversationId))
       .catch(() => {
         /* request 层已 toast */
       });
   },
 
-  // 副按钮：✎ 补充（与主按钮同流程）/ ↧ 导出分享图；按 e.detail.icon 区分
-  onSecondary(e: WechatMiniprogram.CustomEvent<{ icon: string }>) {
-    if (e.detail && e.detail.icon === 'edit') {
-      this.onPrimary();
-    } else {
-      this._exportShare();
-    }
+  // 续写补充：POST /reports/:id/append 建续写会话（开场已引用报告标题）→ 复用同一回流机制续该会话
+  _appendThisReport() {
+    appendReport(this.data.id)
+      .then((r) => this._gotoChatConversation(r.conversationId))
+      .catch(() => {
+        /* request 层已 toast */
+      });
+  },
+
+  // 暂存目标会话 id（chat 页 onShow 检查此键并续该会话），切回对话 tab
+  _gotoChatConversation(conversationId: string) {
+    wx.setStorageSync(STORAGE_KEYS.pendingConversationId, conversationId);
+    wx.switchTab({ url: '/pages/chat/chat' });
   },
 
   // 导出分享图：GET export → 绘制宣纸风长图 → 操作面板（保存相册 / 发送给朋友）

@@ -141,6 +141,12 @@ function dispatch(frame: SseFrame, opts: SsePostOptions): void {
 // MOCK 实现：按片段吐一段固定军师回复，事件结构与真实协议一致
 // ---------------------------------------------------------------------------
 function mockSsePost(opts: SsePostOptions): SseTask {
+  // 续写会话（会话 id 编码原报告 id）：走织入分支，suggestions 主气泡为 appendCommit
+  const appendM = String(opts.data.conversationId ?? '').match(/^mock-conv-append-(.+)-\d+$/);
+  if (appendM) {
+    return mockAppendSsePost(opts, appendM[1]);
+  }
+
   // 固定回复：按标点切成若干片段，模拟逐 token 流入
   const reply =
     '这就是你的根据地——别人拿钱砸半年也砸不动的东西。' +
@@ -203,6 +209,65 @@ function mockSsePost(opts: SsePostOptions): SseTask {
         conversationId: String(opts.data.conversationId ?? 'mock-conv-1'),
       });
     }, after + step * 2) as unknown as number
+  );
+
+  return {
+    abort() {
+      aborted = true;
+      timers.forEach((t) => clearTimeout(t));
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// MOCK 续写分支：军师接住这一笔，suggestions 主气泡换成 appendCommit（携带 reportId），
+// 无 reportOffer / 无 generateReport；点击后由页面走 commitAppend 织入。
+// ---------------------------------------------------------------------------
+function mockAppendSsePost(opts: SsePostOptions, reportId: string): SseTask {
+  const reply =
+    '好，这一笔我接住了。' +
+    '它跟你这篇的底色是一路的——都是你把命运往自己手里攥的那股劲。' +
+    '要不要我现在就把它织进这篇里？';
+  const chunks = reply.match(/[^，。—…]+[，。—…]?/g) || [reply];
+
+  const timers: number[] = [];
+  let aborted = false;
+  const step = 90;
+
+  chunks.forEach((piece, i) => {
+    const id = setTimeout(() => {
+      if (aborted) return;
+      opts.onEvent({ type: 'token', text: piece });
+    }, step * (i + 1)) as unknown as number;
+    timers.push(id);
+  });
+
+  const after = step * (chunks.length + 1);
+
+  // suggestions：primary 为 appendCommit（携带 reportId），不含 generateReport
+  timers.push(
+    setTimeout(() => {
+      if (aborted) return;
+      opts.onEvent({
+        type: 'suggestions',
+        items: [
+          { text: '好，把它织进这篇', primary: true, action: 'appendCommit', reportId, reportType: 'resume' },
+          { text: '再帮我改改这一笔的说法', action: 'chat' },
+          { text: '先不急，我再想想', action: 'chat' },
+        ],
+      });
+    }, after) as unknown as number
+  );
+
+  // done
+  timers.push(
+    setTimeout(() => {
+      if (aborted) return;
+      opts.onDone?.({
+        messageId: `mock-msg-${Date.now()}`,
+        conversationId: String(opts.data.conversationId ?? 'mock-conv-append'),
+      });
+    }, after + step) as unknown as number
   );
 
   return {
