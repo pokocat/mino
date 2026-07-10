@@ -22,6 +22,11 @@ export const envValidationSchema = Joi.object({
   WX_SECRET: Joi.string().allow('').default(''),
   // Mock 登录开关（本地/联调无真实 appid 时置 true）
   WX_MOCK: Joi.boolean().truthy('true').falsy('false').default(false),
+  // 订阅消息模板 id（占位，产品方申请后填入）与跳转页
+  WX_TMPL_DAILY_Q: Joi.string().allow('').default(''),
+  WX_TMPL_REPORT_READY: Joi.string().allow('').default(''),
+  WX_PUSH_PAGE_CHAT: Joi.string().allow('').default('pages/chat/chat'),
+  WX_PUSH_PAGE_REPORTS: Joi.string().allow('').default('pages/reports/list'),
 
   FASTGPT_BASE_URL: Joi.string().uri().allow('').default(''),
   FASTGPT_APP_KEY: Joi.string().allow('').default(''),

@@ -19,6 +19,11 @@ export interface StreamChatParams {
    * 真实模式忽略此字段（报告结构由 messages 中的提示词决定）。
    */
   reportType?: ReportType;
+  /**
+   * 仅 FASTGPT_MOCK：置 true 时 complete() 返回「今日一问」固定 JSON（设计稿那条），供 M5 回访链路联调/测试；
+   * 真实模式忽略此字段（问题由 messages 中的提示词决定）。
+   */
+  dailyQuestion?: boolean;
 }
 
 /**
@@ -47,10 +52,11 @@ export class FastgptChatService {
   async complete(params: StreamChatParams): Promise<string> {
     const messages = this.normalizeMessages(params);
     if (this.config.get<boolean>('fastgpt.mock')) {
-      // 报告链路：按类型返回固定报告 JSON；其余（如 kb.ingest 要点提取）返回固定要点串
-      return params.reportType
-        ? MOCK_REPORTS[params.reportType]
-        : MOCK_EXTRACTION;
+      // 报告链路：按类型返回固定报告 JSON；今日一问：返回固定问题 JSON；
+      // 其余（如 kb.ingest 要点提取）返回固定要点串
+      if (params.reportType) return MOCK_REPORTS[params.reportType];
+      if (params.dailyQuestion) return MOCK_DAILY_QUESTION;
+      return MOCK_EXTRACTION;
     }
 
     const baseUrl = (this.config.get<string>('fastgpt.baseUrl') ?? '').replace(
@@ -176,6 +182,16 @@ const DONE = Symbol('done');
 /** Mock 模式下要点提取的固定返回（两条要点，供 kb.ingest 联调/测试）。 */
 const MOCK_EXTRACTION =
   '1. 这位老板做宠物殡葬生意\n2. 当前最大关切是获客渠道断裂、怕客源断掉';
+
+/**
+ * Mock 模式下「今日一问」的固定返回（即设计稿那条），供 M5 回访链路联调/测试。
+ * 结构与真实提示词契约一致：{question, hint, estMinutes}。
+ */
+const MOCK_DAILY_QUESTION = JSON.stringify({
+  question: '你最值钱的一张牌是什么？',
+  hint: '别急着答。先想想——离了它，你的生意还剩几成。',
+  estMinutes: 3,
+});
 
 /**
  * Mock 模式下四类报告工作流的固定 JSON 返回（符合受限 Markdown 规范，供 M4 报告链路联调/测试）。

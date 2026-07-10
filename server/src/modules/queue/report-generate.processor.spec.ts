@@ -1,7 +1,16 @@
 import { PrismaService } from '../../prisma/prisma.service';
 import { FastgptChatService } from '../fastgpt/fastgpt-chat.service';
 import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
+import { WxPushService } from '../push/wx-push.service';
 import { ReportGenerateProcessor } from './report-generate.processor';
+
+/** 推送桩（旁路，不触网）。 */
+function stubPush(): WxPushService & { sendReportReady: jest.Mock } {
+  return {
+    sendReportReady: jest.fn().mockResolvedValue(undefined),
+    sendDailyQuestion: jest.fn().mockResolvedValue(undefined),
+  } as unknown as WxPushService & { sendReportReady: jest.Mock };
+}
 
 /** 造一份 generating 的报告行（含关联会话）。 */
 function buildReport(overrides: Record<string, unknown> = {}) {
@@ -11,7 +20,13 @@ function buildReport(overrides: Record<string, unknown> = {}) {
     status: 'generating',
     meta: {},
     userId: 'user-1',
-    user: { industry: '宠物殡葬', bizNote: '开了两家店', kbId: null },
+    user: {
+      industry: '宠物殡葬',
+      bizNote: '开了两家店',
+      kbId: null,
+      wxOpenid: 'openid-1',
+      nickname: '牧之',
+    },
     sources: [
       {
         conversation: {
@@ -56,12 +71,17 @@ describe('ReportGenerateProcessor', () => {
       search: jest.fn().mockResolvedValue([]),
     } as unknown as FastgptKbService;
 
+    const push = stubPush();
     const proc = new ReportGenerateProcessor(
       prisma as unknown as PrismaService,
       chat,
       kb,
+      push,
     );
     await proc.process({ reportId: 'rpt-1' });
+
+    // ready 后推送订阅消息（报告完成）
+    expect(push.sendReportReady).toHaveBeenCalledTimes(1);
 
     // 第一次 update = 置 ready；找出该次调用
     const readyCall = prisma.report.update.mock.calls.find(
@@ -98,6 +118,7 @@ describe('ReportGenerateProcessor', () => {
       prisma as unknown as PrismaService,
       chat,
       kb,
+      stubPush(),
     );
     void config;
     await proc.process({ reportId: 'rpt-1' });
@@ -118,6 +139,7 @@ describe('ReportGenerateProcessor', () => {
       prisma as unknown as PrismaService,
       chat,
       kb,
+      stubPush(),
     );
     await proc.process({ reportId: 'nope' });
     expect(prisma.report.update).not.toHaveBeenCalled();

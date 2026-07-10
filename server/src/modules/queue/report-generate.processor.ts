@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FastgptChatService } from '../fastgpt/fastgpt-chat.service';
 import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
+import { WxPushService } from '../push/wx-push.service';
 import {
   buildReportMessages,
   countWords,
@@ -30,13 +31,22 @@ export class ReportGenerateProcessor {
     private readonly prisma: PrismaService,
     private readonly fastgptChat: FastgptChatService,
     private readonly kb: FastgptKbService,
+    private readonly push: WxPushService,
   ) {}
 
   async process(data: ReportGenerateJobData): Promise<void> {
     const report = await this.prisma.report.findUnique({
       where: { id: data.reportId },
       include: {
-        user: { select: { industry: true, bizNote: true, kbId: true } },
+        user: {
+          select: {
+            industry: true,
+            bizNote: true,
+            kbId: true,
+            wxOpenid: true,
+            nickname: true,
+          },
+        },
         sources: {
           include: {
             conversation: {
@@ -82,9 +92,10 @@ export class ReportGenerateProcessor {
       // 回喂知识库：标题 + 首段（失败不影响报告 ready）
       await this.syncToKb(report.id, report.userId, parsed);
 
-      // TODO(M5)：订阅消息推送「军师刚写好一份…」（此处仅留日志）
-      this.logger.log(
-        `report-generate：TODO 推送订阅消息（报告 ${report.id} · 用户 ${report.userId}）`,
+      // 订阅消息推送「军师刚写好一份…」（R4；WxPushService 内部自消化异常，绝不抛出）
+      await this.push.sendReportReady(
+        { wxOpenid: report.user.wxOpenid, nickname: report.user.nickname },
+        { id: report.id, title: parsed.title },
       );
     } catch (err) {
       this.logger.error(

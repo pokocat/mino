@@ -140,6 +140,27 @@ M3 让军师「越来越懂你」：每轮对话结束后异步把要点写入�
   真实模式下建库/检索所需模型名由 `FASTGPT_KB_VECTOR_MODEL` / `FASTGPT_KB_AGENT_MODEL` 指定，
   须与产品方 FastGPT `config.json` 登记的模型一致。
 
+### 回访（M5：今日一问 + 订阅消息 + streak）
+
+M5 收尾回访闭环：每日 cron 派发「今日一问」，微信订阅消息送达，连续天数 streak 结算。
+
+- **今日一问**：`GET /tasks/today` 返回当日一问 `{id, question, hint, estMinutes, status}`
+  或 `null`；**当日无任务时惰性生成**（新用户当天即可拿到，不必等 cron）。
+  `POST /tasks/:id/start` 新建会话（开场 assistant 消息 = 军师今日一问），返回 `{conversationId}`，幂等。
+  `FASTGPT_MOCK=true` 时问题固定为设计稿那条「你最值钱的一张牌是什么？」。
+
+- **cron（每日 08:30 Asia/Shanghai）**：为活跃用户（近 14 天有消息或 `streakDays>0`）生成
+  当日 daily_q 并推送。可临时在代码中调用 `TaskCron.runDailyDispatch()` 手动触发验证。
+
+- **订阅消息（R4）**：`WxPushService.sendDailyQuestion` / `sendReportReady`。
+  `WX_MOCK=true` 时不触外网，仅结构化打印 `[mock push]`；发送失败（43101 用户未授权等）
+  只记日志绝不抛出。模板 id 走 `WX_TMPL_DAILY_Q` / `WX_TMPL_REPORT_READY`（产品方申请后填入）。
+  `access_token` 进程内内存缓存 7000s（单实例足够；多实例各自缓存，微信侧对 token 幂等）。
+
+- **streak（R6）**：以 Asia/Shanghai 日界，用户每日**第一条消息**触发结算——
+  昨天活跃 +1、今天已活跃不变、断签重置为 1。日界计算见 `modules/streak/streak.util.ts`
+  纯函数（显式 +8 偏移，无 DST，不依赖服务器本地时区）。`GET /me/streak`、`GET /me` 返回最新值。
+
 ## 4. 小程序（miniprogram/）
 
 ```bash

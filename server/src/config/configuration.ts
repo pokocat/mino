@@ -22,8 +22,14 @@ export default () => ({
   wx: {
     appId: process.env.WX_APPID,
     secret: process.env.WX_SECRET,
-    // Mock 模式：WX_MOCK=true 时不请求微信，openid = mock_<code hash>
+    // Mock 模式：WX_MOCK=true 时不请求微信（登录 openid = mock_<code hash>；订阅消息仅打印 [mock push]）
     mock: process.env.WX_MOCK === 'true',
+    // 订阅消息模板 id（占位；产品方在微信后台申请后填入）
+    tmplDailyQ: process.env.WX_TMPL_DAILY_Q ?? '',
+    tmplReportReady: process.env.WX_TMPL_REPORT_READY ?? '',
+    // 订阅消息点击后跳转的小程序页面（可留空）
+    pushPageChat: process.env.WX_PUSH_PAGE_CHAT ?? 'pages/chat/chat',
+    pushPageReports: process.env.WX_PUSH_PAGE_REPORTS ?? 'pages/reports/list',
   },
   fastgpt: {
     baseUrl: process.env.FASTGPT_BASE_URL,

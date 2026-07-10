@@ -10,6 +10,7 @@ import {
 import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { KbIngestQueue } from '../queue/kb-ingest.queue';
 import { ReportService } from '../report/report.service';
+import { StreakService } from '../streak/streak.service';
 import { JUNSHI_OPENING } from './junshi-constants';
 import { ReportMarker, ReportMarkerStream } from './report-marker';
 
@@ -44,6 +45,7 @@ export class ChatService {
     private readonly kb: FastgptKbService,
     private readonly kbIngest: KbIngestQueue,
     private readonly reports: ReportService,
+    private readonly streak: StreakService,
   ) {}
 
   /**
@@ -118,6 +120,10 @@ export class ChatService {
     const userMsg = await this.prisma.message.create({
       data: { conversationId, role: 'user', content },
     });
+
+    // 1.5) streak 结算（R6，异步旁路）：每日首条消息 +1，当日重复不变；
+    //      settleOnMessage 内部已吞异常，此处 void 不阻塞、失败绝不影响对话。
+    void this.streak.settleOnMessage(conv.userId);
 
     // 2) 组装上下文：本条消息检索用户知识库（战略档案摘录）→ 附加 system；再接会话历史
     const messages: ChatMessage[] = [];

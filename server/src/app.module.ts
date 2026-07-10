@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import configuration from './config/configuration';
 import { envValidationSchema } from './config/env.validation';
 import { HealthController } from './health/health.controller';
@@ -20,6 +21,8 @@ import { QueueModule } from './modules/queue/queue.module';
       load: [configuration],
       validationSchema: envValidationSchema,
     }),
+    // 定时任务调度（今日一问 cron）
+    ScheduleModule.forRoot(),
     // 全局基础设施：Prisma（数据库连接）+ 队列（BullMQ/kb.ingest，Redis 降级容错）
     PrismaModule,
     QueueModule,

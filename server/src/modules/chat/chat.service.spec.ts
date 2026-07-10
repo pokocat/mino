@@ -6,8 +6,17 @@ import { FastgptChatService } from '../fastgpt/fastgpt-chat.service';
 import { FastgptKbService } from '../fastgpt/fastgpt-kb.service';
 import { KbIngestQueue } from '../queue/kb-ingest.queue';
 import { ReportService } from '../report/report.service';
+import { StreakService } from '../streak/streak.service';
 import { ChatService, inferReportType, SseEvent } from './chat.service';
 import { JUNSHI_OPENING } from './junshi-constants';
+
+/** streak 结算桩（旁路，不触 DB）。 */
+function stubStreak(): StreakService & { settleOnMessage: jest.Mock } {
+  return {
+    settleOnMessage: jest.fn().mockResolvedValue(1),
+    getStreak: jest.fn().mockResolvedValue(1),
+  } as unknown as StreakService & { settleOnMessage: jest.Mock };
+}
 
 /** 检索无命中的 kb 桩（默认不注入档案上下文）。 */
 function stubKb(fragments: string[] = []): FastgptKbService {
@@ -70,6 +79,7 @@ describe('ChatService', () => {
         stubKb(),
         stubQueue(),
         stubReports(),
+        stubStreak(),
       );
 
       const result = await service.createConversation('user-1');
@@ -123,6 +133,7 @@ describe('ChatService', () => {
         stubKb(),
         queue,
         reports,
+        stubStreak(),
       );
     });
 
@@ -242,6 +253,7 @@ describe('ChatService', () => {
         kb,
         queue,
         reports,
+        stubStreak(),
       );
 
       const conv = buildConversation();
@@ -298,6 +310,7 @@ describe('ChatService', () => {
         stubKb(),
         stubQueue(),
         stubReports(),
+        stubStreak(),
       );
       await expect(
         service.getOwnedConversation('user-x', 'conv-1'),

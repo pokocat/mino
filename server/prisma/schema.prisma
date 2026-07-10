@@ -160,9 +160,10 @@ model Task {
   type   TaskType
   status TaskStatus @default(pending)
 
-  question   String @db.Text
-  promptSeed String @map("prompt_seed") @db.Text // 进对话时的开场
-  estMinutes Int?   @map("est_minutes") // 「约 3 分钟」
+  question   String  @db.Text
+  hint       String? @db.Text // 钩子文案（卡片副标题；今日一问由 LLM 一并产出）
+  promptSeed String  @map("prompt_seed") @db.Text // 进对话时的开场
+  estMinutes Int?    @map("est_minutes") // 「约 3 分钟」
 
   conversationId String? @map("conversation_id")
 
