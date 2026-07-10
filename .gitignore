@@ -36,3 +36,6 @@ Thumbs.db
 # 临时
 *.tmp
 .cache/
+
+# Redis 本地测试持久化
+dump.rdb
