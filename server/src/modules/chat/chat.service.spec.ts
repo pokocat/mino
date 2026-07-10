@@ -4,6 +4,7 @@ import { Conversation } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FastgptChatService } from '../fastgpt/fastgpt-chat.service';
 import { ChatService, inferReportType, SseEvent } from './chat.service';
+import { JUNSHI_OPENING } from './junshi-constants';
 
 function buildConversation(
   overrides: Partial<Conversation> = {},
@@ -24,6 +25,39 @@ describe('ChatService', () => {
   const mockConfig = {
     get: (key: string) => (key === 'fastgpt.mock' ? true : undefined),
   } as unknown as ConfigService;
+
+  describe('createConversation（建会话含军师开场白）', () => {
+    it('同步落一条 assistant 开场白，并置 lastMessageAt', async () => {
+      const prisma = {
+        conversation: {
+          create: jest.fn().mockResolvedValue({
+            id: 'conv-new',
+            fastgptChatId: 'chat-new',
+          }),
+        },
+      };
+      const service = new ChatService(
+        prisma as unknown as PrismaService,
+        {} as FastgptChatService,
+        mockConfig,
+      );
+
+      const result = await service.createConversation('user-1');
+
+      expect(result).toEqual({
+        conversationId: 'conv-new',
+        fastgptChatId: 'chat-new',
+      });
+      const createArg = prisma.conversation.create.mock.calls[0][0];
+      expect(createArg.data.lastMessageAt).toBeInstanceOf(Date);
+      // 嵌套创建首条 assistant 消息 = 开场白原文（与 deploy 文档同源常量）
+      expect(createArg.data.messages.create).toEqual({
+        role: 'assistant',
+        content: JUNSHI_OPENING,
+      });
+      expect(JUNSHI_OPENING.startsWith('兄弟，坐下聊。')).toBe(true);
+    });
+  });
 
   describe('streamReply（mock 流端到端）', () => {
     let prisma: {

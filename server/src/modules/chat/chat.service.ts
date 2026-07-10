@@ -7,6 +7,7 @@ import {
   ChatMessage,
   FastgptChatService,
 } from '../fastgpt/fastgpt-chat.service';
+import { JUNSHI_OPENING } from './junshi-constants';
 import { ReportMarker, ReportMarkerStream } from './report-marker';
 
 /** 一条 suggestions 气泡。 */
@@ -35,12 +36,23 @@ export class ChatService {
     private readonly config: ConfigService,
   ) {}
 
-  /** 新建会话：生成 fastgptChatId（uuid）。 */
+  /**
+   * 新建会话：生成 fastgptChatId（uuid），并同步落一条军师开场白（assistant）——
+   * 端上建会话后立即 GET messages 即可拿到开场白（双端契约）；
+   * 该条随会话历史一并作为 assistant 上下文喂给 FastGPT。
+   */
   async createConversation(
     userId: string,
   ): Promise<{ conversationId: string; fastgptChatId: string }> {
     const conv = await this.prisma.conversation.create({
-      data: { userId, fastgptChatId: randomUUID() },
+      data: {
+        userId,
+        fastgptChatId: randomUUID(),
+        lastMessageAt: new Date(),
+        messages: {
+          create: { role: 'assistant', content: JUNSHI_OPENING },
+        },
+      },
     });
     return { conversationId: conv.id, fastgptChatId: conv.fastgptChatId };
   }
