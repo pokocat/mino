@@ -1,0 +1,10 @@
+<scroll-view class="fc" scroll-x enable-flex show-scrollbar="{{false}}">
+  <view
+    wx:for="{{options}}"
+    wx:key="key"
+    class="fc__chip {{active === item.key ? 'fc__chip--active' : ''}}"
+    hover-class="fc__chip--hover"
+    data-key="{{item.key}}"
+    bindtap="onTap"
+  >{{item.label}} {{item.count}}</view>
+</scroll-view>

@@ -1,0 +1,35 @@
+<view class="md {{narrative ? 'md--narrative' : 'md--structured'}}">
+  <block wx:for="{{blocks}}" wx:key="index" wx:for-item="b">
+    <!-- 小节标题：4px 竖色条（色板轮换）+ 衬线小标题 -->
+    <view wx:if="{{b.kind === 'section'}}" class="md__section">
+      <view class="md__bar md__bar--{{b.accent}}"></view>
+      <text class="md__section-title">{{b.title}}</text>
+    </view>
+
+    <!-- 有序列表：壹/贰/叁 衬线序号 -->
+    <view wx:elif="{{b.kind === 'olist'}}" class="md__olist">
+      <view wx:for="{{b.items}}" wx:key="index" wx:for-item="it" class="md__oitem">
+        <text class="md__ordinal">{{it.ordinal}}</text>
+        <text class="md__oitem-text">
+          <text
+            wx:for="{{it.spans}}"
+            wx:key="index"
+            wx:for-item="sp"
+            class="{{sp.bold ? 'md__lead' : ''}}"
+          >{{sp.text}}</text>
+        </text>
+      </view>
+    </view>
+
+    <!-- 段落：含粗体 span 拆分；自传体首段首字下沉 -->
+    <view wx:else class="md__para">
+      <text wx:if="{{b.dropCap}}" class="md__dropcap">{{b.dropCap}}</text>
+      <text
+        wx:for="{{b.spans}}"
+        wx:key="index"
+        wx:for-item="sp"
+        class="{{sp.bold ? 'md__strong' : ''}}"
+      >{{sp.text}}</text>
+    </view>
+  </block>
+</view>

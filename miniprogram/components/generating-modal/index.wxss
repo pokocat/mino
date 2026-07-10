@@ -1,0 +1,116 @@
+/* 报告生成弹层：蒙层 + 中部纸卡 + 转圈 / 成功态。 */
+.gm {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(20, 17, 13, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 44rpx; /* 22px 左右 */
+}
+.gm__card {
+  width: 100%;
+  background: var(--color-paper-start);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-modal);
+  padding: 60rpx 48rpx 52rpx; /* 30px 24px 26px */
+  text-align: center;
+}
+
+/* 旋转 spinner */
+.gm__spin {
+  width: 112rpx; /* 56px */
+  height: 112rpx;
+  margin: 0 auto;
+  border: 4rpx solid rgba(178, 58, 46, 0.2);
+  border-top-color: var(--color-vermilion);
+  border-radius: var(--radius-round);
+  animation: mn-spin 1s linear infinite;
+}
+/* 成功勾 */
+.gm__check {
+  width: 112rpx;
+  height: 112rpx;
+  margin: 0 auto;
+  border-radius: var(--radius-round);
+  background: rgba(111, 140, 90, 0.14);
+  color: var(--color-success);
+  font-size: 56rpx;
+  line-height: 112rpx;
+}
+.gm__title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 36rpx; /* 18px */
+  color: var(--color-ink);
+  margin-top: 40rpx;
+}
+.gm__sub {
+  font-size: 24rpx; /* 12px */
+  color: var(--color-ink-tertiary);
+  margin-top: 16rpx;
+  line-height: 1.65;
+}
+
+/* 进度清单 */
+.gm__steps {
+  text-align: left;
+  margin-top: 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+.gm__step {
+  font-size: 24rpx;
+}
+.gm__step--done {
+  color: var(--color-success);
+}
+.gm__step--active {
+  color: var(--color-ink-faint);
+}
+
+/* 底部提示（生成中）*/
+.gm__hint {
+  margin-top: 36rpx;
+  font-size: 22rpx; /* 11px */
+  color: var(--color-ink-tertiary);
+  line-height: 1.7;
+}
+.gm__hint-hl {
+  color: var(--color-gold);
+}
+
+/* 成功态按钮 */
+.gm__actions {
+  margin-top: 40rpx;
+  display: flex;
+  gap: 20rpx;
+}
+.gm__btn {
+  flex: 1;
+  text-align: center;
+  border-radius: var(--radius-card-lg);
+  padding: 22rpx 0;
+  font-size: 26rpx;
+}
+.gm__btn--primary {
+  background: var(--color-ink);
+  color: var(--color-gold-text);
+  font-weight: 500;
+}
+.gm__btn--plain {
+  background: var(--color-card);
+  border: 1px solid var(--border-soft);
+  color: var(--color-ink-secondary);
+}
+.gm__btn--hover {
+  opacity: 0.88;
+}
+
+@keyframes mn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

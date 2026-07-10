@@ -1,0 +1,7 @@
+<view wx:if="{{tags.length}}" class="st">
+  <text
+    wx:for="{{tags}}"
+    wx:key="text"
+    class="st__tag {{item.gold ? 'st__tag--gold' : ''}}"
+  >{{item.text}}</text>
+</view>

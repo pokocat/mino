@@ -11,6 +11,8 @@ const DOC_ACTIVE =
 const DOC_INACTIVE =
   'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOUI5Mzg0IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAtMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiIvPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ii8+PGxpbmUgeDE9IjE2IiB5MT0iMTMiIHgyPSI4IiB5Mj0iMTMiLz48bGluZSB4MT0iMTYiIHkxPSIxNyIgeDI9IjgiIHkyPSIxNyIvPjxsaW5lIHgxPSIxMCIgeTE9IjkiIHgyPSI4IiB5Mj0iOSIvPjwvc3ZnPg==';
 
+import { getReportStats } from '../utils/api';
+
 interface TabItem {
   key: 'chat' | 'reports';
   pagePath: string;
@@ -22,6 +24,7 @@ interface TabItem {
 Component({
   data: {
     active: 'chat' as 'chat' | 'reports',
+    reportsUnread: false, // 报告库 tab 红点（stats.unread>0）
     tabs: [
       {
         key: 'chat',
@@ -39,7 +42,20 @@ Component({
       },
     ] as TabItem[],
   },
+  lifetimes: {
+    attached() {
+      this.refreshBadge();
+    },
+  },
   methods: {
+    // 刷新报告库红点（各页 onShow 可调用以同步未读态）
+    refreshBadge() {
+      getReportStats()
+        .then((s) => this.setData({ reportsUnread: s.unread > 0 }))
+        .catch(() => {
+          /* 静默 */
+        });
+    },
     onTap(e: WechatMiniprogram.TouchEvent) {
       const { key, path } = e.currentTarget.dataset as {
         key: 'chat' | 'reports';

@@ -1,0 +1,82 @@
+/* 报告卡。默认纸面卡；isNew → 朱砂描边 + 角标；generating → 转圈占位。 */
+.rc {
+  position: relative;
+  background: var(--color-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-card-lg); /* 8px */
+  padding: 26rpx 30rpx; /* 13px 15px */
+  box-shadow: var(--shadow-card);
+  margin-top: 18rpx; /* 9px */
+}
+.rc--hover {
+  opacity: 0.9;
+}
+/* 军师主动 · 新报告卡（高亮）*/
+.rc--new {
+  border: 3rpx solid var(--border-vermilion); /* 1.5px */
+  padding: 28rpx 32rpx 30rpx;
+  box-shadow: var(--shadow-new-report);
+}
+.rc__badge {
+  position: absolute;
+  top: 26rpx;
+  right: 28rpx;
+  font-size: 18rpx; /* 9px */
+  color: var(--color-vermilion);
+  background: rgba(178, 58, 46, 0.1);
+  border-radius: 16rpx;
+  padding: 4rpx 16rpx;
+}
+.rc__head {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  flex-wrap: wrap;
+}
+.rc__origin {
+  font-size: 21rpx; /* 10.5px */
+  color: var(--color-ink-faint);
+}
+/* 生成中：转圈 + 文案 */
+.rc__gen {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.rc__spin {
+  width: 26rpx;
+  height: 26rpx;
+  border: 3rpx solid rgba(178, 58, 46, 0.2);
+  border-top-color: var(--color-vermilion);
+  border-radius: var(--radius-round);
+  animation: mn-spin 1s linear infinite;
+}
+.rc__gen-text {
+  font-size: 21rpx;
+  color: var(--color-ink-faint);
+}
+.rc__title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 31rpx; /* 16px */
+  color: var(--color-ink);
+  margin-top: 18rpx;
+  line-height: 1.4;
+}
+.rc__summary {
+  font-size: 22rpx; /* 11.5px */
+  color: var(--color-ink-tertiary);
+  margin-top: 12rpx;
+  line-height: 1.6;
+}
+.rc__meta {
+  font-size: 21rpx; /* 10.5px */
+  color: var(--color-ink-faint);
+  margin-top: 14rpx;
+}
+
+@keyframes mn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

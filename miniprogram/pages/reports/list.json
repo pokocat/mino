@@ -1,8 +1,12 @@
 {
   "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
   "usingComponents": {
     "paper-page": "/components/paper-page/index",
     "nav-bar": "/components/nav-bar/index",
-    "seal-avatar": "/components/seal-avatar/index"
+    "seal-avatar": "/components/seal-avatar/index",
+    "filter-chips": "/components/filter-chips/index",
+    "report-card": "/components/report-card/index"
   }
 }

@@ -1,0 +1,31 @@
+<view
+  class="rc {{isNew ? 'rc--new' : ''}} {{isGenerating ? 'rc--generating' : ''}}"
+  hover-class="{{isGenerating ? '' : 'rc--hover'}}"
+  bindtap="onTap"
+>
+  <!-- 未读角标 -->
+  <text wx:if="{{isNew}}" class="rc__badge">军师刚写好</text>
+
+  <!-- 头部：类型 chip（生成中另配转圈）-->
+  <view class="rc__head">
+    <type-chip type="{{report.type}}"></type-chip>
+    <view wx:if="{{isGenerating}}" class="rc__gen">
+      <view class="rc__spin"></view>
+      <text class="rc__gen-text">军师正在执笔…</text>
+    </view>
+    <text wx:elif="{{!isNew}}" class="rc__origin">{{originLabel}}</text>
+  </view>
+
+  <!-- 标题 -->
+  <view class="rc__title">{{report.title}}</view>
+
+  <!-- 摘要（生成中不展示）-->
+  <view wx:if="{{!isGenerating && report.summary}}" class="rc__summary">{{report.summary}}</view>
+
+  <!-- 元信息：日期 · 来源 · 字数（生成中隐藏）-->
+  <view wx:if="{{!isGenerating}}" class="rc__meta">
+    <text>{{dateLabel}}</text>
+    <text wx:if="{{isNew}}"> · {{originLabel}}</text>
+    <text wx:if="{{wordLabel}}"> · {{wordLabel}}</text>
+  </view>
+</view>

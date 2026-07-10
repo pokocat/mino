@@ -1,3 +1,46 @@
-<view class="page">
-  <text class="title">{{title}}</text>
-</view>
+<paper-page>
+  <nav-bar title="{{navTitle}}" back="{{true}}" actionText="分享" bind:back="onBack" bind:action="onShare"></nav-bar>
+
+  <view wx:if="{{loading}}" class="detail__loading">军师翻档中……</view>
+
+  <block wx:elif="{{report}}">
+    <scroll-view class="detail__scroll" scroll-y enable-flex>
+      <!-- 结构化头部（左对齐）-->
+      <view wx:if="{{!narrative}}" class="head head--left">
+        <type-chip type="{{report.type}}"></type-chip>
+        <view class="head__title head__title--left">{{report.title}}</view>
+        <view class="head__meta">{{originLabel}} · {{dateLabel}}</view>
+      </view>
+
+      <!-- 自传体头部（居中 + 装饰线）-->
+      <view wx:else class="head head--center">
+        <type-chip type="{{report.type}}" suffix="{{chipSuffix}}"></type-chip>
+        <view class="head__title head__title--center">{{report.title}}</view>
+        <view class="head__rule"></view>
+      </view>
+
+      <!-- 正文 -->
+      <md-report body-md="{{report.bodyMd}}" type="{{report.type}}"></md-report>
+
+      <!-- 军师批注 -->
+      <annotation-block
+        wx:if="{{report.annotation}}"
+        label="{{narrative ? '军师批注' : '军师一句话'}}"
+        text="{{report.annotation}}"
+      ></annotation-block>
+
+      <!-- 溯源标签 -->
+      <source-tags sources="{{report.sources}}" kb-synced="{{report.meta.kbSynced}}"></source-tags>
+
+      <view class="detail__tail"></view>
+    </scroll-view>
+
+    <!-- 底部操作条 -->
+    <detail-action-bar
+      primary-text="{{primaryText}}"
+      icon="{{secondaryIcon}}"
+      bind:primary="onPrimary"
+      bind:secondary="onSecondary"
+    ></detail-action-bar>
+  </block>
+</paper-page>

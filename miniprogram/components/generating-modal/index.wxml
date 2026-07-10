@@ -1,0 +1,35 @@
+<view wx:if="{{visible}}" class="gm" catchtap="onClose">
+  <view class="gm__card" catchtap="noop">
+    <!-- 生成中 -->
+    <block wx:if="{{phase !== 'success'}}">
+      <view class="gm__spin"></view>
+      <view class="gm__title">军师正在为你执笔……</view>
+      <view class="gm__sub"
+        >正在把刚才关于「{{topic}}」的对话，整理成一份《{{typeLabel}}》报告。</view
+      >
+      <view class="gm__steps">
+        <view class="gm__step gm__step--done">✓ 读取本次对话要点</view>
+        <view class="gm__step gm__step--done">✓ 检索你的知识库（过往画像）</view>
+        <view class="gm__step gm__step--active">· 撰写 主要矛盾 / 定位 / 三步走…</view>
+      </view>
+      <view class="gm__hint"
+        >写好会存进「报告库」，并微信通知你。<text class="gm__hint-hl">你可以先回去接着聊。</text></view
+      >
+    </block>
+
+    <!-- 成功态 -->
+    <block wx:else>
+      <view class="gm__check">✓</view>
+      <view class="gm__title">军师写好了</view>
+      <view class="gm__sub">《{{typeLabel}}》已存进你的报告库。</view>
+      <view class="gm__actions">
+        <view class="gm__btn gm__btn--primary" hover-class="gm__btn--hover" catchtap="onView"
+          >查看报告</view
+        >
+        <view class="gm__btn gm__btn--plain" hover-class="gm__btn--hover" catchtap="onClose"
+          >继续聊</view
+        >
+      </view>
+    </block>
+  </view>
+</view>

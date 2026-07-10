@@ -73,4 +73,14 @@
       >↑</view
     >
   </view>
+
+  <!-- 报告生成弹层 -->
+  <generating-modal
+    visible="{{modalVisible}}"
+    phase="{{modalPhase}}"
+    topic="{{modalTopic}}"
+    type="{{modalType}}"
+    bind:close="onModalClose"
+    bind:view="onModalView"
+  ></generating-modal>
 </paper-page>

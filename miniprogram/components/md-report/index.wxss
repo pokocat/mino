@@ -1,0 +1,104 @@
+/* 报告正文渲染器：structured（小节竖条+壹贰叁）/ narrative（衬线长文+首字下沉）。 */
+
+/* ---------- 小节标题（structured）---------- */
+.md__section {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 32rpx; /* 16px */
+}
+.md__bar {
+  width: 8rpx; /* 4px */
+  height: 30rpx; /* 15px */
+  border-radius: 4rpx;
+  flex-shrink: 0;
+}
+/* 色板按小节序轮换：朱砂 / 描金 / 黛蓝 */
+.md__bar--0 {
+  background: var(--color-type-strategy);
+}
+.md__bar--1 {
+  background: var(--color-type-resume);
+}
+.md__bar--2 {
+  background: var(--color-type-review);
+}
+.md__section-title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 30rpx; /* 15px */
+  color: var(--color-ink);
+}
+
+/* ---------- 段落（structured）---------- */
+.md__para {
+  font-size: 26rpx; /* 13px */
+  color: var(--color-ink-body);
+  line-height: var(--lh-report); /* 1.85 */
+  margin-top: 16rpx;
+}
+/* 段落内强调：朱砂 */
+.md__strong {
+  color: var(--color-vermilion);
+  font-weight: 700;
+}
+
+/* ---------- 有序列表（structured）---------- */
+.md__olist {
+  margin-top: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx; /* 9px */
+}
+.md__oitem {
+  display: flex;
+  align-items: flex-start;
+  gap: 22rpx; /* 11px */
+}
+.md__ordinal {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 30rpx; /* 15px */
+  color: var(--color-vermilion);
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+.md__oitem-text {
+  font-size: 25rpx; /* 12.5px */
+  color: var(--color-ink-secondary);
+  line-height: 1.65;
+}
+/* 列表项引导词：墨黑（守。/攒。/扩。）*/
+.md__lead {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+/* ---------- 自传体（narrative）---------- */
+.md--narrative .md__para {
+  font-family: var(--font-serif);
+  font-size: 28rpx; /* 14px */
+  color: var(--color-ink-body);
+  line-height: var(--lh-narrative); /* 2.05 */
+  text-align: justify;
+  margin-top: 0;
+}
+/* 段间距（首段除外由 margin-top:0 起手）*/
+.md--narrative .md__para + .md__para {
+  margin-top: 32rpx;
+}
+/* 首字下沉：朱砂 44px float */
+.md--narrative .md__dropcap {
+  float: left;
+  font-family: var(--font-serif);
+  font-size: 88rpx; /* 44px */
+  line-height: 0.85;
+  font-weight: 900;
+  color: var(--color-vermilion);
+  margin: 8rpx 20rpx 0 0;
+}
+/* 自传体内强调：不改色，仅加粗（避免朱砂散落长文）*/
+.md--narrative .md__strong {
+  color: var(--color-ink);
+  font-weight: 700;
+}

@@ -12,7 +12,8 @@ import type { ApiError, SuggestionItem, ReportType } from './api';
 export type SseEvent =
   | { type: 'token'; text: string }
   | { type: 'suggestions'; items: SuggestionItem[] }
-  | { type: 'reportOffer'; reportType: ReportType; topic: string };
+  // reportOffer：军师提议写报告；有 reportId 表示军师已主动开写（前端跳过 generate）
+  | { type: 'reportOffer'; reportType: ReportType; topic: string; reportId?: string };
 
 export interface SseDone {
   messageId: string;
@@ -94,6 +95,8 @@ function dispatch(frame: SseFrame, opts: SsePostOptions): void {
         type: 'reportOffer',
         reportType: (payload.reportType as ReportType) || 'strategy',
         topic: String(payload.topic ?? ''),
+        // reportId 可缺省（军师仅提议、未开写）
+        reportId: payload.reportId ? String(payload.reportId) : undefined,
       });
       break;
     case 'done':

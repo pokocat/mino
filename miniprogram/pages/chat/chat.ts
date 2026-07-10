@@ -6,10 +6,14 @@ import {
   listConversations,
   createConversation,
   getMessages,
+  generateReport,
+  getReport,
+  getReportStats,
 } from '../../utils/api';
-import type { ChatMessage, SuggestionItem } from '../../utils/api';
+import type { ChatMessage, SuggestionItem, ReportType } from '../../utils/api';
 import { ssePost } from '../../utils/sse';
 import type { SseEvent, SseTask } from '../../utils/sse';
+import { STORAGE_KEYS } from '../../utils/config';
 
 // 页面渲染用的消息项（role=system 承载 reportOffer 占位行）
 interface UiMessage {
@@ -32,6 +36,11 @@ Page({
     canRetry: false,
     scrollToId: '',
     inited: false,
+    // 报告生成弹层
+    modalVisible: false,
+    modalPhase: 'generating', // 'generating' | 'success'
+    modalTopic: '',
+    modalType: 'strategy' as ReportType,
   },
 
   // ---- 内部可变态（非渲染，不进 data）----
@@ -41,21 +50,67 @@ Page({
   _pendingNote: '', // reportOffer 占位文案，待 done 后插入
   _flushTimer: 0, // 节流定时器句柄
   _seq: 0, // 消息 id 自增
+  _lastTopic: '刚才聊的', // 最近一次 reportOffer 话题（供生成弹层文案）
+  _genReportId: '', // 正在生成/轮询的报告 id
+  _genType: 'strategy' as ReportType,
+  _pollTimer: 0, // 轮询定时器句柄
+  _pollDeadline: 0, // 轮询截止时刻（60s）
 
   onShow() {
     // 同步自定义 tabBar 选中态
-    const tabBar = this.getTabBar?.();
+    const tabBar = this.getTabBar?.() as
+      | (WechatMiniprogram.Component.TrivialInstance & { refreshBadge?: () => void })
+      | undefined;
     if (tabBar) {
       tabBar.setData({ active: 'chat' });
+      tabBar.refreshBadge?.();
     }
-    if (!this.data.inited) {
+    // 报告详情「跟军师聊/补充」回流：续该会话
+    const pending = wx.getStorageSync(STORAGE_KEYS.pendingConversationId) as string;
+    if (pending) {
+      wx.removeStorageSync(STORAGE_KEYS.pendingConversationId);
+      this._applyConversation(pending);
+    } else if (!this.data.inited) {
       this._init();
+    } else {
+      // 常规返回：刷新报告计数（可能刚生成了新报告）
+      this._refreshReportTotal();
     }
+  },
+
+  onHide() {
+    this._clearPoll();
   },
 
   onUnload() {
     this._task?.abort();
     if (this._flushTimer) clearTimeout(this._flushTimer);
+    this._clearPoll();
+  },
+
+  // 切换到指定会话（报告回流）：清空当前对话态，拉该会话历史
+  _applyConversation(convId: string) {
+    if (this._conversationId === convId && this.data.inited) return;
+    this._task?.abort();
+    if (this._flushTimer) {
+      clearTimeout(this._flushTimer);
+      this._flushTimer = 0;
+    }
+    this._conversationId = convId;
+    this.setData({
+      inited: true,
+      messages: [],
+      suggestions: [],
+      streaming: { active: false, text: '' },
+      typing: false,
+      sending: false,
+      canRetry: false,
+    });
+    getMessages(convId)
+      .then((msgs) => this._setHistory(msgs))
+      .catch(() => {
+        /* 静默：无历史即空对话 */
+      });
   },
 
   // 首次加载：拉用户信息 + 会话历史（老会话续聊 / 首次自动建会话取开场白）
@@ -94,6 +149,15 @@ Page({
       .then((msgs) => this._setHistory(msgs))
       .catch(() => {
         /* 静默：无历史即空对话 */
+      });
+  },
+
+  // 刷新问候区报告计数（接 /reports/stats total）
+  _refreshReportTotal() {
+    getReportStats()
+      .then((s) => this.setData({ reportTotal: s.total }))
+      .catch(() => {
+        /* 静默 */
       });
   },
 
@@ -156,8 +220,14 @@ Page({
       // done 前必有 suggestions（可空）；暂存，done 后随 setData 展示
       this.setData({ suggestions: ev.items });
     } else if (ev.type === 'reportOffer') {
-      // 占位：军师提议写报告 → 待整段回复落定后，插一条系统提示行
-      this._pendingNote = `军师想把「${ev.topic}」整理成一份报告（报告生成将在 M4 上线）`;
+      this._lastTopic = ev.topic || this._lastTopic;
+      if (ev.reportId) {
+        // 军师已主动开写：直接弹层轮询该报告（跳过 generate）
+        this._openModalWithId(ev.reportId, ev.reportType, ev.topic);
+      } else {
+        // 仅提议：待整段回复落定后，插一条系统提示行
+        this._pendingNote = `军师想把「${ev.topic}」整理成一份报告`;
+      }
     }
   },
 
@@ -249,8 +319,8 @@ Page({
   onSuggestionSelect(e: WechatMiniprogram.CustomEvent<{ item: SuggestionItem }>) {
     const item = e.detail.item;
     if (item.action === 'generateReport') {
-      // 本期占位
-      wx.showToast({ title: '报告生成将在 M4 上线', icon: 'none' });
+      // 触发报告生成弹层
+      this._startGenerate(item.reportType || 'strategy');
       return;
     }
     // chat 或缺省：作为用户输入直接发送
@@ -265,6 +335,90 @@ Page({
     const userMsg: UiMessage = { id: `u${++this._seq}`, role: 'user', content: q };
     this.setData({ messages: this.data.messages.concat(userMsg) });
     this._startStream(q);
+  },
+
+  // ---- 报告生成弹层 ----
+
+  // 用户点「写报告」suggestion：POST /generate → 弹层 + 轮询
+  _startGenerate(type: ReportType) {
+    if (!this._conversationId) return;
+    this.setData({
+      modalVisible: true,
+      modalPhase: 'generating',
+      modalTopic: this._lastTopic,
+      modalType: type,
+    });
+    generateReport(this._conversationId, type)
+      .then((r) => {
+        this._genReportId = r.reportId;
+        this._genType = type;
+        this._startPolling();
+      })
+      .catch(() => this.setData({ modalVisible: false })); // request 层已 toast
+  },
+
+  // 军师已开写（offer 带 reportId）：跳过 generate，直接弹层轮询
+  _openModalWithId(reportId: string, type: ReportType, topic: string) {
+    this._genReportId = reportId;
+    this._genType = type;
+    this.setData({
+      modalVisible: true,
+      modalPhase: 'generating',
+      modalTopic: topic || this._lastTopic,
+      modalType: type,
+    });
+    this._startPolling();
+  },
+
+  // 每 2s 轮询 GET /reports/:id；ready→成功态；60s 未完→收起并 toast
+  _startPolling() {
+    this._pollDeadline = Date.now() + 60000;
+    this._poll();
+  },
+  _poll() {
+    this._pollTimer = setTimeout(() => {
+      this._pollTimer = 0;
+      getReport(this._genReportId)
+        .then((r) => {
+          if (r.status === 'ready') {
+            this.setData({ modalPhase: 'success' });
+            this._refreshReportTotal();
+          } else if (Date.now() >= this._pollDeadline) {
+            this._timeoutModal();
+          } else {
+            this._poll();
+          }
+        })
+        .catch(() => {
+          if (Date.now() >= this._pollDeadline) this._timeoutModal();
+          else this._poll();
+        });
+    }, 2000) as unknown as number;
+  },
+  _timeoutModal() {
+    this._clearPoll();
+    this.setData({ modalVisible: false });
+    wx.showToast({ title: '军师还在写，稍后去报告库看', icon: 'none' });
+  },
+  _clearPoll() {
+    if (this._pollTimer) {
+      clearTimeout(this._pollTimer);
+      this._pollTimer = 0;
+    }
+  },
+
+  // 弹层收起（蒙层/关闭/继续聊）：停轮询，后台继续生成
+  onModalClose() {
+    this._clearPoll();
+    this.setData({ modalVisible: false });
+  },
+  // 查看报告：跳详情
+  onModalView() {
+    const id = this._genReportId;
+    const type = this._genType;
+    this._clearPoll();
+    this.setData({ modalVisible: false });
+    wx.navigateTo({ url: `/pages/reports/detail?id=${id}&type=${type}` });
   },
 
   // 滚动到底部锚点：置空再赋值以强制触发 scroll-into-view

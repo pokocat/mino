@@ -1,0 +1,21 @@
+/* 军师批注块：左描金竖线，纸面卡。 */
+.ab {
+  margin-top: 34rpx; /* 18px */
+  background: var(--color-card);
+  border-left: 6rpx solid var(--color-gold); /* 3px 描金竖线 */
+  border-radius: 0 12rpx 12rpx 0;
+  padding: 24rpx 30rpx; /* 12px 15px */
+  box-shadow: var(--shadow-card);
+}
+.ab__label {
+  font-size: 20rpx; /* 10px */
+  color: var(--color-gold);
+  letter-spacing: 2rpx;
+  margin-bottom: 12rpx;
+}
+.ab__text {
+  font-family: var(--font-serif);
+  font-size: 26rpx; /* 13px */
+  color: var(--color-ink);
+  line-height: var(--lh-annotation);
+}

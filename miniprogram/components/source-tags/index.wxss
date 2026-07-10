@@ -1,0 +1,19 @@
+/* 溯源标签行。弱底纹 chip；描金 chip 用于「存入知识库」。 */
+.st {
+  margin-top: 28rpx; /* 14px */
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+.st__tag {
+  font-size: 20rpx; /* 10px */
+  color: var(--color-ink-tertiary);
+  background: var(--color-ink-05);
+  border-radius: 20rpx;
+  padding: 6rpx 20rpx; /* 3px 10px */
+}
+.st__tag--gold {
+  color: var(--color-gold);
+  background: rgba(154, 123, 63, 0.1);
+}

@@ -1,14 +1,55 @@
-.page {
+.detail__loading {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: var(--space-xl);
+  font-size: 26rpx;
+  color: var(--color-ink-faint);
 }
-.title {
+
+.detail__scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 16rpx var(--space-xl) 0; /* 8px 22px */
+}
+.detail__tail {
+  height: 24rpx;
+}
+
+/* ---------- 报告头 ---------- */
+.head {
+  padding: 12rpx 0 28rpx;
+}
+.head--left {
+  border-bottom: 1px solid var(--border-hairline);
+}
+.head--center {
+  text-align: center;
+  padding: 16rpx 0 32rpx;
+}
+.head__title {
   font-family: var(--font-serif);
   font-weight: 900;
-  font-size: 40rpx;
-  letter-spacing: 4rpx;
   color: var(--color-ink);
+  margin-top: 20rpx;
+}
+.head__title--left {
+  font-size: 44rpx; /* 22px */
+  line-height: 1.4;
+}
+.head__title--center {
+  font-size: 48rpx; /* 24px */
+}
+.head__meta {
+  font-size: 21rpx; /* 10.5px */
+  color: var(--color-ink-faint);
+  margin-top: 16rpx;
+}
+/* 自传体装饰短线 */
+.head__rule {
+  display: inline-block;
+  width: 80rpx; /* 40px */
+  height: 4rpx; /* 2px */
+  background: var(--color-vermilion);
+  margin-top: 24rpx;
 }

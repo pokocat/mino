@@ -1,0 +1,4 @@
+<view wx:if="{{text}}" class="ab">
+  <view class="ab__label">{{label}}</view>
+  <view class="ab__text">{{text}}</view>
+</view>

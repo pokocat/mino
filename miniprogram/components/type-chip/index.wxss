@@ -1,0 +1,24 @@
+/* 类型 chip：4 类型 → 4 色（底纹为类型色低透明）。10px≈20rpx。 */
+.type-chip {
+  display: inline-block;
+  font-size: 20rpx;
+  line-height: 1.6;
+  border-radius: 18rpx; /* 9px */
+  padding: 4rpx 18rpx; /* 2px 9px */
+}
+.type-chip--strategy {
+  color: var(--color-type-strategy);
+  background: rgba(178, 58, 46, 0.08);
+}
+.type-chip--resume {
+  color: var(--color-type-resume);
+  background: rgba(154, 123, 63, 0.1);
+}
+.type-chip--review {
+  color: var(--color-type-review);
+  background: rgba(61, 111, 160, 0.1);
+}
+.type-chip--decision {
+  color: var(--color-type-decision);
+  background: rgba(122, 91, 160, 0.1);
+}

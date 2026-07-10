@@ -1,4 +1,12 @@
 {
   "navigationStyle": "custom",
-  "usingComponents": {}
+  "usingComponents": {
+    "paper-page": "/components/paper-page/index",
+    "nav-bar": "/components/nav-bar/index",
+    "type-chip": "/components/type-chip/index",
+    "md-report": "/components/md-report/index",
+    "annotation-block": "/components/annotation-block/index",
+    "source-tags": "/components/source-tags/index",
+    "detail-action-bar": "/components/detail-action-bar/index"
+  }
 }

@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "type-chip": "/components/type-chip/index"
+  }
+}

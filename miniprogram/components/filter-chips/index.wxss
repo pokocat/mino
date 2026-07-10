@@ -1,0 +1,23 @@
+/* 筛选 chip 条：横向滚动，激活朱砂白字，未激活纸面描边。 */
+.fc {
+  white-space: nowrap;
+  padding: 12rpx var(--space-lg) 20rpx;
+}
+.fc__chip {
+  display: inline-block;
+  margin-right: 14rpx; /* 7px gap */
+  padding: 12rpx 26rpx; /* 6px 13px */
+  border-radius: var(--radius-chip); /* 16px */
+  font-size: 24rpx; /* 12px */
+  color: var(--color-ink-secondary);
+  background: var(--color-card);
+  border: 1px solid rgba(40, 34, 28, 0.14);
+}
+.fc__chip--active {
+  color: var(--color-paper-start);
+  background: var(--color-vermilion);
+  border-color: var(--color-vermilion);
+}
+.fc__chip--hover {
+  opacity: 0.85;
+}

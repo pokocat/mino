@@ -7,11 +7,14 @@
     data-path="{{item.pagePath}}"
     bindtap="onTap"
   >
-    <image
-      class="tab-icon"
-      src="{{active === item.key ? item.iconActive : item.iconInactive}}"
-      mode="aspectFit"
-    />
+    <view class="tab-icon-wrap">
+      <image
+        class="tab-icon"
+        src="{{active === item.key ? item.iconActive : item.iconInactive}}"
+        mode="aspectFit"
+      />
+      <view wx:if="{{item.key === 'reports' && reportsUnread}}" class="tab-dot"></view>
+    </view>
     <text class="tab-text {{active === item.key ? 'tab-text--active' : ''}}">{{item.text}}</text>
   </view>
 </view>

@@ -7,6 +7,7 @@
     "streak-chip": "/components/streak-chip/index",
     "daily-question-card": "/components/daily-question-card/index",
     "message-bubble": "/components/message-bubble/index",
-    "suggestion-chips": "/components/suggestion-chips/index"
+    "suggestion-chips": "/components/suggestion-chips/index",
+    "generating-modal": "/components/generating-modal/index"
   }
 }

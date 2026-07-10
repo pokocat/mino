@@ -121,3 +121,112 @@ export function getMessages(conversationId: string): Promise<ChatMessage[]> {
     method: 'GET',
   });
 }
+
+// ---------------- 报告（M4）----------------
+
+// 报告生成态
+export type ReportStatus = 'generating' | 'ready' | 'failed';
+// 报告来源：user=我请军师写的 / agent=军师执笔
+export type ReportOrigin = 'user' | 'agent';
+
+// 列表项（GET /reports items[]）
+export interface ReportListItem {
+  id: string;
+  type: ReportType;
+  status: ReportStatus;
+  title: string;
+  summary: string;
+  origin: ReportOrigin;
+  isRead: boolean;
+  wordCount: number;
+  createdAt: string;
+}
+
+// GET /reports?type=&cursor=&limit= 返回
+export interface ReportListResult {
+  items: ReportListItem[];
+  nextCursor: string | null;
+}
+
+// 报告溯源对话（详情 sources[]）
+export interface ReportSource {
+  conversationId: string;
+  title: string;
+}
+
+// 报告详情类型专属元数据（meta，全可选）
+export interface ReportMeta {
+  kbSynced?: boolean; // 存入知识库标记（溯源标签用）
+  verifyStatus?: 'pending' | 'verified' | 'failed'; // decision「待验证」等
+}
+
+// GET /reports/:id 返回
+export interface ReportDetail {
+  id: string;
+  type: ReportType;
+  status: ReportStatus;
+  title: string;
+  bodyMd: string;
+  annotation: string;
+  origin: ReportOrigin;
+  isRead: boolean;
+  wordCount: number;
+  sequenceNo: number | null; // 创业履历「第一篇」编号
+  meta: ReportMeta;
+  createdAt: string;
+  sources: ReportSource[];
+}
+
+// POST /reports/generate 返回
+export interface GenerateReportResult {
+  reportId: string;
+  status: ReportStatus;
+}
+
+// POST /reports/generate {conversationId, type} → {reportId, status}
+export function generateReport(
+  conversationId: string,
+  type: ReportType
+): Promise<GenerateReportResult> {
+  return request<GenerateReportResult>({
+    url: '/reports/generate',
+    method: 'POST',
+    data: { conversationId, type },
+  });
+}
+
+// GET /reports?type=&cursor=&limit= → {items, nextCursor}
+// type 为空串表示「全部」；cursor 为空表示首页
+export function listReports(
+  type = '',
+  cursor = '',
+  limit = 10
+): Promise<ReportListResult> {
+  const qs: string[] = [`limit=${limit}`];
+  if (type) qs.push(`type=${type}`);
+  if (cursor) qs.push(`cursor=${cursor}`);
+  return request<ReportListResult>({ url: `/reports?${qs.join('&')}`, method: 'GET' });
+}
+
+// GET /reports/stats → {total, byType, unread}
+export function getReportStats(): Promise<ReportStats> {
+  return request<ReportStats>({ url: '/reports/stats', method: 'GET' });
+}
+
+// GET /reports/:id → 详情
+export function getReport(id: string): Promise<ReportDetail> {
+  return request<ReportDetail>({ url: `/reports/${id}`, method: 'GET' });
+}
+
+// POST /reports/:id/read → {ok:true}
+export function markReportRead(id: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>({ url: `/reports/${id}/read`, method: 'POST' });
+}
+
+// POST /reports/:id/chat → {conversationId}（跟军师聊/补充这份报告，续该会话）
+export function chatFromReport(id: string): Promise<{ conversationId: string }> {
+  return request<{ conversationId: string }>({
+    url: `/reports/${id}/chat`,
+    method: 'POST',
+  });
+}

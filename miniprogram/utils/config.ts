@@ -17,4 +17,6 @@ export const config = {
 // 本地存储键位
 export const STORAGE_KEYS = {
   token: 'mn_token',
+  // 报告详情「跟军师聊/补充」→ 暂存目标会话 id，chat 页 onShow 检查并续该会话
+  pendingConversationId: 'mn_pending_conversation_id',
 };

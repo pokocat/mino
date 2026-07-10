@@ -1,8 +1,30 @@
 <paper-page tabbar="{{true}}">
-  <nav-bar title="报告库"></nav-bar>
+  <nav-bar title="报告库">
+    <text slot="action" class="list__navsub">来自知识库</text>
+  </nav-bar>
 
-  <!-- 空态：大印章 + 文案 -->
-  <view class="empty">
+  <!-- 筛选条 -->
+  <filter-chips
+    active="{{activeType}}"
+    counts="{{stats}}"
+    bind:change="onFilterChange"
+  ></filter-chips>
+
+  <!-- 列表 -->
+  <view wx:if="{{items.length}}" class="list">
+    <report-card
+      wx:for="{{items}}"
+      wx:key="id"
+      report="{{item}}"
+      bind:tap="onCardTap"
+    ></report-card>
+
+    <view wx:if="{{loadingMore}}" class="list__more">正在取更多…</view>
+    <view wx:elif="{{!nextCursor}}" class="list__end">· 到底了 ·</view>
+  </view>
+
+  <!-- 空态 -->
+  <view wx:elif="{{inited && !loading}}" class="empty">
     <seal-avatar variant="ink" size="160" text="档"></seal-avatar>
     <text class="empty__title">还没有报告</text>
     <text class="empty__sub">先去跟军师聊聊，聊透了他给你写一份。</text>

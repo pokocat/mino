@@ -23,9 +23,22 @@
   gap: 6rpx;
 }
 
+.tab-icon-wrap {
+  position: relative;
+}
 .tab-icon {
   width: 44rpx;
   height: 44rpx;
+}
+/* 报告库未读红点 */
+.tab-dot {
+  position: absolute;
+  top: -2rpx;
+  right: -6rpx;
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: var(--radius-round);
+  background: var(--color-vermilion);
 }
 
 .tab-text {

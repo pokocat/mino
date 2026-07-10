@@ -1,0 +1,8 @@
+<view class="dab">
+  <view class="dab__primary" hover-class="dab__primary--hover" bindtap="onPrimary"
+    >{{primaryText}}</view
+  >
+  <view class="dab__secondary" hover-class="dab__secondary--hover" bindtap="onSecondary"
+    >{{iconChar}}</view
+  >
+</view>
