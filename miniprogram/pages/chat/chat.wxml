@@ -1,6 +1,6 @@
 <paper-page tabbar="{{true}}">
   <nav-bar title="米诺战略参谋部">
-    <streak-chip slot="action" days="{{streakDays}}"></streak-chip>
+    <streak-chip wx:if="{{streakDays > 0}}" slot="action" days="{{streakDays}}"></streak-chip>
   </nav-bar>
 
   <scroll-view
@@ -21,8 +21,16 @@
       </view>
     </view>
 
-    <!-- 今日一问·深墨卡（本期静态占位，默认隐藏；M5 接任务数据后打开）-->
-    <daily-question-card show="{{false}}" bind:start="onDailyStart"></daily-question-card>
+    <!-- 今日一问·深墨卡（M5 接 GET /tasks/today；show/文案由 status 控制）-->
+    <daily-question-card
+      show="{{daily.show}}"
+      question="{{daily.question}}"
+      hint="{{daily.hint}}"
+      estMinutes="{{daily.estMinutes}}"
+      unread="{{daily.unread}}"
+      started="{{daily.started}}"
+      bind:start="onDailyStart"
+    ></daily-question-card>
 
     <!-- 消息流 -->
     <view class="chat__list">

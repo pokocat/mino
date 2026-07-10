@@ -1,9 +1,12 @@
-<!-- 今日一问·深墨卡（本期静态占位；show 默认 false，M5 接任务数据后打开）-->
+<!-- 今日一问·深墨卡（M5 接任务数据；show 由页面按 status 控制）-->
 <view wx:if="{{show}}" class="dq">
-  <!-- 右上角脉冲红点（未读提示）-->
+  <!-- 右上角脉冲红点（未读提示，仅 pending 显示）-->
   <view wx:if="{{unread}}" class="dq__pulse"></view>
   <view class="dq__tag">今日一问 · 军师推送</view>
   <view class="dq__question">{{question}}</view>
-  <view class="dq__hint">{{hint}}</view>
-  <view class="dq__cta" hover-class="dq__cta--hover" bindtap="onStart">开始聊 →</view>
+  <!-- 副文行：hint 后并入「约 N 分钟」（estMinutes>0 时）-->
+  <view class="dq__hint">{{hint}}<text wx:if="{{estMinutes}}"> 约 {{estMinutes}} 分钟</text></view>
+  <view class="dq__cta" hover-class="dq__cta--hover" bindtap="onStart"
+    >{{started ? '继续聊 →' : '开始聊 →'}}</view
+  >
 </view>

@@ -9,11 +9,14 @@ import {
   generateReport,
   getReport,
   getReportStats,
+  getTodayTask,
+  startTask,
 } from '../../utils/api';
 import type { ChatMessage, SuggestionItem, ReportType } from '../../utils/api';
 import { ssePost } from '../../utils/sse';
 import type { SseEvent, SseTask } from '../../utils/sse';
 import { STORAGE_KEYS } from '../../utils/config';
+import { requestSubscribe } from '../../utils/subscribe';
 
 // 页面渲染用的消息项（role=system 承载 reportOffer 占位行）
 interface UiMessage {
@@ -26,6 +29,15 @@ Page({
   data: {
     streakDays: 0,
     reportTotal: 0,
+    // 今日一问卡（GET /tasks/today 填充；show 由 status 控制）
+    daily: {
+      show: false,
+      question: '',
+      hint: '',
+      estMinutes: 0,
+      unread: true, // pending 时脉冲红点
+      started: false, // started 时 CTA 变「继续聊 →」
+    },
     messages: [] as UiMessage[],
     // 正在生成的军师气泡（独立路径更新，避免全量 messages setData）
     streaming: { active: false, text: '' },
@@ -55,6 +67,8 @@ Page({
   _genType: 'strategy' as ReportType,
   _pollTimer: 0, // 轮询定时器句柄
   _pollDeadline: 0, // 轮询截止时刻（60s）
+  _dailyTaskId: '', // 今日一问任务 id（供「开始聊」调 start）
+  _streakTimer: 0, // 发消息后 streak 延迟刷新定时器句柄
 
   onShow() {
     // 同步自定义 tabBar 选中态
@@ -65,6 +79,9 @@ Page({
       tabBar.setData({ active: 'chat' });
       tabBar.refreshBadge?.();
     }
+    // 今日一问：每次 onShow 拉一次，按 status 决定卡片显隐/文案
+    this._refreshDailyTask();
+
     // 报告详情「跟军师聊/补充」回流：续该会话
     const pending = wx.getStorageSync(STORAGE_KEYS.pendingConversationId) as string;
     if (pending) {
@@ -80,11 +97,16 @@ Page({
 
   onHide() {
     this._clearPoll();
+    if (this._streakTimer) {
+      clearTimeout(this._streakTimer);
+      this._streakTimer = 0;
+    }
   },
 
   onUnload() {
     this._task?.abort();
     if (this._flushTimer) clearTimeout(this._flushTimer);
+    if (this._streakTimer) clearTimeout(this._streakTimer);
     this._clearPoll();
   },
 
@@ -150,6 +172,45 @@ Page({
       .catch(() => {
         /* 静默：无历史即空对话 */
       });
+  },
+
+  // 今日一问：GET /tasks/today。pending/started 显示卡片，其余（null/done/expired）隐藏。
+  _refreshDailyTask() {
+    getTodayTask()
+      .then((task) => {
+        if (task && (task.status === 'pending' || task.status === 'started')) {
+          this._dailyTaskId = task.id;
+          this.setData({
+            daily: {
+              show: true,
+              question: task.question,
+              hint: task.hint,
+              estMinutes: task.estMinutes,
+              unread: task.status === 'pending', // 脉冲红点仅 pending
+              started: task.status === 'started', // CTA「继续聊 →」
+            },
+          });
+        } else {
+          this._dailyTaskId = '';
+          this.setData({ 'daily.show': false });
+        }
+      })
+      .catch(() => {
+        /* 静默：拉取失败即不显示卡片 */
+      });
+  },
+
+  // 发消息结算后延迟刷新 streak（服务端异步旁路，800ms 后取 /me 内嵌 streakDays）
+  _scheduleStreakRefresh() {
+    if (this._streakTimer) clearTimeout(this._streakTimer);
+    this._streakTimer = setTimeout(() => {
+      this._streakTimer = 0;
+      getMe()
+        .then((me) => this.setData({ streakDays: me.streakDays }))
+        .catch(() => {
+          /* 静默 */
+        });
+    }, 800) as unknown as number;
   },
 
   // 刷新问候区报告计数（接 /reports/stats total）
@@ -270,6 +331,8 @@ Page({
       },
       () => this._scrollToBottom()
     );
+    // 发消息 done 后延迟刷新 streak（服务端异步结算）
+    this._scheduleStreakRefresh();
   },
 
   // 出错：丢弃半截流内容，显示友好错误气泡并允许重发
@@ -329,12 +392,22 @@ Page({
     this._startStream(item.text);
   },
 
-  // ---- 今日一问 CTA（本期卡片默认隐藏；触发则以问题开场）----
-  onDailyStart(e: WechatMiniprogram.CustomEvent<{ question: string }>) {
-    const q = e.detail.question;
-    const userMsg: UiMessage = { id: `u${++this._seq}`, role: 'user', content: q };
-    this.setData({ messages: this.data.messages.concat(userMsg) });
-    this._startStream(q);
+  // ---- 今日一问 CTA（开始聊 / 继续聊）----
+  // POST /tasks/:id/start（幂等）→ 切换到返回会话（拉历史，军师开场提问已在首条）→ 卡片收起。
+  onDailyStart() {
+    const id = this._dailyTaskId;
+    if (!id) return;
+    // R4 时机 a：高意愿点，请求订阅消息授权（拒绝静默不阻塞）
+    requestSubscribe('dailyStart');
+    startTask(id)
+      .then((r) => {
+        this._applyConversation(r.conversationId);
+        this.setData({ 'daily.show': false }); // 卡片收起
+        this._dailyTaskId = '';
+      })
+      .catch(() => {
+        /* request 层已 toast */
+      });
   },
 
   // ---- 报告生成弹层 ----
@@ -342,6 +415,8 @@ Page({
   // 用户点「写报告」suggestion：POST /generate → 弹层 + 轮询
   _startGenerate(type: ReportType) {
     if (!this._conversationId) return;
+    // R4 时机 b：生成报告是高意愿点，触发 generate 前请求订阅消息授权
+    requestSubscribe('generateReport');
     this.setData({
       modalVisible: true,
       modalPhase: 'generating',

@@ -5,12 +5,15 @@ import type {
   ChatMessage,
   Conversation,
   CreateConversationResult,
+  DailyTask,
   GenerateReportResult,
   ReportDetail,
   ReportListItem,
   ReportListResult,
   ReportStats,
   ReportType,
+  StartTaskResult,
+  TaskStatus,
   UserProfile,
   WxLoginResult,
 } from './api';
@@ -216,6 +219,24 @@ function reportStats(): ReportStats {
 const genDeadline: Record<string, number> = {};
 const GEN_MS = 5000; // 约 5s（弹层每 2s 轮询，2~3 次后 ready）
 
+// ---------------- 今日一问 mock（走查整条动线用）----------------
+
+const DAILY_TASK_ID = 'task-today-1';
+const DAILY_CONV_ID = 'mock-conv-daily';
+// 任务态：初次 pending；start 后翻为 started，再次进入卡片显示「继续聊 →」。
+let dailyTaskStatus: TaskStatus = 'pending';
+
+// GET /tasks/today（设计稿那条「最值钱的牌」，estMinutes=3）
+function mockDailyTask(): DailyTask {
+  return {
+    id: DAILY_TASK_ID,
+    question: '今天想通一件事：你最值钱的一张牌是什么？',
+    hint: '聊透了，我给你写进《战略分析》。',
+    estMinutes: 3,
+    status: dailyTaskStatus,
+  };
+}
+
 // ---------------- 用户 mock ----------------
 
 // 全 0 stats 的默认用户；profile 提交时用入参覆盖对应字段。
@@ -258,8 +279,13 @@ export function resolveMock<T>(
   const reportReadMatch = path.match(/^\/reports\/([^/]+)\/read$/);
   const reportChatMatch = path.match(/^\/reports\/([^/]+)\/chat$/);
   const reportIdMatch = path.match(/^\/reports\/([^/]+)$/);
+  const taskStartMatch = path.match(/^\/tasks\/([^/]+)\/start$/);
 
-  if (M === 'GET' && msgMatch) {
+  if (M === 'POST' && taskStartMatch) {
+    // 开始聊：任务翻 started（幂等），返回今日一问专属会话 id（其历史首条为军师开场提问）
+    dailyTaskStatus = 'started';
+    payload = { conversationId: DAILY_CONV_ID } as StartTaskResult;
+  } else if (M === 'GET' && msgMatch) {
     // 历史消息：给一条军师开场白（首次进入即续聊此开场）
     payload = [
       {
@@ -302,6 +328,10 @@ export function resolveMock<T>(
         break;
       case 'GET /me':
         payload = mockUser();
+        break;
+      case 'GET /tasks/today':
+        // 今日一问：设计稿「最值钱的牌」，status 随 start 动线变化
+        payload = mockDailyTask();
         break;
       case 'POST /conversations':
         payload = {

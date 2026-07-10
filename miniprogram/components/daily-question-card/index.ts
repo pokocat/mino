@@ -1,17 +1,20 @@
-// daily-question-card：今日一问·深墨卡。
-// 本期为静态占位：数据写死一条示例，show 默认 false（隐藏）；M5 接任务接口后置 show=true。
-// bind:start 供页面以 prompt_seed 开场进对话（本期未接任务接口，仅透传 question）。
+// daily-question-card：今日一问·深墨卡。M5 接 GET /tasks/today 数据后由页面控制 show。
+// props：question / hint / estMinutes（「约 N 分钟」并入 hint 行）/ unread（脉冲红点，=pending）/
+//        started（true 时 CTA 文案变「继续聊 →」，走同一 start 幂等接口续会话）。
+// bind:start 供页面触发 start 动线（页面持有 taskId，此处不透传）。
 Component({
   options: { addGlobalClass: true },
   properties: {
     show: { type: Boolean, value: false }, // 隐藏开关，默认隐藏
-    question: { type: String, value: '今天想通一件事：你最值钱的一张牌是什么？' },
-    hint: { type: String, value: '聊透了，我给你写进《战略分析》。约 3 分钟。' },
-    unread: { type: Boolean, value: true }, // 脉冲红点
+    question: { type: String, value: '' },
+    hint: { type: String, value: '' },
+    estMinutes: { type: Number, value: 0 }, // 预估时长，>0 时并入 hint 行显示
+    unread: { type: Boolean, value: true }, // 脉冲红点（pending 时为 true）
+    started: { type: Boolean, value: false }, // 已开聊：CTA 改「继续聊 →」
   },
   methods: {
     onStart() {
-      this.triggerEvent('start', { question: this.data.question });
+      this.triggerEvent('start');
     },
   },
 });

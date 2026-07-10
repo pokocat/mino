@@ -122,6 +122,45 @@ export function getMessages(conversationId: string): Promise<ChatMessage[]> {
   });
 }
 
+// ---------------- 今日一问 / streak（M5）----------------
+
+// 今日一问任务态：pending 待办 / started 已开聊 / done 已完成 / expired 已过期
+export type TaskStatus = 'pending' | 'started' | 'done' | 'expired';
+
+// GET /tasks/today 返回（无今日一问则为 null，前端隐藏卡片）
+export interface DailyTask {
+  id: string;
+  question: string;
+  hint: string;
+  estMinutes: number;
+  status: TaskStatus;
+}
+
+// POST /tasks/:id/start 返回（注入 prompt_seed 为开场，task→started）
+export interface StartTaskResult {
+  conversationId: string;
+}
+
+// GET /me/streak 返回（页面用 /me 内嵌的 streakDays，此端点备用）
+export interface StreakResult {
+  streakDays: number;
+}
+
+// GET /tasks/today → 今日一问 | null
+export function getTodayTask(): Promise<DailyTask | null> {
+  return request<DailyTask | null>({ url: '/tasks/today', method: 'GET' });
+}
+
+// POST /tasks/:id/start → {conversationId}（幂等：started 任务续同一会话）
+export function startTask(id: string): Promise<StartTaskResult> {
+  return request<StartTaskResult>({ url: `/tasks/${id}/start`, method: 'POST' });
+}
+
+// GET /me/streak → {streakDays}（页面主用 /me，此端点为契约完整性保留）
+export function getStreak(): Promise<StreakResult> {
+  return request<StreakResult>({ url: '/me/streak', method: 'GET' });
+}
+
 // ---------------- 报告（M4）----------------
 
 // 报告生成态
