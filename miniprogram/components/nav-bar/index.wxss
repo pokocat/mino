@@ -1,0 +1,45 @@
+.nav-bar {
+  width: 100%;
+  background: transparent; /* 透纸底 */
+}
+.nav-bar__inner {
+  position: relative;
+  height: 92rpx; /* 48px */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-lg);
+}
+/* 左右侧对称区，保证标题居中 */
+.nav-bar__side {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  min-width: 80rpx;
+}
+.nav-bar__side--left {
+  left: var(--space-lg);
+  justify-content: flex-start;
+}
+.nav-bar__side--right {
+  right: var(--space-lg);
+  justify-content: flex-end;
+}
+.nav-bar__back {
+  font-size: 46rpx;
+  line-height: 1;
+  color: var(--color-ink);
+}
+.nav-bar__title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 31rpx; /* 16px */
+  letter-spacing: 6rpx; /* ~3px 字距 */
+  color: var(--color-ink);
+}
+.nav-bar__action {
+  font-size: 24rpx;
+  color: var(--color-vermilion);
+}

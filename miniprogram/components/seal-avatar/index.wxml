@@ -1,0 +1,6 @@
+<view
+  class="seal seal--{{variant}}"
+  style="width: {{size}}rpx; height: {{size}}rpx;"
+>
+  <text class="seal__char" style="font-size: {{fontSize}}rpx;">{{displayText}}</text>
+</view>

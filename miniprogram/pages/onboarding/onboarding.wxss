@@ -1,21 +1,163 @@
-.page {
+/* ============ 登录态 ============ */
+.login {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 200rpx var(--space-xl) 80rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+.login__hero {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: var(--space-lg);
 }
 .brand {
+  margin-top: var(--space-xl);
   font-family: var(--font-serif);
   font-weight: 700;
-  font-size: 40rpx;
+  font-size: 52rpx;
   letter-spacing: 8rpx;
   color: var(--color-ink);
 }
-.subtitle {
+.slogan {
   margin-top: var(--space-md);
-  font-family: var(--font-serif);
+  font-size: 26rpx;
+  color: var(--color-ink-tertiary);
+  text-align: center;
+}
+.login__foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 微信绿登录按钮 */
+.wx-btn {
+  width: 100%;
+  height: 92rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-card);
+  background: var(--color-wechat);
+  box-shadow: var(--shadow-card);
+}
+.wx-btn--loading {
+  background: var(--color-wechat-press);
+}
+.wx-btn__text {
   font-size: 30rpx;
+  color: var(--color-paper-start);
+  letter-spacing: 2rpx;
+}
+
+/* 协议勾选 */
+.agree {
+  margin-top: var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.agree__box {
+  width: 32rpx;
+  height: 32rpx;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-seal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.agree__box--on {
+  background: var(--color-vermilion);
+  border-color: var(--color-vermilion);
+}
+.agree__tick {
+  font-size: 22rpx;
+  color: var(--color-paper-start);
+  line-height: 1;
+}
+.agree__text {
+  font-size: 22rpx;
+  color: var(--color-ink-tertiary);
+}
+.agree__link {
   color: var(--color-vermilion);
+}
+
+/* ============ 入局态 ============ */
+.entry {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 140rpx var(--space-xl) 60rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+.entry__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--space-xl);
+}
+.entry__title {
+  margin-top: var(--space-lg);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 40rpx;
+  letter-spacing: 4rpx;
+  color: var(--color-ink);
+}
+.entry__sub {
+  margin-top: var(--space-sm);
+  font-size: 24rpx;
+  color: var(--color-ink-tertiary);
+}
+
+.field {
+  margin-bottom: var(--space-lg);
+}
+.field__label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  font-size: 24rpx;
+  color: var(--color-ink-secondary);
+}
+.field__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-md);
+  background: var(--color-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  font-size: 28rpx;
+  color: var(--color-ink);
+}
+.field__textarea {
+  min-height: 120rpx;
+}
+.field__ph {
+  color: var(--color-ink-faint);
+}
+
+/* 提交按钮：朱砂 */
+.submit {
+  margin-top: var(--space-md);
+  height: 92rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-card);
+  background: var(--color-vermilion);
+  box-shadow: var(--shadow-seal);
+}
+.submit--loading {
+  opacity: 0.7;
+}
+.submit__text {
+  font-size: 30rpx;
+  color: var(--color-paper-start);
+  letter-spacing: 4rpx;
 }

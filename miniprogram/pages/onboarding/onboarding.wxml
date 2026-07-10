@@ -1,4 +1,78 @@
-<view class="page">
-  <text class="brand">{{title}}</text>
-  <text class="subtitle">兄弟，坐下聊。</text>
-</view>
+<paper-page>
+  <!-- ============ 登录态 ============ -->
+  <view wx:if="{{mode === 'login'}}" class="login">
+    <view class="login__hero">
+      <seal-avatar variant="marshal" size="160" text="势"></seal-avatar>
+      <text class="brand">米诺战略参谋部</text>
+      <text class="slogan">对话产出报告，报告喂养对话。军师随时在。</text>
+    </view>
+
+    <view class="login__foot">
+      <view class="wx-btn {{loading ? 'wx-btn--loading' : ''}}" bindtap="onLogin">
+        <text class="wx-btn__text">{{loading ? '登录中…' : '微信一键登录'}}</text>
+      </view>
+
+      <view class="agree">
+        <view class="agree__box {{agreed ? 'agree__box--on' : ''}}" bindtap="onToggleAgree">
+          <text wx:if="{{agreed}}" class="agree__tick">✓</text>
+        </view>
+        <view class="agree__text">
+          <text>已阅读并同意</text>
+          <text class="agree__link" catchtap="onViewAgreement">《用户协议》</text>
+          <text class="agree__link" catchtap="onViewPrivacy">《隐私政策》</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 入局态 ============ -->
+  <view wx:else class="entry">
+    <view class="entry__head">
+      <seal-avatar variant="ink" size="96" text="师"></seal-avatar>
+      <text class="entry__title">先认识一下</text>
+      <text class="entry__sub">三句话，军师就能开始懂你。</text>
+    </view>
+
+    <view class="field">
+      <text class="field__label">昵称</text>
+      <input
+        class="field__input"
+        placeholder="怎么称呼你"
+        placeholder-class="field__ph"
+        value="{{form.nickname}}"
+        data-field="nickname"
+        bindinput="onInput"
+      />
+    </view>
+
+    <view class="field">
+      <text class="field__label">行业</text>
+      <input
+        class="field__input"
+        placeholder="你在哪个行当"
+        placeholder-class="field__ph"
+        value="{{form.industry}}"
+        data-field="industry"
+        bindinput="onInput"
+      />
+    </view>
+
+    <view class="field">
+      <text class="field__label">一句话生意背景</text>
+      <textarea
+        class="field__input field__textarea"
+        placeholder="你的生意，一句话说清"
+        placeholder-class="field__ph"
+        value="{{form.bizNote}}"
+        data-field="bizNote"
+        bindinput="onInput"
+        maxlength="120"
+        auto-height
+      />
+    </view>
+
+    <view class="submit {{submitting ? 'submit--loading' : ''}}" bindtap="onSubmit">
+      <text class="submit__text">{{submitting ? '提交中…' : '进去跟军师聊'}}</text>
+    </view>
+  </view>
+</paper-page>

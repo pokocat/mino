@@ -1,0 +1,20 @@
+// 运行时配置（单一来源）：后端地址 / 字体 / 开发开关
+// 生产构建时可由脚本注入覆盖；此处为 dev 默认值。
+
+// MOCK_API 开关：为 true 时 request 不发真实请求，返回内置 mock 数据，
+// 保证无后端也能在开发者工具走通「登录→入局→chat 空态」全流程（M1 验收用）。
+export const MOCK_API = true;
+
+export const config = {
+  // dev 后端地址（NestJS 代理）。真机需替换为 request 合法域名。
+  baseUrl: 'http://localhost:3000',
+  // 子集化衬线字体 CDN 占位（R3 第一步）：留空则直接降级系统衬线栈，不加载。
+  serifFontUrl: '',
+  // 与 tokens.wxss --font-serif 首选族名保持一致。
+  serifFontFamily: 'Noto Serif SC',
+};
+
+// 本地存储键位
+export const STORAGE_KEYS = {
+  token: 'mn_token',
+};

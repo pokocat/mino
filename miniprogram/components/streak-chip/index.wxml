@@ -1,0 +1,4 @@
+<view class="streak">
+  <text class="streak__label">连续</text>
+  <text class="streak__num">{{days}}</text>
+</view>

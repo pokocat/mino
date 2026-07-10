@@ -1,4 +1,7 @@
 {
   "navigationStyle": "custom",
-  "usingComponents": {}
+  "usingComponents": {
+    "paper-page": "/components/paper-page/index",
+    "seal-avatar": "/components/seal-avatar/index"
+  }
 }

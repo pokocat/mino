@@ -1,0 +1,25 @@
+/* 纸底容器：与 app.wxss page 同一纸纹，保证组件内区域也铺满宣纸底 */
+.paper-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  box-sizing: border-box;
+  /* 极淡横纹叠 radial 渐变（同 tokens / app.wxss 口径）*/
+  background-color: var(--color-paper-end);
+  background-image: repeating-linear-gradient(
+      0deg,
+      rgba(40, 34, 28, 0.013) 0,
+      rgba(40, 34, 28, 0.013) 2rpx,
+      transparent 2rpx,
+      transparent 7rpx
+    ),
+    radial-gradient(circle at 50% -5%, var(--color-paper-start), var(--color-paper-end));
+  /* 底部安全区 */
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 为自定义 tabBar 预留高度（tab 根页使用）*/
+.paper-page--tabbar {
+  padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+}

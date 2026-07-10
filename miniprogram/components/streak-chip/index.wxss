@@ -1,0 +1,20 @@
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 6rpx 18rpx;
+  border-radius: var(--radius-card);
+  background: var(--color-vermilion-08);
+}
+.streak__label {
+  font-size: 20rpx;
+  color: var(--color-vermilion);
+}
+.streak__num {
+  /* 等宽数字：Space Mono，缺失时退 Menlo/monospace（tokens --font-mono）*/
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
+  color: var(--color-vermilion);
+}

@@ -1,3 +1,18 @@
-<view class="page">
-  <text class="title">{{title}}</text>
-</view>
+<paper-page tabbar="{{true}}">
+  <nav-bar title="米诺战略参谋部">
+    <streak-chip slot="action" days="{{streakDays}}"></streak-chip>
+  </nav-bar>
+
+  <!-- 空态：印章头像 + 问候 -->
+  <view class="greeting">
+    <seal-avatar variant="marshal" size="120" text="势"></seal-avatar>
+    <text class="greeting__title">兄弟，坐下聊。</text>
+    <text class="greeting__sub">聊几句，我慢慢懂你。对话产出报告，报告喂养对话。</text>
+  </view>
+
+  <!-- 禁用输入条（视觉占位，M2 接入流式后启用）-->
+  <view class="inputbar inputbar--disabled">
+    <view class="inputbar__field">说说你的想法……</view>
+    <view class="inputbar__send">↑</view>
+  </view>
+</paper-page>

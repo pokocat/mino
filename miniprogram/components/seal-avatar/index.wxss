@@ -1,0 +1,27 @@
+.seal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-seal);
+  flex-shrink: 0;
+}
+/* 军师：朱砂底 + 印章投影 */
+.seal--marshal {
+  background: var(--color-vermilion);
+  box-shadow: var(--shadow-seal);
+}
+/* 师：深墨底 */
+.seal--ink {
+  background: var(--color-ink);
+}
+.seal__char {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  line-height: 1;
+}
+.seal--marshal .seal__char {
+  color: var(--color-paper-start);
+}
+.seal--ink .seal__char {
+  color: var(--color-gold-text);
+}

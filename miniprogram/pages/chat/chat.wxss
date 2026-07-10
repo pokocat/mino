@@ -1,14 +1,59 @@
-.page {
+.greeting {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-xl);
+  gap: var(--space-lg);
+}
+.greeting__title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 38rpx;
+  letter-spacing: 4rpx;
+  color: var(--color-ink);
+}
+.greeting__sub {
+  font-size: 24rpx;
+  color: var(--color-ink-tertiary);
+  text-align: center;
+  line-height: var(--lh-ui);
+}
+
+/* 禁用输入条：固定在 tabBar 之上 */
+.inputbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface-tab);
+  border-top: 1px solid var(--border-hairline);
+}
+.inputbar--disabled {
+  opacity: 0.75;
+}
+.inputbar__field {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-chip);
+  font-size: 26rpx;
+  color: var(--color-ink-faint);
+}
+.inputbar__send {
+  width: 72rpx;
+  height: 72rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding-bottom: var(--tabbar-height);
-}
-.title {
-  font-family: var(--font-serif);
-  font-weight: 700;
+  border-radius: var(--radius-round);
+  background: var(--color-vermilion);
+  color: var(--color-paper-start);
   font-size: 34rpx;
-  letter-spacing: 6rpx;
-  color: var(--color-vermilion);
 }
