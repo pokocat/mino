@@ -29,6 +29,7 @@ interface MeResponse {
   industry: string | null;
   bizNote: string | null;
   streakDays: number;
+  createdAt: string; // 注册时间（ISO 8601），供小程序「相伴 N 天」展示
   reportStats: ReportStats;
 }
 
@@ -69,6 +70,7 @@ export class MeController {
       industry: user.industry,
       bizNote: user.bizNote,
       streakDays: user.streakDays,
+      createdAt: user.createdAt.toISOString(),
       reportStats,
     };
   }

@@ -70,7 +70,8 @@ describe('MeController', () => {
   });
 
   it('GET /me 聚合报告计数（groupBy → byType/total，count → unread）', async () => {
-    const user = buildUser({ nickname: '阿明', streakDays: 5 });
+    const createdAt = new Date('2026-01-01T00:00:00.000Z');
+    const user = buildUser({ nickname: '阿明', streakDays: 5, createdAt });
     prisma.report.groupBy.mockResolvedValue([
       { type: 'strategy', _count: { _all: 2 } },
       { type: 'review', _count: { _all: 1 } },
@@ -86,6 +87,7 @@ describe('MeController', () => {
       industry: null,
       bizNote: null,
       streakDays: 5,
+      createdAt: '2026-01-01T00:00:00.000Z', // ISO 8601 字符串，供「相伴 N 天」
       reportStats: {
         total: 3,
         byType: { strategy: 2, resume: 0, review: 1, decision: 0 },
