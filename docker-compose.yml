@@ -1,0 +1,114 @@
+# 米诺 V3 本地开发编排
+# 服务：
+#   - postgres  应用业务库（Prisma 迁移目标）
+#   - redis     缓存 / BullMQ 队列 / streak
+#   - fastgpt 及其依赖（mongo + pgvector 向量库 + sandbox）—— 引擎，产品灵魂
+#
+# FastGPT 部分取自官方 docker-compose-pgvector.yml 的最小可跑子集。
+# 出处见 docs/dev-setup.md（含参考版本与官方链接）。
+# 模型 API / AK 由产品方后续接入：本文件仅保留环境变量位（走根目录 .env）。
+#
+# 所有密钥/密码走 .env 占位，未提供时用 ${VAR:-默认值} 兜底（仅本地开发）。
+
+services:
+  # ---------------- 应用业务库 ----------------
+  postgres:
+    image: postgres:16
+    container_name: mino-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mino}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mino}
+      POSTGRES_DB: ${POSTGRES_DB:-mino}
+    ports:
+      - '5432:5432'
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-mino}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------- 缓存 / 队列 ----------------
+  redis:
+    image: redis:7
+    container_name: mino-redis
+    restart: always
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------- FastGPT 依赖：向量库（pgvector）----------------
+  fastgpt-pg:
+    image: pgvector/pgvector:0.8.0-pg15
+    container_name: mino-fastgpt-pg
+    restart: always
+    environment:
+      POSTGRES_USER: ${FASTGPT_PG_USER:-fastgpt}
+      POSTGRES_PASSWORD: ${FASTGPT_PG_PASSWORD:-fastgpt}
+      POSTGRES_DB: ${FASTGPT_PG_DB:-fastgpt}
+    volumes:
+      - fastgpt_pg_data:/var/lib/postgresql/data
+
+  # ---------------- FastGPT 依赖：文档库（mongo）----------------
+  fastgpt-mongo:
+    image: mongo:5.0.18
+    container_name: mino-fastgpt-mongo
+    restart: always
+    command: mongod --keyFile /data/mongodb.key --replSet rs0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${FASTGPT_MONGO_USER:-myusername}
+      MONGO_INITDB_ROOT_PASSWORD: ${FASTGPT_MONGO_PASSWORD:-mypassword}
+    volumes:
+      - fastgpt_mongo_data:/data/db
+    # 首次启动需初始化副本集与 keyFile，详见 docs/dev-setup.md
+
+  # ---------------- FastGPT 依赖：代码沙箱 ----------------
+  fastgpt-sandbox:
+    image: ghcr.io/labring/fastgpt-sandbox:v4.9.11
+    container_name: mino-fastgpt-sandbox
+    restart: always
+
+  # ---------------- FastGPT 主服务 ----------------
+  fastgpt:
+    image: ghcr.io/labring/fastgpt:v4.9.11
+    container_name: mino-fastgpt
+    restart: always
+    depends_on:
+      - fastgpt-pg
+      - fastgpt-mongo
+      - fastgpt-sandbox
+    ports:
+      - '3001:3000'
+    environment:
+      # ---- 基础 ----
+      DEFAULT_ROOT_PSW: ${FASTGPT_ROOT_PSW:-1234}
+      # ---- 依赖连接 ----
+      MONGODB_URI: mongodb://${FASTGPT_MONGO_USER:-myusername}:${FASTGPT_MONGO_PASSWORD:-mypassword}@fastgpt-mongo:27017/fastgpt?authSource=admin
+      PG_URL: postgresql://${FASTGPT_PG_USER:-fastgpt}:${FASTGPT_PG_PASSWORD:-fastgpt}@fastgpt-pg:5432/${FASTGPT_PG_DB:-fastgpt}
+      SANDBOX_URL: http://fastgpt-sandbox:3000
+      # ---- 鉴权盐 ----
+      TOKEN_KEY: ${FASTGPT_TOKEN_KEY:-please-change-me}
+      ROOT_KEY: ${FASTGPT_ROOT_KEY:-please-change-me}
+      FILE_TOKEN_KEY: ${FASTGPT_FILE_TOKEN_KEY:-please-change-me}
+      # ---- 模型接入点（产品方后续填入，此处仅占位）----
+      # 通常指向 OneAPI / AIProxy；模型 base_url 与 key 由产品方接入
+      OPENAI_BASE_URL: ${FASTGPT_OPENAI_BASE_URL:-}
+      CHAT_API_KEY: ${FASTGPT_CHAT_API_KEY:-}
+    volumes:
+      # FastGPT 需挂载 config.json（模型清单等），产品方接入模型时提供
+      - ./deploy/fastgpt/config.json:/app/data/config.json
+
+volumes:
+  pg_data:
+  redis_data:
+  fastgpt_pg_data:
+  fastgpt_mongo_data:

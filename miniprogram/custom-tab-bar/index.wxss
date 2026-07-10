@@ -1,0 +1,38 @@
+@import '../styles/tokens.wxss';
+
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  height: 120rpx; /* 60px */
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--color-surface-tab);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+}
+
+.tab-icon {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+.tab-text {
+  font-size: 20rpx;
+  color: var(--color-ink-faint);
+}
+
+.tab-text--active {
+  color: var(--color-vermilion);
+}

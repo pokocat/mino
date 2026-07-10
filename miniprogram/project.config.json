@@ -1,0 +1,17 @@
+{
+  "description": "米诺战略参谋部 · 天势小程序 V3（原生 TypeScript）",
+  "appid": "touristappid",
+  "projectname": "mino-v3",
+  "compileType": "miniprogram",
+  "libVersion": "3.5.0",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "useCompilerPlugins": ["typescript"],
+    "ignoreDevUnusedFiles": false
+  },
+  "condition": {}
+}

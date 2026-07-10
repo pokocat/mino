@@ -1,0 +1,89 @@
+/* ============================================================
+ * 米诺 V3 设计 token（宣纸水墨）—— 单一事实源
+ * 依据：方案 §7.3 / design-analysis.md §3 / design-handoff §9
+ *
+ * px → rpx 换算规范（方案 §7.3）：
+ *   设计稿手机内屏宽 = 388px，微信 rpx 基准 = 750rpx（= 屏宽）。
+ *   故 1px ≈ 750 / 388 ≈ 1.93rpx（取整时四舍五入）。
+ *   例：18px ≈ 35rpx，16px ≈ 31rpx，13px ≈ 25rpx，4px ≈ 8rpx。
+ *   组件尺寸/间距一律用 rpx；1px 描边可保留 1px（物理像素细线）。
+ * ============================================================ */
+
+page {
+  /* ---------- 颜色 · 纸底与卡面 ---------- */
+  --color-paper-start: #f6f1e5; /* 内屏渐变起点 / 卡片背景 / 弹层卡 */
+  --color-paper-end: #e6dcc9; /* 内屏 radial 渐变止点 */
+  --color-card: #fbf7ef; /* 气泡 / 报告卡 / 批注块 */
+  --color-surface-tab: #ede5d3; /* 底部 tab / 输入条背景 */
+
+  /* ---------- 颜色 · 墨阶（文字）---------- */
+  --color-ink: #1f1b16; /* 正文墨 / 深墨块底 */
+  --color-ink-secondary: #574f44; /* 次要文字 */
+  --color-ink-tertiary: #6b6256; /* 副文 / 元信息 */
+  --color-ink-faint: #9b9384; /* 占位 / 最弱元信息 / tab 未激活 */
+  --color-ink-body: #2a241c; /* 状态栏 / 报告正文段落 */
+
+  /* ---------- 颜色 · 强调 ---------- */
+  --color-vermilion: #b23a2e; /* 朱砂：军师 / 印章 / CTA / 激活 / tab 激活 */
+  --color-gold: #9a7b3f; /* 描金：履历 / 批注竖线 / 次强调 */
+  --color-gold-text: #e8c77a; /* 金字：深墨块上文字 / 主 suggestion */
+  --color-gold-subtext: #e8dcc4; /* 深块副文（弹层底提示）*/
+  --color-ink-on-dark: #b8b0a2; /* 深块副文（今日一问副文）*/
+
+  /* ---------- 颜色 · 报告 4 类型色 ---------- */
+  --color-type-strategy: #b23a2e; /* 战略分析 */
+  --color-type-resume: #9a7b3f; /* 创业履历 */
+  --color-type-review: #3d6fa0; /* 复盘战报 */
+  --color-type-decision: #7a5ba0; /* 决策记录 */
+
+  /* ---------- 颜色 · 语义 ---------- */
+  --color-success: #6f8c5a; /* 墨绿：完成态 / 肯定 */
+  --color-wechat: #07c160; /* 微信绿：登录按钮 */
+
+  /* ---------- 颜色 · 边框 / 描边（alpha）---------- */
+  --border-hairline: rgba(40, 34, 28, 0.1); /* 卡片默认描边 */
+  --border-soft: rgba(40, 34, 28, 0.16); /* 输入框 / 次气泡描边 */
+  --border-vermilion: rgba(178, 58, 46, 0.4); /* 新报告卡高亮红边 */
+
+  /* ---------- 圆角 ---------- */
+  --radius-card: 12rpx; /* 卡片 / 按钮 / 深块（6px≈12rpx）*/
+  --radius-card-lg: 16rpx; /* 8px≈16rpx */
+  --radius-seal: 8rpx; /* 印章方标 4px */
+  --radius-bubble-a: 8rpx; /* 气泡非对称小角 4px */
+  --radius-bubble-b: 25rpx; /* 气泡非对称大角 13px */
+  --radius-chip: 31rpx; /* 胶囊 chip 16px */
+  --radius-chip-pill: 39rpx; /* 胶囊 suggestion 20px */
+  --radius-screen: 77rpx; /* 手机内屏 40px（原型用）*/
+  --radius-round: 50%; /* 发送圆钮 / 圆头像 */
+
+  /* ---------- 阴影（elevation 阶梯）---------- */
+  --shadow-card: 0 8rpx 24rpx rgba(40, 34, 28, 0.05); /* 卡片默认 */
+  --shadow-raised: 0 16rpx 44rpx rgba(40, 34, 28, 0.08); /* 架构主卡 */
+  --shadow-ink-block: 0 16rpx 44rpx rgba(40, 34, 28, 0.22); /* 深墨块（今日一问）*/
+  --shadow-new-report: 0 12rpx 32rpx rgba(178, 58, 46, 0.1); /* 高亮新报告卡 */
+  --shadow-seal: 0 8rpx 28rpx rgba(178, 58, 46, 0.3); /* 印章头像 */
+  --shadow-bubble: 0 6rpx 20rpx rgba(40, 34, 28, 0.05); /* 气泡 */
+  --shadow-bubble-user: 0 6rpx 20rpx rgba(178, 58, 46, 0.2); /* 用户气泡 */
+  --shadow-modal: 0 48rpx 120rpx rgba(0, 0, 0, 0.4); /* 弹层卡 */
+
+  /* ---------- 间距（8pt 基准，已换算 rpx）---------- */
+  --space-xs: 8rpx; /* 4px */
+  --space-sm: 14rpx; /* 7px */
+  --space-md: 25rpx; /* 13px 卡内 padding */
+  --space-lg: 35rpx; /* 18px 列表边距 */
+  --space-xl: 43rpx; /* 22px 报告正文边距 */
+
+  /* ---------- 字体族 ---------- */
+  --font-serif: 'Noto Serif SC', 'Songti SC', 'STSong', serif; /* 衬线：标题 / 报告正文 */
+  --font-sans: -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif; /* UI */
+  --font-mono: 'Space Mono', 'Menlo', monospace; /* 数字 / 时间 / 标签 */
+
+  /* ---------- 行高 ---------- */
+  --lh-ui: 1.65; /* UI */
+  --lh-report: 1.85; /* 报告结构正文 */
+  --lh-narrative: 2.05; /* 自传叙事 */
+  --lh-annotation: 1.75; /* 军师批注 */
+
+  /* ---------- 底部 tab ---------- */
+  --tabbar-height: 120rpx; /* 60px（不含安全区）*/
+}

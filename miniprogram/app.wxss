@@ -1,0 +1,25 @@
+/* 全局样式：引入设计 token 并铺纸底背景 */
+@import './styles/tokens.wxss';
+
+page {
+  /* 宣纸纸底：极淡横纹叠 radial 渐变（方案 §7 / analysis §0）*/
+  background-color: var(--color-paper-end);
+  background-image: repeating-linear-gradient(
+      0deg,
+      rgba(40, 34, 28, 0.013) 0,
+      rgba(40, 34, 28, 0.013) 2rpx,
+      transparent 2rpx,
+      transparent 7rpx
+    ),
+    radial-gradient(circle at 50% -5%, var(--color-paper-start), var(--color-paper-end));
+  background-attachment: fixed;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 28rpx;
+  line-height: var(--lh-ui);
+}
+
+view,
+text {
+  box-sizing: border-box;
+}

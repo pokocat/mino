@@ -1,0 +1,38 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+build/
+coverage/
+server/dist/
+miniprogram/dist/
+
+# Prisma 生成物
+server/generated/
+**/.prisma/
+
+# 环境变量（切勿提交）
+.env
+.env.*
+!.env.example
+
+# 微信开发者工具私有产物
+miniprogram/project.private.config.json
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# 临时
+*.tmp
+.cache/

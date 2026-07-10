@@ -1,0 +1,17 @@
+<view class="tab-bar">
+  <view
+    wx:for="{{tabs}}"
+    wx:key="key"
+    class="tab-item"
+    data-key="{{item.key}}"
+    data-path="{{item.pagePath}}"
+    bindtap="onTap"
+  >
+    <image
+      class="tab-icon"
+      src="{{active === item.key ? item.iconActive : item.iconInactive}}"
+      mode="aspectFit"
+    />
+    <text class="tab-text {{active === item.key ? 'tab-text--active' : ''}}">{{item.text}}</text>
+  </view>
+</view>

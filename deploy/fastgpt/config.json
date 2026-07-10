@@ -1,0 +1,13 @@
+{
+  "_comment": "FastGPT 运行配置占位。模型清单（llmModels / vectorModels 等）由产品方接入模型时按官方文档补全：https://doc.fastgpt.io/docs/development/configuration/ 。此文件被 docker-compose.yml 挂载到 /app/data/config.json。",
+  "feConfigs": {
+    "lafEnv": "https://laf.dev"
+  },
+  "systemEnv": {
+    "vectorMaxProcess": 15,
+    "qaMaxProcess": 15,
+    "pgHNSWEfSearch": 100
+  },
+  "llmModels": [],
+  "vectorModels": []
+}

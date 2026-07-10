@@ -1,0 +1,4 @@
+<view class="page">
+  <text class="brand">{{title}}</text>
+  <text class="subtitle">兄弟，坐下聊。</text>
+</view>

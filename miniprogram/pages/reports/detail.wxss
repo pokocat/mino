@@ -1,0 +1,14 @@
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-xl);
+}
+.title {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 40rpx;
+  letter-spacing: 4rpx;
+  color: var(--color-ink);
+}

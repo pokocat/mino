@@ -1,0 +1,33 @@
+{
+  "pages": [
+    "pages/onboarding/onboarding",
+    "pages/chat/chat",
+    "pages/reports/list",
+    "pages/reports/detail"
+  ],
+  "window": {
+    "navigationStyle": "custom",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "米诺战略参谋部",
+    "navigationBarBackgroundColor": "#F6F1E5",
+    "backgroundColor": "#E6DCC9"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#9B9384",
+    "selectedColor": "#B23A2E",
+    "backgroundColor": "#EDE5D3",
+    "list": [
+      {
+        "pagePath": "pages/chat/chat",
+        "text": "军师"
+      },
+      {
+        "pagePath": "pages/reports/list",
+        "text": "报告库"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

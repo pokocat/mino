@@ -1,0 +1,14 @@
+{
+  "name": "mino-miniprogram",
+  "version": "0.0.1",
+  "description": "米诺 V3 微信原生小程序（TypeScript）",
+  "private": true,
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "miniprogram-api-typings": "^4.0.4",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,116 @@
+# 本地开发环境搭建（M0 地基）
+
+本文说明如何在本地把米诺 V3 的双端与依赖服务跑起来。
+
+## 0. 先决条件
+
+- Node.js 20（CI 基准；本地 20/22 均可）
+- npm 10+
+- Docker + Docker Compose v2（起 postgres / redis / FastGPT）
+- 微信开发者工具（运行小程序）
+
+## 1. 依赖服务（Docker Compose）
+
+根目录 `docker-compose.yml` 编排四类服务：
+
+| 服务 | 镜像（固定 tag） | 用途 | 端口 |
+|---|---|---|---|
+| `postgres` | `postgres:16` | 应用业务库（Prisma 迁移目标） | 5432 |
+| `redis` | `redis:7` | 缓存 / BullMQ 队列 / streak | 6379 |
+| `fastgpt` | `ghcr.io/labring/fastgpt:v4.9.11` | LLM 引擎（军师应用 / 知识库 / 报告工作流） | 3001→3000 |
+| `fastgpt-mongo` | `mongo:5.0.18` | FastGPT 文档库 | 内网 |
+| `fastgpt-pg` | `pgvector/pgvector:0.8.0-pg15` | FastGPT 向量库 | 内网 |
+| `fastgpt-sandbox` | `ghcr.io/labring/fastgpt-sandbox:v4.9.11` | FastGPT 代码沙箱 | 内网 |
+
+### 只起业务依赖（日常开发后端够用）
+
+```bash
+docker compose up -d postgres redis
+```
+
+### 起全套（含 FastGPT）
+
+```bash
+docker compose up -d
+```
+
+密钥/密码通过根目录 `.env` 覆盖（compose 里用 `${VAR:-默认值}` 兜底），例如：
+
+```env
+POSTGRES_USER=mino
+POSTGRES_PASSWORD=mino
+POSTGRES_DB=mino
+FASTGPT_MONGO_USER=myusername
+FASTGPT_MONGO_PASSWORD=mypassword
+FASTGPT_TOKEN_KEY=please-change-me
+FASTGPT_ROOT_KEY=please-change-me
+FASTGPT_FILE_TOKEN_KEY=please-change-me
+# 模型接入（产品方后续填入）
+FASTGPT_OPENAI_BASE_URL=
+FASTGPT_CHAT_API_KEY=
+```
+
+## 2. FastGPT 说明与出处
+
+`docker-compose.yml` 的 FastGPT 部分取自官方 **pgvector 版** `docker-compose-pgvector.yml`
+的最小可跑子集（fastgpt + mongo + pgvector + sandbox）。
+
+- 官方仓库：<https://github.com/labring/FastGPT>
+- 官方编排目录：`FastGPT/deploy/docker/`（`docker-compose-pgvector.yml`）
+- 官方文档（Docker 部署 / 配置文件）：<https://doc.fastgpt.io/docs/development/docker/>
+- 参考版本：镜像 tag 固定为 `v4.9.11`（fastgpt / sandbox）、`mongo:5.0.18`、`pgvector/pgvector:0.8.0-pg15`。
+  升级前请对照官方同版本编排文件核对环境变量与依赖。
+
+已知需产品方接入的部分（M0 仅留占位，未接入即无法真正对话）：
+
+1. **模型 API / AK**：`config.json`（`deploy/fastgpt/config.json`）中的 `llmModels` / `vectorModels`
+   与 compose 里的 `OPENAI_BASE_URL` / `CHAT_API_KEY`（通常指向 OneAPI / AIProxy）。
+2. **Mongo 副本集初始化**：`mongo:5.0.18` 首次启动需 `--replSet` + keyFile 初始化；
+   完整步骤见官方文档「Docker 部署」章节（生成 keyFile → `rs.initiate()`）。
+
+> M0 目标是把地基和编排落地，不要求 FastGPT 完整跑通对话；模型接入在 M2 与产品方并行推进。
+
+## 3. 后端（server/）
+
+```bash
+cd server
+cp .env.example .env          # 按需修改
+npm install
+npx prisma generate           # 生成 Prisma Client（需 DATABASE_URL 存在）
+npx prisma validate           # 校验 schema
+npm run start:dev             # 开发模式
+```
+
+健康检查：
+
+```bash
+curl http://localhost:3000/health
+# {"status":"ok"}
+```
+
+数据库迁移（需 postgres 已起）：
+
+```bash
+npx prisma migrate dev --name init
+```
+
+常用脚本：`npm run build` / `npm run lint` / `npm test`。
+
+## 4. 小程序（miniprogram/）
+
+```bash
+cd miniprogram
+npm install
+npx tsc --noEmit              # 类型检查
+```
+
+用微信开发者工具「导入项目」，目录选 `miniprogram/`，AppID 使用占位 `touristappid`
+（无需真实 AppID 即可预览；正式联调时替换为真实 AppID）。
+
+- 底部为自定义 2 tab（军师 / 报告库），见 `custom-tab-bar/`。
+- 设计 token 统一在 `styles/tokens.wxss`，`app.wxss` 引入并铺纸底背景。
+
+## 5. 提前并行事项（方案 §10）
+
+微信主体资质与类目、订阅消息模板申请、FastGPT 部署与模型 key、域名 + HTTPS + ICP 备案
+（request 合法域名）——均需在 M0 阶段并行启动。
