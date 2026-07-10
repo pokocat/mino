@@ -1,0 +1,49 @@
+<paper-page>
+  <nav-bar title="军师所知的你" back="{{true}}" bind:back="onBack"></nav-bar>
+
+  <view class="edit" wx:if="{{!loading}}">
+    <text class="edit__hint">改了之后，军师会按新的画像来懂你。</text>
+
+    <view class="field">
+      <text class="field__label">昵称</text>
+      <input
+        class="field__input"
+        placeholder="怎么称呼你"
+        placeholder-class="field__ph"
+        value="{{form.nickname}}"
+        data-field="nickname"
+        bindinput="onInput"
+      />
+    </view>
+
+    <view class="field">
+      <text class="field__label">行业</text>
+      <input
+        class="field__input"
+        placeholder="你在哪个行当"
+        placeholder-class="field__ph"
+        value="{{form.industry}}"
+        data-field="industry"
+        bindinput="onInput"
+      />
+    </view>
+
+    <view class="field">
+      <text class="field__label">一句话生意背景</text>
+      <textarea
+        class="field__input field__textarea"
+        placeholder="你的生意，一句话说清"
+        placeholder-class="field__ph"
+        value="{{form.bizNote}}"
+        data-field="bizNote"
+        bindinput="onInput"
+        maxlength="120"
+        auto-height
+      />
+    </view>
+
+    <view class="submit {{submitting ? 'submit--loading' : ''}}" bindtap="onSubmit">
+      <text class="submit__text">{{submitting ? '提交中…' : '保存'}}</text>
+    </view>
+  </view>
+</paper-page>

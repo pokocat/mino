@@ -30,6 +30,7 @@ export interface UserProfile {
   bizNote: string;
   streakDays: number;
   reportStats: ReportStats;
+  createdAt?: string; // 注册时间（ISO）；用于「与军师相伴 N 天」，缺省则隐藏该行
 }
 
 // POST /me/profile 入参
@@ -102,6 +103,11 @@ export function updateProfile(input: ProfileInput): Promise<UserProfile> {
 // GET /me → 用户信息 + streakDays + reportStats
 export function getMe(): Promise<UserProfile> {
   return request<UserProfile>({ url: '/me', method: 'GET' });
+}
+
+// DELETE /me → {ok:true}（注销账号：连带清对话/报告/知识库，后端职责）
+export function deleteMe(): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>({ url: '/me', method: 'DELETE' });
 }
 
 // POST /conversations → {conversationId, fastgptChatId}（新建一段会话）

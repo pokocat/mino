@@ -2,6 +2,7 @@
 // 生成中占位 / 下拉刷新 / cursor 分页触底加载。对照 02 屏。
 import { listReports, getReportStats, getReport, generateReport } from '../../utils/api';
 import type { ReportListItem, ReportStats, ReportType } from '../../utils/api';
+import { STORAGE_KEYS } from '../../utils/config';
 
 const PAGE_SIZE = 4; // 每页条数（小页便于演示触底加载）
 
@@ -24,6 +25,12 @@ Page({
     if (tabBar) {
       tabBar.setData({ active: 'reports' });
       tabBar.refreshBadge?.();
+    }
+    // 我的页宫格跳入时预置类型筛选（storage 传参，消费后立即清除，避免污染后续进入）
+    const preset = wx.getStorageSync<string>(STORAGE_KEYS.reportsPresetType);
+    if (preset) {
+      wx.removeStorageSync(STORAGE_KEYS.reportsPresetType);
+      this.setData({ activeType: preset as ReportType, items: [], nextCursor: null });
     }
     // 每次进入刷新：反映详情已读后未读态/角标变化
     this._reload();

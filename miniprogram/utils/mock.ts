@@ -269,9 +269,13 @@ function mockUser(overrides?: Partial<UserProfile>): UserProfile {
     bizNote: '',
     streakDays: 47,
     reportStats: reportStats(),
+    createdAt: daysAgo(30), // 注册于 30 天前 → 相伴 31 天
     ...overrides,
   };
 }
+
+// 我的画像 mock 覆盖态：POST /me/profile 后回填，使 GET /me 复现已填资料（走查画像回显用）
+let mockProfileOverride: Partial<UserProfile> | null = null;
 
 // 相对今天的日期串（ISO）；hhmm 指定时刻，默认 09:00
 function daysAgo(n: number, hhmm = '09:00'): string {
@@ -343,14 +347,22 @@ export function resolveMock<T>(
         payload = { token: 'mock-token', isNewUser: true } as WxLoginResult;
         break;
       case 'POST /me/profile':
-        payload = mockUser({
+        // 记住本次提交，后续 GET /me 复现（走查画像编辑回显）
+        mockProfileOverride = {
           nickname: (data?.nickname as string) || '',
           industry: (data?.industry as string) || '',
           bizNote: (data?.bizNote as string) || '',
-        });
+        };
+        payload = mockUser(mockProfileOverride);
         break;
       case 'GET /me':
-        payload = mockUser();
+        payload = mockUser(mockProfileOverride || undefined);
+        break;
+      case 'DELETE /me':
+        // 注销：复位 mock 会话/画像态，返回 ok（前端随即清 token 回 onboarding）
+        mockProfileOverride = null;
+        dailyTaskStatus = 'pending';
+        payload = { ok: true };
         break;
       case 'GET /tasks/today':
         // 今日一问：设计稿「最值钱的牌」，status 随 start 动线变化

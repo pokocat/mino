@@ -1,0 +1,120 @@
+<paper-page tabbar="{{true}}">
+  <nav-bar title="我的"></nav-bar>
+
+  <view class="me" wx:if="{{inited}}">
+    <!-- ① 身份头卡 -->
+    <view class="ident">
+      <seal-avatar variant="marshal" size="112" text="{{avatarText}}"></seal-avatar>
+      <view class="ident__main">
+        <view class="ident__row">
+          <text class="ident__name">{{nickname || '还没取名'}}</text>
+          <text wx:if="{{industry}}" class="ident__chip">{{industry}}</text>
+        </view>
+        <text wx:if="{{companionDays >= 0}}" class="ident__days">与军师相伴 {{companionDays}} 天</text>
+      </view>
+    </view>
+
+    <!-- ② streak 里程卡（深墨大卡） -->
+    <view class="streak">
+      <block wx:if="{{streakDays > 0}}">
+        <text class="streak__num">{{streakDays}}</text>
+        <text class="streak__main">连续 {{streakDays}} 天与军师对谈</text>
+        <text class="streak__sub">兵贵有恒。明天接着聊。</text>
+      </block>
+      <block wx:else>
+        <text class="streak__main streak__main--idle">今天还没跟军师聊</text>
+        <view class="streak__cta" bindtap="onGoChat">
+          <text class="streak__cta-text">去聊 →</text>
+        </view>
+      </block>
+    </view>
+
+    <!-- ③ 报告战绩宫格 -->
+    <view class="reports">
+      <text class="reports__line">已为你写下 {{reportTotal}} 份报告 · {{reportUnread}} 份未读</text>
+      <view class="grid">
+        <view
+          wx:for="{{grid}}"
+          wx:key="type"
+          class="grid__cell"
+          data-type="{{item.type}}"
+          bindtap="onGridTap"
+        >
+          <text class="grid__num grid__num--{{item.type}}">{{item.count}}</text>
+          <text class="grid__label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- ④ 我的画像卡 -->
+    <view class="profile">
+      <view class="profile__head">
+        <text class="profile__title">军师所知的你</text>
+        <text class="profile__edit" bindtap="onEditProfile">改一改</text>
+      </view>
+      <view class="profile__item">
+        <text class="profile__k">行业</text>
+        <text class="profile__v {{industry ? '' : 'profile__v--empty'}}">{{industry || '还没告诉军师'}}</text>
+      </view>
+      <view class="profile__item">
+        <text class="profile__k">生意背景</text>
+        <text class="profile__v {{bizNote ? '' : 'profile__v--empty'}}">{{bizNote || '还没告诉军师'}}</text>
+      </view>
+    </view>
+
+    <!-- ⑤ 设置分组 -->
+    <view class="group">
+      <view class="row" bindtap="onNotify">
+        <text class="row__label">通知提醒</text>
+        <text class="row__arrow">›</text>
+      </view>
+      <view class="row" bindtap="onOpenAgreement">
+        <text class="row__label">用户协议</text>
+        <text class="row__arrow">›</text>
+      </view>
+      <view class="row" bindtap="onOpenPrivacy">
+        <text class="row__label">隐私政策</text>
+        <text class="row__arrow">›</text>
+      </view>
+      <view class="row row--static">
+        <text class="row__label">关于米诺</text>
+        <text class="row__meta">米诺战略参谋部 · {{version}}</text>
+      </view>
+    </view>
+
+    <view class="group">
+      <view class="row" bindtap="onLogout">
+        <text class="row__label">退出登录</text>
+        <text class="row__arrow">›</text>
+      </view>
+      <view class="row" bindtap="onDeleteAccount">
+        <text class="row__label row__label--danger">删除账号</text>
+        <text class="row__arrow">›</text>
+      </view>
+    </view>
+  </view>
+  <!-- /.me -->
+
+  <!-- 删除账号 · 二次输入确认弹层 -->
+  <view wx:if="{{deleteModalVisible}}" class="mask" catchtap="onDeleteCancel">
+    <view class="dialog" catchtap="">
+      <text class="dialog__title">再确认一次</text>
+      <text class="dialog__desc">此操作不可恢复。请输入「删除」二字以确认注销账号。</text>
+      <input
+        class="dialog__input"
+        placeholder="输入：删除"
+        placeholder-class="dialog__ph"
+        value="{{deleteInput}}"
+        bindinput="onDeleteInput"
+      />
+      <view class="dialog__actions">
+        <view class="dialog__btn" bindtap="onDeleteCancel">
+          <text>取消</text>
+        </view>
+        <view class="dialog__btn dialog__btn--danger" bindtap="onDeleteConfirm">
+          <text>确认删除</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</paper-page>

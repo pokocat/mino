@@ -1,0 +1,297 @@
+/* 「我的」页：沿用 07 屏视觉体系（深墨大卡 / 宫格 tile / 行分组），全用 token 变量。 */
+.me {
+  padding: var(--space-md) var(--space-lg) 40rpx;
+}
+
+/* ① 身份头卡 */
+.ident {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) 0 var(--space-lg);
+}
+.ident__main {
+  flex: 1;
+  min-width: 0;
+}
+.ident__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.ident__name {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 38rpx;
+  letter-spacing: 2rpx;
+  color: var(--color-ink);
+}
+/* 行业 chip：描金描边小 chip */
+.ident__chip {
+  flex-shrink: 0;
+  padding: 4rpx 16rpx;
+  font-size: 20rpx;
+  color: var(--color-gold);
+  border: 1px solid var(--color-gold);
+  border-radius: var(--radius-chip);
+}
+.ident__days {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--color-ink-tertiary);
+}
+
+/* ② streak 里程卡（深墨大卡） */
+.streak {
+  background: var(--color-ink);
+  border-radius: var(--radius-card);
+  padding: 36rpx 20rpx 40rpx;
+  text-align: center;
+  box-shadow: var(--shadow-ink-block);
+}
+.streak__num {
+  display: block;
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 96rpx;
+  line-height: 1;
+  color: var(--color-gold-text);
+}
+.streak__main {
+  display: block;
+  margin-top: 16rpx;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 30rpx;
+  letter-spacing: 2rpx;
+  color: var(--color-gold-text);
+}
+.streak__main--idle {
+  color: var(--color-paper-start);
+}
+.streak__sub {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: var(--color-ink-on-dark);
+}
+/* streak=0 CTA */
+.streak__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 24rpx;
+  padding: 12rpx 36rpx;
+  border-radius: var(--radius-chip);
+  background: var(--color-vermilion);
+}
+.streak__cta-text {
+  font-size: 26rpx;
+  letter-spacing: 2rpx;
+  color: var(--color-paper-start);
+}
+
+/* ③ 报告战绩宫格 */
+.reports {
+  margin-top: var(--space-lg);
+}
+.reports__line {
+  display: block;
+  margin-bottom: var(--space-md);
+  font-size: 23rpx;
+  color: var(--color-ink-tertiary);
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+.grid__cell {
+  box-sizing: border-box;
+  width: calc((100% - var(--space-sm)) / 2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 26rpx 8rpx;
+  background: var(--color-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.grid__num {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  font-size: 48rpx;
+  line-height: 1.1;
+}
+.grid__num--strategy {
+  color: var(--color-type-strategy);
+}
+.grid__num--resume {
+  color: var(--color-type-resume);
+}
+.grid__num--review {
+  color: var(--color-type-review);
+}
+.grid__num--decision {
+  color: var(--color-type-decision);
+}
+.grid__label {
+  margin-top: 6rpx;
+  font-size: 21rpx;
+  color: var(--color-ink-tertiary);
+}
+
+/* ④ 我的画像卡 */
+.profile {
+  margin-top: var(--space-lg);
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+  background: var(--color-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.profile__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.profile__title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 28rpx;
+  letter-spacing: 1rpx;
+  color: var(--color-ink);
+}
+.profile__edit {
+  font-size: 24rpx;
+  color: var(--color-vermilion);
+}
+.profile__item {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+.profile__item:last-child {
+  border-bottom: none;
+}
+.profile__k {
+  flex-shrink: 0;
+  width: 120rpx;
+  font-size: 24rpx;
+  color: var(--color-ink-tertiary);
+}
+.profile__v {
+  flex: 1;
+  font-size: 26rpx;
+  line-height: var(--lh-ui);
+  color: var(--color-ink-secondary);
+}
+.profile__v--empty {
+  color: var(--color-ink-faint);
+}
+
+/* ⑤ 设置分组 */
+.group {
+  margin-top: var(--space-lg);
+  background: var(--color-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx var(--space-md);
+  border-bottom: 1px solid var(--border-hairline);
+}
+.row:last-child {
+  border-bottom: none;
+}
+.row__label {
+  font-size: 28rpx;
+  color: var(--color-ink);
+}
+.row__label--danger {
+  color: var(--color-vermilion);
+}
+.row__arrow {
+  font-size: 34rpx;
+  color: var(--color-ink-faint);
+}
+.row__meta {
+  font-size: 22rpx;
+  color: var(--color-ink-faint);
+}
+
+/* 删除账号 · 二次确认弹层 */
+.mask {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0 var(--space-xl);
+}
+.dialog {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-lg);
+  background: var(--color-paper-start);
+  border-radius: var(--radius-card-lg);
+  box-shadow: var(--shadow-modal);
+}
+.dialog__title {
+  display: block;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 32rpx;
+  letter-spacing: 2rpx;
+  color: var(--color-ink);
+}
+.dialog__desc {
+  display: block;
+  margin-top: var(--space-sm);
+  font-size: 24rpx;
+  line-height: var(--lh-ui);
+  color: var(--color-ink-tertiary);
+}
+.dialog__input {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  font-size: 28rpx;
+  color: var(--color-ink);
+}
+.dialog__ph {
+  color: var(--color-ink-faint);
+}
+.dialog__actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+.dialog__btn {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border-soft);
+  font-size: 28rpx;
+  color: var(--color-ink-secondary);
+}
+.dialog__btn--danger {
+  background: var(--color-vermilion);
+  border-color: var(--color-vermilion);
+  color: var(--color-paper-start);
+}

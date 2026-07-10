@@ -4,6 +4,8 @@
     "pages/chat/chat",
     "pages/reports/list",
     "pages/reports/detail",
+    "pages/me/me",
+    "pages/me/profile-edit",
     "pages/legal/legal"
   ],
   "window": {
@@ -26,6 +28,10 @@
       {
         "pagePath": "pages/reports/list",
         "text": "报告库"
+      },
+      {
+        "pagePath": "pages/me/me",
+        "text": "我"
       }
     ]
   },

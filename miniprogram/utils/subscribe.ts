@@ -5,8 +5,8 @@
 
 import { config, STORAGE_KEYS } from './config';
 
-// 授权场景（对应 R4 两个高意愿时机）
-export type SubscribeScene = 'dailyStart' | 'generateReport';
+// 授权场景（R4 两个高意愿时机 + 我的页设置项主动开启）
+export type SubscribeScene = 'dailyStart' | 'generateReport' | 'meSettings';
 
 // 本地日期串 YYYY-MM-DD（用于「每场景每日一次」的去重键值）
 function todayStr(): string {

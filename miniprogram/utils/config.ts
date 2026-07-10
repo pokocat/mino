@@ -24,4 +24,6 @@ export const STORAGE_KEYS = {
   pendingConversationId: 'mn_pending_conversation_id',
   // 订阅消息授权：每场景每日最多请求一次，键为 前缀+场景，值记请求日期（YYYY-MM-DD）
   subscribeDatePrefix: 'mn_subscribe_',
+  // 我的页宫格点击 → 报告库预置类型筛选；reports/list onShow 消费后清除
+  reportsPresetType: 'mn_reports_preset_type',
 };

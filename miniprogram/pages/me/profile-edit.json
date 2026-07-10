@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "paper-page": "../../components/paper-page/index",
+    "nav-bar": "../../components/nav-bar/index"
+  }
+}
