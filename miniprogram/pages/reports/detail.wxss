@@ -7,6 +7,29 @@
   color: var(--color-ink-faint);
 }
 
+/* nav 右上「分享」button（去系统按钮默认样式，还原文本 action 观感）*/
+.detail__share-btn {
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  line-height: 1.2;
+  background: transparent;
+  font-size: 26rpx;
+  color: var(--color-vermilion);
+}
+.detail__share-btn::after {
+  border: none;
+}
+
+/* 离屏 canvas：不可见、不占布局 */
+.detail__canvas {
+  position: fixed;
+  left: -9999rpx;
+  top: 0;
+  width: 750px;
+  height: 200px;
+}
+
 .detail__scroll {
   flex: 1;
   min-height: 0;

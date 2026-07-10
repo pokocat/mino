@@ -1,8 +1,9 @@
 // 报告详情页（二级页，type 驱动双版式）。对照 03（结构化）/ 04（自传体）屏。
 // 头部 + md-report 正文 + 军师批注 + 溯源标签 + 底部操作条；onShow 未读 → POST /read。
-import { getReport, markReportRead, chatFromReport } from '../../utils/api';
-import type { ReportDetail, ReportType } from '../../utils/api';
+import { getReport, markReportRead, chatFromReport, exportReport } from '../../utils/api';
+import type { ReportDetail, ReportType, ApiError } from '../../utils/api';
 import { STORAGE_KEYS } from '../../utils/config';
+import { renderShareCard } from '../../utils/share-card';
 
 const TYPE_LABELS: Record<ReportType, string> = {
   strategy: '战略分析',
@@ -20,6 +21,7 @@ Page({
   data: {
     id: '',
     loading: true,
+    loadError: false, // 首屏网络错误 → error-retry 组件
     report: null as ReportDetail | null,
     // 派生渲染字段
     navTitle: '报告',
@@ -29,6 +31,7 @@ Page({
     dateLabel: '',
     primaryText: '跟军师聊这份报告',
     secondaryIcon: 'export',
+    exporting: false, // 分享图导出中（防抖）
   },
 
   onLoad(query: Record<string, string>) {
@@ -41,6 +44,7 @@ Page({
 
   _load(id: string) {
     if (!id) return;
+    this.setData({ loading: true, loadError: false });
     getReport(id)
       .then((r) => {
         const narrative = r.type === 'resume';
@@ -62,16 +66,34 @@ Page({
           });
         }
       })
-      .catch(() => this.setData({ loading: false }));
+      .catch((err: ApiError) => {
+        // 404/403：报告已删除或无权访问 → toast + 返回；其余按网络错误显示重试
+        const code = String(err && err.code);
+        if (code.indexOf('404') >= 0 || code.indexOf('403') >= 0) {
+          wx.showToast({ title: '这份报告不在了', icon: 'none' });
+          setTimeout(() => wx.navigateBack(), 800);
+          return;
+        }
+        this.setData({ loading: false, loadError: true });
+      });
+  },
+
+  // error-retry 组件重试
+  onRetry() {
+    this._load(this.data.id);
   },
 
   onBack() {
     wx.navigateBack();
   },
 
-  // 分享（本期占位）
-  onShare() {
-    wx.showToast({ title: '分享将在 M6 上线', icon: 'none' });
+  // 转发分享（nav 右上 button open-type="share" 触发此回调）
+  onShareAppMessage(): WechatMiniprogram.Page.ICustomShareContent {
+    const r = this.data.report;
+    return {
+      title: r ? r.title : '米诺战略参谋部 · 军师报告',
+      path: `/pages/reports/detail?id=${this.data.id}&type=${r ? r.type : 'strategy'}`,
+    };
   },
 
   // 主按钮：跟军师聊/补充这份报告 → 建/续会话 → 回对话页
@@ -88,9 +110,73 @@ Page({
       });
   },
 
-  // 副按钮：导出/补充（本期占位）
+  // 副按钮：↧ 导出分享图 / ✎ 补充（补充与主按钮同流程）
   onSecondary() {
-    wx.showToast({ title: '导出将在 M6 上线', icon: 'none' });
+    if (this.data.secondaryIcon === 'export') {
+      this._exportShare();
+    } else {
+      this.onPrimary();
+    }
+  },
+
+  // 导出分享图：GET export → 绘制宣纸风长图 → 操作面板（保存相册 / 发送给朋友）
+  _exportShare() {
+    if (this.data.exporting) return;
+    const id = this.data.id;
+    this.setData({ exporting: true });
+    wx.showLoading({ title: '军师落笔中…', mask: true });
+    exportReport(id)
+      .then((data) => renderShareCard(this, '#shareCanvas', data))
+      .then((tempFilePath) => {
+        wx.hideLoading();
+        this.setData({ exporting: false });
+        this._showShareActions(tempFilePath);
+      })
+      .catch(() => {
+        wx.hideLoading();
+        this.setData({ exporting: false });
+        wx.showToast({ title: '导出没成，稍后再试', icon: 'none' });
+      });
+  },
+
+  // 操作面板：保存到相册 / 发送给朋友
+  _showShareActions(tempFilePath: string) {
+    wx.showActionSheet({
+      itemList: ['保存到相册', '发送给朋友'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          this._saveToAlbum(tempFilePath);
+        } else {
+          // 小程序无法直接拉起图片转发：如实引导用户预览后长按转发
+          wx.previewImage({
+            urls: [tempFilePath],
+            success: () =>
+              wx.showToast({ title: '长按图片可发送给朋友', icon: 'none' }),
+          });
+        }
+      },
+    });
+  },
+
+  // 保存到相册；授权拒绝时引导去设置页开启
+  _saveToAlbum(tempFilePath: string) {
+    wx.saveImageToPhotosAlbum({
+      filePath: tempFilePath,
+      success: () => wx.showToast({ title: '已存到相册', icon: 'success' }),
+      fail: (e) => {
+        // 用户拒绝相册授权：引导去设置页
+        if (String(e.errMsg).indexOf('auth') >= 0 || String(e.errMsg).indexOf('deny') >= 0) {
+          wx.showModal({
+            title: '需要相册权限',
+            content: '保存分享图需要你授权相册，去设置里开启一下？',
+            confirmText: '去设置',
+            success: (m) => {
+              if (m.confirm) wx.openSetting();
+            },
+          });
+        }
+      },
+    });
   },
 });
 

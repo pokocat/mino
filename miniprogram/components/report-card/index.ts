@@ -17,6 +17,7 @@ Component({
   data: {
     isNew: false,
     isGenerating: false,
+    isFailed: false, // 生成失败态
     originLabel: '',
     dateLabel: '',
     wordLabel: '',
@@ -33,6 +34,7 @@ Component({
       this.setData({
         isNew: !r.isRead && r.status === 'ready',
         isGenerating: r.status === 'generating',
+        isFailed: r.status === 'failed',
         originLabel: ORIGIN_LABEL[r.origin] || '军师执笔',
         dateLabel: formatDate(r.createdAt),
         wordLabel: r.wordCount ? `约 ${r.wordCount} 字` : '',
@@ -41,6 +43,11 @@ Component({
     onTap() {
       const r = this.data.report as ReportListItem | null;
       if (!r || r.status === 'generating') return; // 生成中不可点
+      if (r.status === 'failed') {
+        // 失败卡：请求重写（页面弹确认后重新生成）
+        this.triggerEvent('retry', { id: r.id, type: r.type });
+        return;
+      }
       this.triggerEvent('tap', { id: r.id, type: r.type });
     },
   },

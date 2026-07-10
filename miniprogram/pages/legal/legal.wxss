@@ -1,0 +1,39 @@
+.legal__scroll {
+  flex: 1;
+  min-height: 0;
+}
+.legal {
+  padding: var(--space-lg) var(--space-xl) 80rpx;
+  display: flex;
+  flex-direction: column;
+}
+.legal__intro {
+  font-size: 26rpx;
+  color: var(--color-ink-secondary);
+  line-height: var(--lh-report);
+  margin-bottom: var(--space-lg);
+}
+.legal__section {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--space-lg);
+}
+.legal__heading {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 30rpx;
+  letter-spacing: 2rpx;
+  color: var(--color-ink);
+  margin-bottom: var(--space-sm);
+}
+.legal__body {
+  font-size: 26rpx;
+  color: var(--color-ink-secondary);
+  line-height: var(--lh-report);
+}
+.legal__foot {
+  margin-top: var(--space-md);
+  font-size: 22rpx;
+  color: var(--color-ink-faint);
+  text-align: center;
+}

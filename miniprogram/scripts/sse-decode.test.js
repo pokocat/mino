@@ -91,4 +91,17 @@ function bytes(str) {
   ok('缺省事件名为 message', f2.event === 'message');
 })();
 
+// ---------- 附加：retract 事件帧切分与解析（M6 军师收回）----------
+(function testRetractFrame() {
+  console.log('附加 · retract 事件');
+  const sp = new SseFrameSplitter();
+  const blob =
+    'event: token\ndata: {"t":"甲"}\n\n' +
+    'event: retract\ndata: {"messageId":"m-42"}\n\n';
+  const frames = sp.push(blob);
+  ok('token 与 retract 各切出 1 帧', frames.length === 2);
+  ok('第 2 帧事件名为 retract', frames[1].event === 'retract');
+  ok('retract data 带 messageId', JSON.parse(frames[1].data).messageId === 'm-42');
+})();
+
 console.log('\n全部通过：' + passed + ' 条断言');

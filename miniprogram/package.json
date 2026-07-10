@@ -7,7 +7,8 @@
     "tsc": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test:sse": "tsc utils/sse-decode.ts --outDir scripts/dist --module commonjs --target es2019 --skipLibCheck && node scripts/sse-decode.test.js",
-    "test:md": "tsc utils/md-lite.ts --outDir scripts/dist --module commonjs --target es2019 --skipLibCheck && node scripts/md-lite.test.js"
+    "test:md": "tsc utils/md-lite.ts --outDir scripts/dist --module commonjs --target es2019 --skipLibCheck && node scripts/md-lite.test.js",
+    "test:share": "tsc utils/share-card-layout.ts --outDir scripts/dist --module commonjs --target es2019 --skipLibCheck && node scripts/share-card-layout.test.js"
   },
   "devDependencies": {
     "miniprogram-api-typings": "^4.0.4",

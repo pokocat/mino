@@ -1,0 +1,16 @@
+<paper-page>
+  <nav-bar title="{{title}}" back="{{true}}" bind:back="onBack"></nav-bar>
+
+  <scroll-view class="legal__scroll" scroll-y>
+    <view class="legal">
+      <text class="legal__intro">{{intro}}</text>
+
+      <view wx:for="{{sections}}" wx:key="heading" class="legal__section">
+        <text class="legal__heading">{{item.heading}}</text>
+        <text class="legal__body">{{item.body}}</text>
+      </view>
+
+      <text class="legal__foot">正式版本以线上发布为准。</text>
+    </view>
+  </scroll-view>
+</paper-page>

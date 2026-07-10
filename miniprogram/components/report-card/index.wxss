@@ -55,6 +55,11 @@
   font-size: 21rpx;
   color: var(--color-ink-faint);
 }
+/* 失败态：朱砂提示 */
+.rc__failed {
+  font-size: 21rpx;
+  color: var(--color-vermilion);
+}
 .rc__title {
   font-family: var(--font-serif);
   font-weight: 700;

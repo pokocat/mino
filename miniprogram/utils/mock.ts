@@ -6,6 +6,8 @@ import type {
   Conversation,
   CreateConversationResult,
   DailyTask,
+  ExportData,
+  ExportParagraph,
   GenerateReportResult,
   ReportDetail,
   ReportListItem,
@@ -152,6 +154,22 @@ const REPORT_DETAILS: Record<string, ReportDetail> = {
     createdAt: daysAgo(28),
     sources: [{ conversationId: 'c-price', title: '定价这件事' }],
   },
+  // 生成失败卡（点击弹「让军师重写一份」；带 sources 供重写取源对话）
+  'r-failed': {
+    id: 'r-failed',
+    type: 'review',
+    status: 'failed',
+    title: '这周的复盘没写成',
+    bodyMd: '',
+    annotation: '',
+    origin: 'agent',
+    isRead: true,
+    wordCount: 0,
+    sequenceNo: null,
+    meta: {},
+    createdAt: daysAgo(0, '15:40'),
+    sources: [{ conversationId: 'c-week7', title: '第 7 周复盘' }],
+  },
   // 列表内的「生成中」占位卡（不可点，GET 详情恒为 generating）
   'r-generating': {
     id: 'r-generating',
@@ -174,6 +192,7 @@ const REPORT_DETAILS: Record<string, ReportDetail> = {
 const REPORT_ORDER = [
   'r-huchenghe',
   'r-generating',
+  'r-failed',
   'r-qishi',
   'r-fupan',
   'r-juece',
@@ -185,6 +204,7 @@ function toListItem(d: ReportDetail): ReportListItem {
   const summaryMap: Record<string, string> = {
     'r-huchenghe': '主要矛盾 · 定位 · 三步走。基于今天关于「最值钱的牌」的对话。',
     'r-generating': '正在把刚才的对话整理成一份《战略分析》报告。',
+    'r-failed': '这次没生成成功，点一下让军师重写一份。',
     'r-qishi': '离开体系那年冬天，你赌上的其实是自己早已看清的一张牌。',
     'r-fupan': '砍掉副线之后，主线的战斗力反而回来了。',
     'r-juece': '先把第一家的模型跑透，再谈第二家。',
@@ -278,6 +298,7 @@ export function resolveMock<T>(
   const msgMatch = path.match(/^\/conversations\/([^/]+)\/messages$/);
   const reportReadMatch = path.match(/^\/reports\/([^/]+)\/read$/);
   const reportChatMatch = path.match(/^\/reports\/([^/]+)\/chat$/);
+  const reportExportMatch = path.match(/^\/reports\/([^/]+)\/export$/);
   const reportIdMatch = path.match(/^\/reports\/([^/]+)$/);
   const taskStartMatch = path.match(/^\/tasks\/([^/]+)\/start$/);
 
@@ -311,6 +332,8 @@ export function resolveMock<T>(
     payload = { ok: true };
   } else if (M === 'POST' && reportChatMatch) {
     payload = { conversationId: `mock-conv-from-report-${Date.now()}` };
+  } else if (M === 'GET' && reportExportMatch) {
+    payload = mockReportExport(reportExportMatch[1]);
   } else if (M === 'GET' && reportIdMatch) {
     payload = mockReportDetail(reportIdMatch[1]);
   } else {
@@ -372,6 +395,71 @@ function mockReportList(query: string): ReportListResult {
   const items = page.map((id) => toListItem(REPORT_DETAILS[id]));
   const nextCursor = nextIndex < ids.length ? String(nextIndex) : null;
   return { items, nextCursor };
+}
+
+// GET /reports/:id/export：把报告详情转成分享图绘制结构（服务端职责，mock 复刻）。
+// 未命中固定库时回退战略示例结构（满足「export 返回 strategy 示例结构」）。
+const TYPE_LABELS: Record<ReportType, string> = {
+  strategy: '战略分析',
+  resume: '创业履历',
+  review: '复盘战报',
+  decision: '决策记录',
+};
+const BRAND = { name: '米诺战略参谋部', slogan: '对话产出报告，报告喂养对话' };
+
+function mockReportExport(id: string): ExportData {
+  const d = REPORT_DETAILS[id];
+  const detail: ReportDetail =
+    d && d.status === 'ready'
+      ? d
+      : {
+          // 回退：战略示例
+          id,
+          type: 'strategy',
+          status: 'ready',
+          title: '你的护城河：把信任做成根据地',
+          bodyMd: BODY_STRATEGY,
+          annotation: '「别急着摊大。风来了先把帆张稳，扩张是水到渠成的事。」',
+          origin: 'agent',
+          isRead: true,
+          wordCount: 900,
+          sequenceNo: null,
+          meta: {},
+          createdAt: new Date().toISOString(),
+          sources: [],
+        };
+  return {
+    title: detail.title,
+    type: detail.type,
+    typeLabel: TYPE_LABELS[detail.type],
+    createdAt: detail.createdAt,
+    wordCount: detail.wordCount,
+    origin: detail.origin,
+    paragraphs: mdToParagraphs(detail.bodyMd),
+    annotation: detail.annotation,
+    brand: BRAND,
+  };
+}
+
+// 受限 Markdown → 导出段落（## 小节=heading / 有序项=item / 其余非空行=text）
+function mdToParagraphs(md: string): ExportParagraph[] {
+  const out: ExportParagraph[] = [];
+  md.split('\n').forEach((raw) => {
+    const line = raw.trim();
+    if (!line) return;
+    if (line.indexOf('## ') === 0) {
+      out.push({ kind: 'heading', text: line.slice(3).trim() });
+    } else if (/^\d+\.\s/.test(line)) {
+      // 去掉序号前缀与 **粗体** 星号（分享图不渲染 markdown 强调）
+      out.push({ kind: 'item', text: stripBold(line.replace(/^\d+\.\s/, '')) });
+    } else {
+      out.push({ kind: 'text', text: stripBold(line) });
+    }
+  });
+  return out;
+}
+function stripBold(s: string): string {
+  return s.replace(/\*\*/g, '');
 }
 
 // GET /reports/:id：固定库命中直接返回；生成态 id 到期翻转为 ready（借战略全文）

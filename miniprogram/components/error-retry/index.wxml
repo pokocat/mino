@@ -1,0 +1,6 @@
+<view class="er">
+  <seal-avatar variant="ink" size="140" text="断"></seal-avatar>
+  <text class="er__title">{{text}}</text>
+  <text class="er__hint">{{hint}}</text>
+  <view class="er__btn" hover-class="er__btn--hover" bindtap="onRetry">重试</view>
+</view>

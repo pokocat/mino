@@ -1,7 +1,19 @@
 <paper-page>
-  <nav-bar title="{{navTitle}}" back="{{true}}" actionText="分享" bind:back="onBack" bind:action="onShare"></nav-bar>
+  <nav-bar title="{{navTitle}}" back="{{true}}" bind:back="onBack">
+    <!-- 转发：open-type="share" 触发 onShareAppMessage（转发给朋友）-->
+    <button
+      wx:if="{{report}}"
+      slot="action"
+      class="detail__share-btn"
+      open-type="share"
+      hover-class="none"
+    >分享</button>
+  </nav-bar>
 
   <view wx:if="{{loading}}" class="detail__loading">军师翻档中……</view>
+
+  <!-- 首屏网络错误 -->
+  <error-retry wx:elif="{{loadError}}" bind:retry="onRetry"></error-retry>
 
   <block wx:elif="{{report}}">
     <scroll-view class="detail__scroll" scroll-y enable-flex>
@@ -43,4 +55,7 @@
       bind:secondary="onSecondary"
     ></detail-action-bar>
   </block>
+
+  <!-- 隐藏离屏 canvas：分享图绘制用（不占布局）-->
+  <canvas type="2d" id="shareCanvas" class="detail__canvas"></canvas>
 </paper-page>

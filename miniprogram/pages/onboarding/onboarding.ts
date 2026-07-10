@@ -31,12 +31,12 @@ Page({
     this.setData({ agreed: !this.data.agreed });
   },
 
-  // 协议 / 隐私占位（M6 接入正式文档页）
+  // 协议 / 隐私：跳静态协议页
   onViewAgreement() {
-    wx.showToast({ title: '《用户协议》占位', icon: 'none' });
+    wx.navigateTo({ url: '/pages/legal/legal?type=agreement' });
   },
   onViewPrivacy() {
-    wx.showToast({ title: '《隐私政策》占位', icon: 'none' });
+    wx.navigateTo({ url: '/pages/legal/legal?type=privacy' });
   },
 
   // 微信登录

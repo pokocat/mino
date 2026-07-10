@@ -7,6 +7,7 @@
     "nav-bar": "/components/nav-bar/index",
     "seal-avatar": "/components/seal-avatar/index",
     "filter-chips": "/components/filter-chips/index",
-    "report-card": "/components/report-card/index"
+    "report-card": "/components/report-card/index",
+    "error-retry": "/components/error-retry/index"
   }
 }

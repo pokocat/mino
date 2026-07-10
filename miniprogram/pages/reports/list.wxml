@@ -17,11 +17,15 @@
       wx:key="id"
       report="{{item}}"
       bind:tap="onCardTap"
+      bind:retry="onCardRetry"
     ></report-card>
 
     <view wx:if="{{loadingMore}}" class="list__more">正在取更多…</view>
     <view wx:elif="{{!nextCursor}}" class="list__end">· 到底了 ·</view>
   </view>
+
+  <!-- 首屏网络错误 -->
+  <error-retry wx:elif="{{loadError}}" bind:retry="onRetry"></error-retry>
 
   <!-- 空态 -->
   <view wx:elif="{{inited && !loading}}" class="empty">

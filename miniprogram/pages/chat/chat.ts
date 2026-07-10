@@ -12,9 +12,12 @@ import {
   getTodayTask,
   startTask,
 } from '../../utils/api';
-import type { ChatMessage, SuggestionItem, ReportType } from '../../utils/api';
+import type { ChatMessage, SuggestionItem, ReportType, ApiError } from '../../utils/api';
 import { ssePost } from '../../utils/sse';
 import type { SseEvent, SseTask } from '../../utils/sse';
+
+// 军师收回消息后的占位文案
+const RETRACT_TEXT = '（这段话军师收回了）';
 import { STORAGE_KEYS } from '../../utils/config';
 import { requestSubscribe } from '../../utils/subscribe';
 
@@ -69,6 +72,8 @@ Page({
   _pollDeadline: 0, // 轮询截止时刻（60s）
   _dailyTaskId: '', // 今日一问任务 id（供「开始聊」调 start）
   _streakTimer: 0, // 发消息后 streak 延迟刷新定时器句柄
+  _lastSent: '', // 最近一次发送内容（军师拒收 400 时恢复输入供修改）
+  _retracted: false, // 当前流式回复是否已被军师收回（收回后停止追加）
 
   onShow() {
     // 同步自定义 tabBar 选中态
@@ -255,6 +260,8 @@ Page({
     }
     this._streamBuf = '';
     this._pendingNote = '';
+    this._lastSent = text;
+    this._retracted = false;
     this.setData({
       sending: true,
       typing: true,
@@ -268,8 +275,8 @@ Page({
       url: `/conversations/${this._conversationId}/messages`,
       data: { conversationId: this._conversationId, content: text },
       onEvent: (ev) => this._onEvent(ev),
-      onDone: () => this._finalizeStream(),
-      onError: (err) => this._onError(err.message),
+      onDone: (done) => this._finalizeStream(done.messageId),
+      onError: (err) => this._onError(err),
     });
   },
 
@@ -289,11 +296,34 @@ Page({
         // 仅提议：待整段回复落定后，插一条系统提示行
         this._pendingNote = `军师想把「${ev.topic}」整理成一份报告`;
       }
+    } else if (ev.type === 'retract') {
+      this._onRetract(ev.messageId);
+    }
+  },
+
+  // 军师收回某条消息：已落地按 messageId 替换内容；正在流式的那条停止追加并替换
+  _onRetract(messageId: string) {
+    // 1) 已落地的历史消息：按 id 命中替换
+    const idx = this.data.messages.findIndex((m) => m.id === messageId);
+    if (idx >= 0) {
+      this.setData({ [`messages[${idx}].content`]: RETRACT_TEXT });
+      return;
+    }
+    // 2) 正在流式的那条：停止追加，用收回占位替换流式内容
+    if (this.data.streaming.active || this.data.typing) {
+      if (this._flushTimer) {
+        clearTimeout(this._flushTimer);
+        this._flushTimer = 0;
+      }
+      this._retracted = true; // 后续 token 一律丢弃
+      this._streamBuf = RETRACT_TEXT; // finalize 时落此文案
+      this.setData({ typing: false, streaming: { active: true, text: RETRACT_TEXT } });
     }
   },
 
   // 逐 token 追加：写内部缓冲 + 60ms 节流刷新独立路径
   _appendToken(text: string) {
+    if (this._retracted) return; // 已被收回：忽略残余 token
     this._streamBuf += text;
     // 首 token 到达：三点 loading → 流式气泡
     if (this.data.typing) {
@@ -308,14 +338,19 @@ Page({
   },
 
   // 流结束：整段落进 messages，清空流式态，插 reportOffer 占位行
-  _finalizeStream() {
+  // messageId：服务端返回的消息 id，作为 assistant 气泡 id（供后续 retract 精确命中）
+  _finalizeStream(messageId?: string) {
     if (this._flushTimer) {
       clearTimeout(this._flushTimer);
       this._flushTimer = 0;
     }
     const appended: UiMessage[] = [];
     if (this._streamBuf) {
-      appended.push({ id: `a${++this._seq}`, role: 'assistant', content: this._streamBuf });
+      appended.push({
+        id: messageId || `a${++this._seq}`,
+        role: 'assistant',
+        content: this._streamBuf,
+      });
     }
     if (this._pendingNote) {
       appended.push({ id: `s${++this._seq}`, role: 'system', content: this._pendingNote });
@@ -335,13 +370,38 @@ Page({
     this._scheduleStreakRefresh();
   },
 
-  // 出错：丢弃半截流内容，显示友好错误气泡并允许重发
-  _onError(_msg: string) {
+  // 出错：丢弃半截流内容。区分军师拒收（400）与网络/服务异常。
+  _onError(err: ApiError) {
     if (this._flushTimer) {
       clearTimeout(this._flushTimer);
       this._flushTimer = 0;
     }
     this._streamBuf = '';
+
+    // 400「这段话我不能收」：移除刚发出的用户气泡，恢复输入供修改，以军师气泡展示提示
+    if (String(err.code) === '400') {
+      const messages = this.data.messages.slice();
+      if (messages.length && messages[messages.length - 1].role === 'user') messages.pop();
+      // 军师气泡样式展示拒收提示（role=assistant → 墨底左气泡）
+      messages.push({
+        id: `a${++this._seq}`,
+        role: 'assistant',
+        content: err.message || '这段话我不能收，换个说法',
+      });
+      this.setData(
+        {
+          messages,
+          input: this._lastSent, // 恢复原文供修改
+          streaming: { active: false, text: '' },
+          typing: false,
+          sending: false,
+          canRetry: false,
+        },
+        () => this._scrollToBottom()
+      );
+      return;
+    }
+
     const errMsg: UiMessage = {
       id: `e${++this._seq}`,
       role: 'assistant',
@@ -494,6 +554,14 @@ Page({
     this._clearPoll();
     this.setData({ modalVisible: false });
     wx.navigateTo({ url: `/pages/reports/detail?id=${id}&type=${type}` });
+  },
+
+  // 默认转发文案（右上菜单/长按转发）
+  onShareAppMessage(): WechatMiniprogram.Page.ICustomShareContent {
+    return {
+      title: '我在米诺战略参谋部跟军师聊生意，越聊他越懂我。',
+      path: '/pages/chat/chat',
+    };
   },
 
   // 滚动到底部锚点：置空再赋值以强制触发 scroll-into-view

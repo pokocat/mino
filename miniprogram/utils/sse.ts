@@ -13,7 +13,9 @@ export type SseEvent =
   | { type: 'token'; text: string }
   | { type: 'suggestions'; items: SuggestionItem[] }
   // reportOffer：军师提议写报告；有 reportId 表示军师已主动开写（前端跳过 generate）
-  | { type: 'reportOffer'; reportType: ReportType; topic: string; reportId?: string };
+  | { type: 'reportOffer'; reportType: ReportType; topic: string; reportId?: string }
+  // retract：军师收回某条已发消息；messageId 指向要替换内容的 assistant 气泡
+  | { type: 'retract'; messageId: string };
 
 export interface SseDone {
   messageId: string;
@@ -53,6 +55,22 @@ export function ssePost(opts: SsePostOptions): SseTask {
     data: opts.data,
     enableChunked: true, // 关键：分块接收（R1）
     responseType: 'arraybuffer',
+    // 非 2xx（如 400「这段话我不能收」）不走分块流，随 success 回来：解 body 取 {code,message}
+    success: (res) => {
+      if (res.statusCode >= 400) {
+        let body: Partial<ApiError> = {};
+        try {
+          const text = new Utf8IncrementalDecoder().decode(new Uint8Array(res.data as ArrayBuffer));
+          body = JSON.parse(text) as Partial<ApiError>;
+        } catch {
+          /* 非 JSON body：退回状态码 */
+        }
+        opts.onError?.({
+          code: String(body.code ?? res.statusCode),
+          message: body.message || '请求失败，请稍后再试',
+        });
+      }
+    },
     fail: (e) => {
       opts.onError?.({ code: 'NETWORK', message: e.errMsg || '网络异常' });
     },
@@ -98,6 +116,9 @@ function dispatch(frame: SseFrame, opts: SsePostOptions): void {
         // reportId 可缺省（军师仅提议、未开写）
         reportId: payload.reportId ? String(payload.reportId) : undefined,
       });
+      break;
+    case 'retract':
+      opts.onEvent({ type: 'retract', messageId: String(payload.messageId ?? '') });
       break;
     case 'done':
       opts.onDone?.({

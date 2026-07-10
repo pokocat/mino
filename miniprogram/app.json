@@ -3,7 +3,8 @@
     "pages/onboarding/onboarding",
     "pages/chat/chat",
     "pages/reports/list",
-    "pages/reports/detail"
+    "pages/reports/detail",
+    "pages/legal/legal"
   ],
   "window": {
     "navigationStyle": "custom",

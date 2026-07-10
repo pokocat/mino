@@ -7,6 +7,7 @@
     "md-report": "/components/md-report/index",
     "annotation-block": "/components/annotation-block/index",
     "source-tags": "/components/source-tags/index",
-    "detail-action-bar": "/components/detail-action-bar/index"
+    "detail-action-bar": "/components/detail-action-bar/index",
+    "error-retry": "/components/error-retry/index"
   }
 }

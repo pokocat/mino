@@ -222,6 +222,33 @@ export interface GenerateReportResult {
   status: ReportStatus;
 }
 
+// ---------------- 报告导出（M6 分享图）----------------
+
+// 导出正文段落（受限结构：小节标题 / 正文 / 有序项）
+export interface ExportParagraph {
+  kind: 'heading' | 'text' | 'item';
+  text: string;
+}
+
+// 品牌信息（分享图页脚）
+export interface ExportBrand {
+  name: string;
+  slogan: string;
+}
+
+// GET /reports/:id/export 返回（canvas 分享图绘制所需结构化数据）
+export interface ExportData {
+  title: string;
+  type: ReportType;
+  typeLabel: string;
+  createdAt: string;
+  wordCount: number;
+  origin: ReportOrigin;
+  paragraphs: ExportParagraph[];
+  annotation: string;
+  brand: ExportBrand;
+}
+
 // POST /reports/generate {conversationId, type} → {reportId, status}
 export function generateReport(
   conversationId: string,
@@ -268,4 +295,9 @@ export function chatFromReport(id: string): Promise<{ conversationId: string }> 
     url: `/reports/${id}/chat`,
     method: 'POST',
   });
+}
+
+// GET /reports/:id/export → 分享图绘制所需结构化数据
+export function exportReport(id: string): Promise<ExportData> {
+  return request<ExportData>({ url: `/reports/${id}/export`, method: 'GET' });
 }
