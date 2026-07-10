@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+@keyframes mn-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.78);}}
+@keyframes mn-spin{to{transform:rotate(360deg);}}
+a,a:hover{color:#B23A2E;}
+</style>
+</helmet>
+
+<!-- ============ TITLE ============ -->
+<div style="position:absolute;left:0px;top:0px;width:1040px;font-family:'Noto Sans SC',sans-serif;">
+  <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:3px;color:#8d887f;text-transform:uppercase;margin-bottom:14px;">Mino · 宣纸水墨 · V3 精简版 · 可实现优先</div>
+  <div style="font-family:'Noto Serif SC',serif;font-weight:900;font-size:46px;color:#1a1714;line-height:1.05;letter-spacing:1px;">天势小程序 · V3</div>
+  <div style="font-size:15px;color:#55504a;margin-top:16px;max-width:860px;line-height:1.8;">回到本质：把「V6.0 军师提示词」在 Claude Code 里跑的那套——<strong style="color:#1a1714;">对话 → 理解用户 → 产出报告</strong>——原样搬到小程序。<strong style="color:#B23A2E;">只有两大块：军师对话 + 报告库</strong>。对话是唯一引擎，报告是唯一交付物。砍掉排盘引擎、评分公式、解锁/段位等高风险或需用户填结构化数据的设计；任务派发 / 微信推送 / 连续天数用最轻的方式塞进对话页，不单独占位。</div>
+  <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+    <span style="font-size:12px;color:#B23A2E;border:1px solid rgba(178,58,46,.35);border-radius:14px;padding:5px 13px;">FastGPT 为唯一引擎</span>
+    <span style="font-size:12px;color:#574f44;border:1px solid rgba(40,34,28,.2);border-radius:14px;padding:5px 13px;">对话 + 报告库</span>
+    <span style="font-size:12px;color:#574f44;border:1px solid rgba(40,34,28,.2);border-radius:14px;padding:5px 13px;">报告 = Markdown 文档</span>
+    <span style="font-size:12px;color:#6F8C5A;border:1px solid rgba(111,140,90,.45);border-radius:14px;padding:5px 13px;">零算命引擎 · 低技术风险</span>
+  </div>
+</div>
+
+<!-- ============ 00 技术架构 ============ -->
+<div style="position:absolute;left:0px;top:250px;width:1836px;font-family:'Noto Sans SC',sans-serif;">
+  <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:#8d887f;margin-bottom:12px;">00 · 技术架构 / 可实现性 · 一切围绕 FastGPT</div>
+  <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.12);border-radius:8px;padding:26px 28px;box-shadow:0 8px 28px rgba(40,34,28,.08);">
+    <div style="display:flex;gap:18px;align-items:stretch;flex-wrap:wrap;">
+      <!-- 前端 -->
+      <div style="flex:1;min-width:230px;background:#F6F1E5;border:1px solid rgba(40,34,28,.12);border-radius:6px;padding:18px;">
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#3D6FA0;">FRONTEND</div>
+        <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:#1F1B16;margin-top:6px;">微信小程序</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:5px;padding:9px 11px;font-size:12px;color:#574f44;">对话页 · 流式打字机</div>
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:5px;padding:9px 11px;font-size:12px;color:#574f44;">报告库 · Markdown 渲染</div>
+        </div>
+        <div style="font-size:11px;color:#9b9384;margin-top:12px;line-height:1.6;">原生 / Taro 皆可，成熟能力，标准页面。</div>
+      </div>
+      <div style="display:flex;align-items:center;color:#B23A2E;font-size:22px;">→</div>
+      <!-- 轻后端 -->
+      <div style="flex:1.1;min-width:250px;background:#F6F1E5;border:1px solid rgba(40,34,28,.12);border-radius:6px;padding:18px;">
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#9A7B3F;">THIN BACKEND</div>
+        <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:#1F1B16;margin-top:6px;">自有轻后端 (Node/Go)</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:5px;padding:9px 11px;font-size:12px;color:#574f44;">微信登录 · JWT</div>
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:5px;padding:9px 11px;font-size:12px;color:#574f44;">代理 FastGPT 对话 (注入 chatId)</div>
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:5px;padding:9px 11px;font-size:12px;color:#574f44;"><b style="color:#1F1B16;">reports</b> 表 · 存 Markdown 报告</div>
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:5px;padding:9px 11px;font-size:12px;color:#574f44;"><b style="color:#1F1B16;">tasks</b> 表 · cron/随机 + 微信推送</div>
+        </div>
+        <div style="font-size:11px;color:#9b9384;margin-top:12px;line-height:1.6;">全是 CRUD + 定时 + 推送，无算法风险。</div>
+      </div>
+      <div style="display:flex;align-items:center;color:#B23A2E;font-size:22px;">→</div>
+      <!-- FastGPT -->
+      <div style="flex:1.1;min-width:250px;background:#1F1B16;border-radius:6px;padding:18px;box-shadow:0 8px 22px rgba(40,34,28,.2);">
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#E8C77A;">ENGINE · FastGPT</div>
+        <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:#F6F1E5;margin-top:6px;">军师 = FastGPT 应用</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="background:rgba(246,241,229,.06);border:1px solid rgba(232,199,122,.22);border-radius:5px;padding:9px 11px;font-size:12px;color:#e8dcc4;">装 V6.0 提示词 (轻量势叙事，不排盘)</div>
+          <div style="background:rgba(246,241,229,.06);border:1px solid rgba(232,199,122,.22);border-radius:5px;padding:9px 11px;font-size:12px;color:#e8dcc4;"><b style="color:#E8C77A;">每用户知识库</b> · 对话要点写入</div>
+          <div style="background:rgba(246,241,229,.06);border:1px solid rgba(232,199,122,.22);border-radius:5px;padding:9px 11px;font-size:12px;color:#e8dcc4;">下次对话自动检索 = 越来越懂你</div>
+          <div style="background:rgba(246,241,229,.06);border:1px solid rgba(232,199,122,.22);border-radius:5px;padding:9px 11px;font-size:12px;color:#e8dcc4;">「总结成报告」工作流 → 出 Markdown</div>
+        </div>
+        <div style="font-size:11px;color:#b8b0a2;margin-top:12px;line-height:1.6;">知识库/记忆是 FastGPT 自带能力，不自造。</div>
+      </div>
+    </div>
+    <div style="margin-top:18px;padding-top:16px;border-top:1px dashed rgba(40,34,28,.14);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:#6F8C5A;">✓ 可实现性结论</span>
+      <span style="font-size:12.5px;color:#574f44;line-height:1.7;">四种能力都是成熟组件：<b style="color:#1F1B16;">对话 API + 知识库(FastGPT 自带)</b>、<b style="color:#1F1B16;">Markdown 生成与展示</b>、<b style="color:#1F1B16;">CRUD + 定时任务</b>、<b style="color:#1F1B16;">微信订阅消息推送</b>。没有一处需要自研算法或让 LLM 生成精确数字。</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 01 军师对话首页 ============ -->
+<div style="position:absolute;left:0px;top:720px;width:414px;font-family:'Noto Sans SC',sans-serif;">
+  <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:#8d887f;margin-bottom:12px;">01 · 军师对话首页 · tab 根 · 核心</div>
+  <div style="width:414px;background:#0b0a08;border-radius:52px;padding:13px;box-shadow:0 30px 70px rgba(40,34,28,.28);">
+    <div style="position:relative;width:388px;height:844px;border-radius:40px;overflow:hidden;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(40,34,28,.013) 3px,rgba(40,34,28,.013) 4px),radial-gradient(circle at 50% -5%,#F6F1E5,#E6DCC9);color:#1F1B16;display:flex;flex-direction:column;">
+      <div style="height:46px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;color:#2a241c;">
+        <span style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;">9:41</span>
+        <div style="display:flex;gap:7px;align-items:center;"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" fill-opacity=".4"/></svg><svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 11.2l2.2-2.7a3.4 3.4 0 00-4.4 0l2.2 2.7z"/><path d="M8.5 4.3c1.9 0 3.7.7 5 2l1.5-1.7a9 9 0 00-13 0L3.5 6.3a7 7 0 015-2z"/></svg><svg width="24" height="12" viewBox="0 0 24 12" fill="none"><rect x=".5" y=".5" width="19" height="11" rx="3" stroke="currentColor" stroke-opacity=".45"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><path d="M21.5 4v4c.9-.3.9-3.7 0-4z" fill="currentColor" fill-opacity=".45"/></svg></div>
+      </div>
+      <div style="height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;">
+        <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;letter-spacing:4px;color:#1F1B16;">米诺战略参谋部</div>
+        <div style="position:absolute;right:16px;display:flex;align-items:center;gap:4px;background:rgba(178,58,46,.08);border-radius:12px;padding:3px 9px;"><span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:#B23A2E;">连续 47</span></div>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:6px 18px 0;">
+        <div style="display:flex;align-items:center;gap:13px;padding:6px 2px 14px;">
+          <div style="width:50px;height:50px;border-radius:4px;background:#B23A2E;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(178,58,46,.3);"><span style="font-family:'Noto Serif SC',serif;font-weight:900;font-size:28px;color:#F6F1E5;">势</span></div>
+          <div style="flex:1;">
+            <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:19px;color:#1F1B16;">兄弟，坐下聊。</div>
+            <div style="font-size:11.5px;color:#6B6256;margin-top:4px;">已为你写下 <span style="color:#9A7B3F;">6 份报告</span> · 越聊我越懂你</div>
+          </div>
+        </div>
+        <!-- 今日一问（任务派发·轻） -->
+        <div style="position:relative;background:#1F1B16;border-radius:6px;padding:15px 17px;overflow:hidden;box-shadow:0 8px 22px rgba(40,34,28,.22);">
+          <span style="position:absolute;top:12px;right:14px;width:8px;height:8px;border-radius:50%;background:#B23A2E;animation:mn-pulse 2.4s infinite;"></span>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#E8C77A;">今日一问 · 军师推送</span></div>
+          <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:#F6F1E5;margin-top:9px;line-height:1.5;">今天想通一件事：你最值钱的一张牌是什么？</div>
+          <div style="font-size:11.5px;color:#b8b0a2;margin-top:7px;line-height:1.6;">聊透了，我给你写进《战略分析》。约 3 分钟。</div>
+          <div style="margin-top:13px;text-align:center;background:#B23A2E;border-radius:6px;padding:10px 0;font-size:13px;color:#F6F1E5;font-weight:500;">开始聊 →</div>
+        </div>
+        <!-- 对话流 -->
+        <div style="margin-top:16px;display:flex;gap:9px;align-items:flex-start;">
+          <div style="width:30px;height:30px;border-radius:4px;flex-shrink:0;background:#1F1B16;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif SC',serif;font-weight:700;font-size:14px;color:#E8C77A;">师</div>
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:4px 13px 13px 13px;padding:11px 13px;font-size:13px;line-height:1.7;color:#1F1B16;max-width:250px;box-shadow:0 3px 10px rgba(40,34,28,.05);">昨天你说想砍掉那条副线。今天先别急——你手里哪张牌最硬？咱们聊透了我记进你的档案，往后越聊我越懂你。</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:9px;align-items:flex-start;flex-direction:row-reverse;">
+          <div style="background:#B23A2E;border-radius:13px 4px 13px 13px;padding:11px 13px;font-size:13px;line-height:1.7;color:#F6F1E5;max-width:230px;box-shadow:0 3px 10px rgba(178,58,46,.2);">是客户的信任吧。老客户闭着眼睛把人交给我。</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:9px;align-items:flex-start;">
+          <div style="width:30px;height:30px;border-radius:4px;flex-shrink:0;background:#1F1B16;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif SC',serif;font-weight:700;font-size:14px;color:#E8C77A;">师</div>
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:4px 13px 13px 13px;padding:11px 13px;font-size:13px;line-height:1.7;color:#1F1B16;max-width:250px;box-shadow:0 3px 10px rgba(40,34,28,.05);">这就是你的根据地——别人拿钱砸半年也砸不动的东西。要不要我把这段整理成一份报告？</div>
+        </div>
+        <!-- suggestions -->
+        <div style="margin-top:14px;">
+          <div style="font-size:10.5px;color:#9b9384;letter-spacing:1px;margin-bottom:8px;">接着聊 ·</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="background:#1F1B16;border-radius:20px;padding:9px 14px;font-size:12.5px;color:#E8C77A;display:flex;align-items:center;gap:7px;"><span style="font-size:13px;">✍</span>好，帮我写一份《战略分析》报告</div>
+            <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.16);border-radius:20px;padding:9px 14px;font-size:12.5px;color:#574f44;">这张牌别人半年能抄走吗？</div>
+            <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.16);border-radius:20px;padding:9px 14px;font-size:12.5px;color:#574f44;">它是怎么一点点攒起来的？</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex-shrink:0;padding:10px 14px 8px;background:#EDE5D3;border-top:1px solid rgba(40,34,28,.1);display:flex;gap:10px;align-items:center;">
+        <div style="flex:1;border:1px solid rgba(40,34,28,.16);border-radius:18px;padding:10px 14px;font-size:13px;background:#FBF7EF;color:#9b9384;">说说你的想法……</div>
+        <div style="width:38px;height:38px;border-radius:50%;background:#B23A2E;display:flex;align-items:center;justify-content:center;color:#F6F1E5;flex-shrink:0;font-size:17px;box-shadow:0 4px 12px rgba(178,58,46,.3);">↑</div>
+      </div>
+      <div style="flex-shrink:0;height:60px;padding-bottom:6px;background:#EDE5D3;display:flex;align-items:center;justify-content:space-around;border-top:1px solid rgba(40,34,28,.1);">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#B23A2E;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H9l-4 3v-3H4z" stroke-linejoin="round"/></svg><span style="font-size:10px;">军师</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#9b9384;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l3 3v15H6z" stroke-linejoin="round"/><path d="M9 9h6M9 13h6M9 17h4" stroke-linecap="round"/></svg><span style="font-size:10px;">报告库</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 02 报告库 ============ -->
+<div style="position:absolute;left:474px;top:720px;width:414px;font-family:'Noto Sans SC',sans-serif;">
+  <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:#8d887f;margin-bottom:12px;">02 · 报告库 · tab 根 · 唯一交付物</div>
+  <div style="width:414px;background:#0b0a08;border-radius:52px;padding:13px;box-shadow:0 30px 70px rgba(40,34,28,.28);">
+    <div style="position:relative;width:388px;height:844px;border-radius:40px;overflow:hidden;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(40,34,28,.013) 3px,rgba(40,34,28,.013) 4px),radial-gradient(circle at 50% -5%,#F6F1E5,#E6DCC9);color:#1F1B16;display:flex;flex-direction:column;">
+      <div style="height:46px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;color:#2a241c;">
+        <span style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;">9:41</span>
+        <div style="display:flex;gap:7px;align-items:center;"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" fill-opacity=".4"/></svg><svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 11.2l2.2-2.7a3.4 3.4 0 00-4.4 0l2.2 2.7z"/><path d="M8.5 4.3c1.9 0 3.7.7 5 2l1.5-1.7a9 9 0 00-13 0L3.5 6.3a7 7 0 015-2z"/></svg><svg width="24" height="12" viewBox="0 0 24 12" fill="none"><rect x=".5" y=".5" width="19" height="11" rx="3" stroke="currentColor" stroke-opacity=".45"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><path d="M21.5 4v4c.9-.3.9-3.7 0-4z" fill="currentColor" fill-opacity=".45"/></svg></div>
+      </div>
+      <div style="height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;"><div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;letter-spacing:3px;color:#1F1B16;">报告库</div><div style="position:absolute;right:16px;font-size:11px;color:#6B6256;">来自 FastGPT 知识库</div></div>
+      <!-- 筛选 -->
+      <div style="flex-shrink:0;padding:6px 18px 10px;display:flex;gap:7px;overflow-x:auto;">
+        <span style="flex-shrink:0;font-size:12px;color:#F6F1E5;background:#B23A2E;border-radius:16px;padding:6px 13px;">全部 12</span>
+        <span style="flex-shrink:0;font-size:12px;color:#574f44;background:#FBF7EF;border:1px solid rgba(40,34,28,.14);border-radius:16px;padding:6px 13px;">战略分析</span>
+        <span style="flex-shrink:0;font-size:12px;color:#574f44;background:#FBF7EF;border:1px solid rgba(40,34,28,.14);border-radius:16px;padding:6px 13px;">创业履历</span>
+        <span style="flex-shrink:0;font-size:12px;color:#574f44;background:#FBF7EF;border:1px solid rgba(40,34,28,.14);border-radius:16px;padding:6px 13px;">复盘战报</span>
+        <span style="flex-shrink:0;font-size:12px;color:#574f44;background:#FBF7EF;border:1px solid rgba(40,34,28,.14);border-radius:16px;padding:6px 13px;">决策记录</span>
+      </div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:0 18px 16px;">
+        <!-- 军师主动产出·新 -->
+        <div style="background:#FBF7EF;border:1.5px solid rgba(178,58,46,.4);border-radius:8px;padding:15px 16px;box-shadow:0 6px 16px rgba(178,58,46,.1);position:relative;">
+          <span style="position:absolute;top:13px;right:14px;font-size:9px;color:#B23A2E;background:rgba(178,58,46,.1);border-radius:8px;padding:2px 8px;">军师刚写好</span>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:#B23A2E;background:rgba(178,58,46,.08);border-radius:9px;padding:2px 9px;">战略分析</span></div>
+          <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:#1F1B16;margin-top:9px;">你的护城河：把信任做成根据地</div>
+          <div style="font-size:11.5px;color:#6B6256;margin-top:6px;line-height:1.6;">主要矛盾 · 定位 · 三步走。基于今天关于「最值钱的牌」的对话。</div>
+          <div style="font-size:10.5px;color:#9b9384;margin-top:9px;">今天 14:32 · 军师执笔 · 约 900 字</div>
+        </div>
+        <!-- 列表 -->
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:9px;">
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:8px;padding:13px 15px;box-shadow:0 4px 12px rgba(40,34,28,.05);">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:#9A7B3F;background:rgba(154,123,63,.1);border-radius:9px;padding:2px 9px;">创业履历</span><span style="font-size:10px;color:#9b9384;">我请军师写的</span></div>
+            <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;margin-top:8px;">起势：我为什么下海</div>
+            <div style="font-size:10.5px;color:#9b9384;margin-top:6px;">6月20日 · 3 段对话织成 · 约 1200 字</div>
+          </div>
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:8px;padding:13px 15px;box-shadow:0 4px 12px rgba(40,34,28,.05);">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:#3D6FA0;background:rgba(61,111,160,.1);border-radius:9px;padding:2px 9px;">复盘战报</span></div>
+            <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;margin-top:8px;">第 6 周复盘：砍掉副线之后</div>
+            <div style="font-size:10.5px;color:#9b9384;margin-top:6px;">6月18日 · 军师执笔 · 约 700 字</div>
+          </div>
+          <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:8px;padding:13px 15px;box-shadow:0 4px 12px rgba(40,34,28,.05);">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:#7A5BA0;background:rgba(122,91,160,.1);border-radius:9px;padding:2px 9px;">决策记录</span></div>
+            <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;margin-top:8px;">决定：暂缓拓第二家门店</div>
+            <div style="font-size:10.5px;color:#9b9384;margin-top:6px;">6月15日 · 待验证 · 约 400 字</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex-shrink:0;height:60px;padding-bottom:6px;background:#EDE5D3;display:flex;align-items:center;justify-content:space-around;border-top:1px solid rgba(40,34,28,.1);">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#9b9384;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H9l-4 3v-3H4z" stroke-linejoin="round"/></svg><span style="font-size:10px;">军师</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#B23A2E;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l3 3v15H6z" stroke-linejoin="round"/><path d="M9 9h6M9 13h6M9 17h4" stroke-linecap="round"/></svg><span style="font-size:10px;">报告库</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 03 报告详情·战略分析 ============ -->
+<div style="position:absolute;left:948px;top:720px;width:414px;font-family:'Noto Sans SC',sans-serif;">
+  <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:#8d887f;margin-bottom:12px;">03 · 报告详情 · 战略分析 (Markdown)</div>
+  <div style="width:414px;background:#0b0a08;border-radius:52px;padding:13px;box-shadow:0 30px 70px rgba(40,34,28,.28);">
+    <div style="position:relative;width:388px;height:844px;border-radius:40px;overflow:hidden;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(40,34,28,.013) 3px,rgba(40,34,28,.013) 4px),radial-gradient(circle at 50% -5%,#F6F1E5,#E6DCC9);color:#1F1B16;display:flex;flex-direction:column;">
+      <div style="height:46px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;color:#2a241c;">
+        <span style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;">9:41</span>
+        <div style="display:flex;gap:7px;align-items:center;"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" fill-opacity=".4"/></svg><svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 11.2l2.2-2.7a3.4 3.4 0 00-4.4 0l2.2 2.7z"/><path d="M8.5 4.3c1.9 0 3.7.7 5 2l1.5-1.7a9 9 0 00-13 0L3.5 6.3a7 7 0 015-2z"/></svg><svg width="24" height="12" viewBox="0 0 24 12" fill="none"><rect x=".5" y=".5" width="19" height="11" rx="3" stroke="currentColor" stroke-opacity=".45"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><path d="M21.5 4v4c.9-.3.9-3.7 0-4z" fill="currentColor" fill-opacity=".45"/></svg></div>
+      </div>
+      <div style="height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;"><div style="position:absolute;left:18px;font-size:24px;color:#1F1B16;">‹</div><div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;letter-spacing:2px;color:#1F1B16;">战略分析</div><div style="position:absolute;right:16px;font-size:12px;color:#B23A2E;">分享</div></div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:8px 22px 16px;">
+        <div style="padding:6px 0 14px;border-bottom:1px solid rgba(40,34,28,.1);">
+          <span style="font-size:10px;color:#B23A2E;background:rgba(178,58,46,.08);border-radius:9px;padding:2px 9px;">战略分析</span>
+          <div style="font-family:'Noto Serif SC',serif;font-weight:900;font-size:22px;color:#1F1B16;margin-top:10px;line-height:1.4;">你的护城河：把信任做成根据地</div>
+          <div style="font-size:10.5px;color:#9b9384;margin-top:8px;">军师执笔 · 今天 14:32 · 源自「最值钱的牌」对话</div>
+        </div>
+        <!-- markdown body -->
+        <div style="margin-top:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="width:4px;height:15px;background:#B23A2E;border-radius:2px;"></span><span style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">主要矛盾</span></div>
+          <div style="font-size:13px;color:#2a241c;line-height:1.85;margin-top:8px;">你想扩张，但你真正的家底——客户信任——是慢功夫攒出来的，快不得。<b style="color:#B23A2E;">扩张的速度 vs 信任的沉淀速度</b>，这是当前最主要的矛盾。</div>
+        </div>
+        <div style="margin-top:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="width:4px;height:15px;background:#9A7B3F;border-radius:2px;"></span><span style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">定位</span></div>
+          <div style="font-size:13px;color:#2a241c;line-height:1.85;margin-top:8px;">不做「更多」，做「更被信任」。你的根据地是老客户的口碑，别人拿钱砸半年也砸不动。</div>
+        </div>
+        <div style="margin-top:16px;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="width:4px;height:15px;background:#3D6FA0;border-radius:2px;"></span><span style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">三步走</span></div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:9px;">
+            <div style="display:flex;gap:11px;align-items:flex-start;"><span style="font-family:'Noto Serif SC',serif;font-weight:900;font-size:15px;color:#B23A2E;flex-shrink:0;">壹</span><div style="font-size:12.5px;color:#574f44;line-height:1.65;"><b style="color:#1F1B16;">守。</b>先把现有老客户的复购和转介绍做到极致，别分心。</div></div>
+            <div style="display:flex;gap:11px;align-items:flex-start;"><span style="font-family:'Noto Serif SC',serif;font-weight:900;font-size:15px;color:#B23A2E;flex-shrink:0;">贰</span><div style="font-size:12.5px;color:#574f44;line-height:1.65;"><b style="color:#1F1B16;">攒。</b>把「凭什么被信任」拆成可复制的动作，写成手册。</div></div>
+            <div style="display:flex;gap:11px;align-items:flex-start;"><span style="font-family:'Noto Serif SC',serif;font-weight:900;font-size:15px;color:#B23A2E;flex-shrink:0;">叁</span><div style="font-size:12.5px;color:#574f44;line-height:1.65;"><b style="color:#1F1B16;">扩。</b>手册跑通后再开第二家，让信任可迁移，而非从零再来。</div></div>
+          </div>
+        </div>
+        <!-- 军师批注 -->
+        <div style="margin-top:18px;background:#FBF7EF;border-left:3px solid #9A7B3F;border-radius:0 6px 6px 0;padding:12px 15px;box-shadow:0 4px 12px rgba(40,34,28,.05);">
+          <div style="font-size:10px;color:#9A7B3F;letter-spacing:1px;margin-bottom:6px;">军师一句话</div>
+          <div style="font-family:'Noto Serif SC',serif;font-size:13px;color:#1F1B16;line-height:1.75;">「别急着摊大。风来了先把帆张稳，扩张是水到渠成的事。」</div>
+        </div>
+      </div>
+      <div style="flex-shrink:0;padding:10px 18px 18px;background:linear-gradient(180deg,rgba(238,230,214,0),#EDE5D3 40%);display:flex;gap:10px;">
+        <div style="flex:1;text-align:center;background:#1F1B16;border-radius:8px;padding:12px 0;font-size:13.5px;color:#E8C77A;font-weight:500;">跟军师聊这份报告</div>
+        <div style="width:46px;text-align:center;background:#FBF7EF;border:1px solid rgba(40,34,28,.16);border-radius:8px;padding:12px 0;font-size:16px;color:#B23A2E;">↧</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 04 报告详情·创业履历 ============ -->
+<div style="position:absolute;left:1422px;top:720px;width:414px;font-family:'Noto Sans SC',sans-serif;">
+  <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:#8d887f;margin-bottom:12px;">04 · 报告详情 · 创业履历 (自传体)</div>
+  <div style="width:414px;background:#0b0a08;border-radius:52px;padding:13px;box-shadow:0 30px 70px rgba(40,34,28,.28);">
+    <div style="position:relative;width:388px;height:844px;border-radius:40px;overflow:hidden;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(40,34,28,.013) 3px,rgba(40,34,28,.013) 4px),radial-gradient(circle at 50% -5%,#F6F1E5,#E6DCC9);color:#1F1B16;display:flex;flex-direction:column;">
+      <div style="height:46px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;color:#2a241c;">
+        <span style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;">9:41</span>
+        <div style="display:flex;gap:7px;align-items:center;"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" fill-opacity=".4"/></svg><svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 11.2l2.2-2.7a3.4 3.4 0 00-4.4 0l2.2 2.7z"/><path d="M8.5 4.3c1.9 0 3.7.7 5 2l1.5-1.7a9 9 0 00-13 0L3.5 6.3a7 7 0 015-2z"/></svg><svg width="24" height="12" viewBox="0 0 24 12" fill="none"><rect x=".5" y=".5" width="19" height="11" rx="3" stroke="currentColor" stroke-opacity=".45"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><path d="M21.5 4v4c.9-.3.9-3.7 0-4z" fill="currentColor" fill-opacity=".45"/></svg></div>
+      </div>
+      <div style="height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;"><div style="position:absolute;left:18px;font-size:24px;color:#1F1B16;">‹</div><div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;letter-spacing:2px;color:#1F1B16;">创业履历</div><div style="position:absolute;right:16px;font-size:12px;color:#B23A2E;">分享</div></div>
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:8px 22px 16px;">
+        <div style="text-align:center;padding:8px 0 16px;">
+          <span style="font-size:10px;color:#9A7B3F;background:rgba(154,123,63,.1);border-radius:9px;padding:2px 9px;">创业履历 · 第一篇</span>
+          <div style="font-family:'Noto Serif SC',serif;font-weight:900;font-size:24px;color:#1F1B16;margin-top:10px;">起势：我为什么下海</div>
+          <div style="display:inline-block;width:40px;height:2px;background:#B23A2E;margin-top:12px;"></div>
+        </div>
+        <div style="font-family:'Noto Serif SC',serif;font-size:14px;color:#2a241c;line-height:2.05;text-align:justify;">
+          <span style="float:left;font-size:44px;line-height:.85;font-weight:900;color:#B23A2E;margin:4px 10px 0 0;">二</span>〇一七年冬天，牧之在一家国企干到第七个年头，忽然觉得日子像一潭静水。<br><br>他辞职那天没跟任何人商量。不是冲动——是攒了太久的一口气。他想验证一件事：离开体系的庇护，自己那点本事还值不值钱。<br><br>头半年很苦。可他发现，真正让客户留下来的，从来不是价格，是那种「交给他放心」的踏实感。这后来成了他整盘生意的底色。
+        </div>
+        <div style="margin-top:18px;background:#FBF7EF;border-left:3px solid #9A7B3F;border-radius:0 6px 6px 0;padding:12px 15px;box-shadow:0 4px 12px rgba(40,34,28,.05);">
+          <div style="font-size:10px;color:#9A7B3F;letter-spacing:1px;margin-bottom:6px;">军师批注</div>
+          <div style="font-family:'Noto Serif SC',serif;font-size:13px;color:#1F1B16;line-height:1.75;">「你说是赌一口气，其实是你早就看清了自己的牌。下海不是冲动，是时势到了。」</div>
+        </div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:#6B6256;background:rgba(40,34,28,.05);border-radius:10px;padding:3px 10px;">源自 6/20 对话</span>
+          <span style="font-size:10px;color:#6B6256;background:rgba(40,34,28,.05);border-radius:10px;padding:3px 10px;">3 段织成</span>
+          <span style="font-size:10px;color:#9A7B3F;background:rgba(154,123,63,.1);border-radius:10px;padding:3px 10px;">存入知识库</span>
+        </div>
+      </div>
+      <div style="flex-shrink:0;padding:10px 18px 18px;background:linear-gradient(180deg,rgba(238,230,214,0),#EDE5D3 40%);display:flex;gap:10px;">
+        <div style="flex:1;text-align:center;background:#1F1B16;border-radius:8px;padding:12px 0;font-size:13.5px;color:#E8C77A;font-weight:500;">跟军师补充这一篇</div>
+        <div style="width:46px;text-align:center;background:#FBF7EF;border:1px solid rgba(40,34,28,.16);border-radius:8px;padding:12px 0;font-size:16px;color:#B23A2E;">✎</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 05 报告生成弹层 ============ -->
+<div style="position:absolute;left:0px;top:1720px;width:414px;font-family:'Noto Sans SC',sans-serif;">
+  <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:#8d887f;margin-bottom:12px;">05 · 报告生成中 · 弹层</div>
+  <div style="width:414px;background:#0b0a08;border-radius:52px;padding:13px;box-shadow:0 30px 70px rgba(40,34,28,.28);">
+    <div style="position:relative;width:388px;height:844px;border-radius:40px;overflow:hidden;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(40,34,28,.013) 3px,rgba(40,34,28,.013) 4px),radial-gradient(circle at 50% -5%,#F6F1E5,#E6DCC9);color:#1F1B16;">
+      <div style="position:absolute;inset:0;background:rgba(20,17,13,.55);"></div>
+      <div style="position:absolute;left:22px;right:22px;top:210px;background:#F6F1E5;border-radius:12px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);">
+        <div style="padding:30px 24px 26px;text-align:center;">
+          <div style="width:56px;height:56px;border-radius:50%;border:2px solid rgba(178,58,46,.2);border-top-color:#B23A2E;margin:0 auto;animation:mn-spin 1s linear infinite;"></div>
+          <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:18px;color:#1F1B16;margin-top:20px;">军师正在为你执笔……</div>
+          <div style="font-size:12px;color:#6B6256;margin-top:10px;line-height:1.7;">正在把刚才关于「最值钱的牌」的对话，<br>整理成一份《战略分析》报告。</div>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:7px;text-align:left;">
+            <div style="display:flex;align-items:center;gap:9px;font-size:12px;color:#6F8C5A;"><span>✓</span>读取本次对话要点</div>
+            <div style="display:flex;align-items:center;gap:9px;font-size:12px;color:#6F8C5A;"><span>✓</span>检索你的知识库（过往画像）</div>
+            <div style="display:flex;align-items:center;gap:9px;font-size:12px;color:#9b9384;"><span style="width:12px;">·</span>撰写 主要矛盾 / 定位 / 三步走…</div>
+          </div>
+        </div>
+      </div>
+      <div style="position:absolute;left:22px;right:22px;bottom:44px;text-align:center;"><div style="font-size:11px;color:#e8dcc4;line-height:1.7;">写好会存进「报告库」，并微信通知你。<br><span style="color:#E8C77A;">你可以先回去接着聊。</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ IA / 范围说明 ============ -->
+<div style="position:absolute;left:474px;top:1720px;width:854px;font-family:'Noto Sans SC',sans-serif;">
+  <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:#8d887f;margin-bottom:12px;">V3 信息架构 · 范围与取舍</div>
+  <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.12);border-radius:8px;padding:24px 26px;box-shadow:0 8px 24px rgba(40,34,28,.07);height:844px;overflow-y:auto;">
+    <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:18px;color:#1F1B16;">最小可行 · 底部 2 tab</div>
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:12px;">
+      <div style="border-left:3px solid #B23A2E;padding:2px 0 2px 12px;"><div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">军师 <span style="font-size:11px;color:#9b9384;font-weight:400;">· 对话（引擎）</span></div><div style="font-size:12px;color:#6B6256;line-height:1.65;margin-top:3px;">直连 FastGPT 应用。顶部「今日一问」= 任务派发的最轻形态；右上「连续 47」= streak；对话后 suggestions 引导深入、并随手「让军师写份报告」。</div></div>
+      <div style="border-left:3px solid #9A7B3F;padding:2px 0 2px 12px;"><div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">报告库 <span style="font-size:11px;color:#9b9384;font-weight:400;">· 交付物 = 知识库</span></div><div style="font-size:12px;color:#6B6256;line-height:1.65;margin-top:3px;">4 类：战略分析 / 创业履历 / 复盘战报 / 决策记录。每份都是 Markdown 文档，可读、可分享、可导出。既给用户看，也回喂 FastGPT 知识库让军师更懂你。</div></div>
+    </div>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px dashed rgba(40,34,28,.14);">
+      <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#6F8C5A;">保留（低风险）</div>
+      <div style="font-size:12px;color:#574f44;line-height:1.8;margin-top:8px;">· 对话（FastGPT 应用 + V6.0 提示词，轻量势叙事）<br>· 每用户知识库（FastGPT 自带，= 越来越懂你）<br>· 报告生成与展示（Markdown，两种触发：用户点「生成」/ 军师主动产出并推送）<br>· 任务派发 + 微信订阅消息推送 + 连续天数（都用最轻形态，塞进对话页，不占 tab）</div>
+    </div>
+    <div style="margin-top:18px;">
+      <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#B23A2E;">砍掉（相比 V2）</div>
+      <div style="font-size:12px;color:#574f44;line-height:1.8;margin-top:8px;">· 八字排盘引擎 → 改为纯比喻「势/节奏」叙事，由 LLM 生成<br>· 战斗力/对齐率等评分公式 → 需用户填结构化数据，实际不会发生<br>· 12 章解锁 / 段位 / 里程碑 / 晋升卡 → 过度游戏化，非核心<br>· 独立「任务」「列传」「我」tab → 收敛为 2 tab</div>
+    </div>
+    <div style="margin-top:18px;padding-top:16px;border-top:1px dashed rgba(40,34,28,.14);">
+      <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">动线（就这一条）</div>
+      <div style="font-size:12.5px;color:#574f44;line-height:1.9;margin-top:8px;">收到「今日一问」推送 → 跟军师聊透 → 点「让军师写份报告」或军师主动写 → 报告进库 + 微信通知 → 回来接着聊，下次军师更懂你。<span style="color:#B23A2E;">对话产出报告，报告喂养对话，闭环只有两步。</span></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
