@@ -96,6 +96,27 @@ npx prisma migrate dev --name init
 
 常用脚本：`npm run build` / `npm run lint` / `npm test`。
 
+### Mock 登录（无真实微信 appid 也能联调）
+
+`.env` 里置 `WX_MOCK=true` 后，`POST /auth/wx-login` 不请求微信 `jscode2session`，
+而是用 `openid = mock_<code 的 sha256 前缀>` 造一个稳定用户 —— 同一 `code` 恒等同一用户，
+方便本地把「登录 → 入局 → /me」闭环跑通。示例（先 `docker compose up -d postgres`
+或本地起 PostgreSQL，再 `npx prisma db push`）：
+
+```bash
+# 1) 登录拿 token（新用户 isNewUser=true）
+curl -s -X POST http://localhost:3000/auth/wx-login \
+  -H 'Content-Type: application/json' -d '{"code":"test-code-123"}'
+# 2) 填入局资料（带 Bearer token）
+curl -s -X POST http://localhost:3000/me/profile \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer <token>" \
+  -d '{"nickname":"阿明","industry":"餐饮","bizNote":"开了家小面馆"}'
+# 3) 拉当前用户（含 streakDays 与报告计数摘要 reportStats）
+curl -s http://localhost:3000/me -H "Authorization: Bearer <token>"
+```
+
+生产/真机联调务必置 `WX_MOCK=false` 并填 `WX_APPID` / `WX_SECRET`。
+
 ## 4. 小程序（miniprogram/）
 
 ```bash

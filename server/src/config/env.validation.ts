@@ -18,6 +18,8 @@ export const envValidationSchema = Joi.object({
 
   WX_APPID: Joi.string().allow('').default(''),
   WX_SECRET: Joi.string().allow('').default(''),
+  // Mock 登录开关（本地/联调无真实 appid 时置 true）
+  WX_MOCK: Joi.boolean().truthy('true').falsy('false').default(false),
 
   FASTGPT_BASE_URL: Joi.string().uri().allow('').default(''),
   FASTGPT_APP_KEY: Joi.string().allow('').default(''),

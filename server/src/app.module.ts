@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { envValidationSchema } from './config/env.validation';
 import { HealthController } from './health/health.controller';
+import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { ReportModule } from './modules/report/report.module';
@@ -18,6 +19,8 @@ import { SafetyModule } from './modules/safety/safety.module';
       load: [configuration],
       validationSchema: envValidationSchema,
     }),
+    // 全局基础设施：Prisma（数据库连接）
+    PrismaModule,
     // 业务模块骨架（M1+ 逐步实现）
     AuthModule,
     ChatModule,

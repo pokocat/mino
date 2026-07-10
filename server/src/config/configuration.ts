@@ -18,6 +18,8 @@ export default () => ({
   wx: {
     appId: process.env.WX_APPID,
     secret: process.env.WX_SECRET,
+    // Mock 模式：WX_MOCK=true 时不请求微信，openid = mock_<code hash>
+    mock: process.env.WX_MOCK === 'true',
   },
   fastgpt: {
     baseUrl: process.env.FASTGPT_BASE_URL,
