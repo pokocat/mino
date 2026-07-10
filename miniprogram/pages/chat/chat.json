@@ -4,6 +4,9 @@
     "paper-page": "/components/paper-page/index",
     "nav-bar": "/components/nav-bar/index",
     "seal-avatar": "/components/seal-avatar/index",
-    "streak-chip": "/components/streak-chip/index"
+    "streak-chip": "/components/streak-chip/index",
+    "daily-question-card": "/components/daily-question-card/index",
+    "message-bubble": "/components/message-bubble/index",
+    "suggestion-chips": "/components/suggestion-chips/index"
   }
 }

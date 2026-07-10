@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "tsc": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:sse": "tsc utils/sse-decode.ts --outDir scripts/dist --module commonjs --target es2019 --skipLibCheck && node scripts/sse-decode.test.js"
   },
   "devDependencies": {
     "miniprogram-api-typings": "^4.0.4",

@@ -1,0 +1,43 @@
+/* 「接着聊」建议气泡列（回复完成后展示）*/
+.sc {
+  margin-top: 28rpx; /* 14px */
+  margin-bottom: 10rpx;
+}
+.sc__title {
+  font-size: 21rpx; /* 10.5px */
+  color: var(--color-ink-faint);
+  letter-spacing: 2rpx;
+  margin-bottom: 16rpx; /* 8px */
+}
+.sc__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx; /* 8px */
+  align-items: flex-start;
+}
+.sc__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 18rpx 28rpx; /* 9px 14px */
+  border-radius: var(--radius-chip-pill); /* 20px 胶囊 */
+  font-size: 25rpx; /* 12.5px */
+  max-width: 100%;
+}
+.sc__chip--hover {
+  opacity: 0.82;
+}
+/* 主气泡（generateReport）：深墨底金字 */
+.sc__chip--primary {
+  background: var(--color-ink);
+  color: var(--color-gold-text);
+}
+/* 次气泡：浅纸面描边 */
+.sc__chip--plain {
+  background: var(--color-card);
+  border: 1px solid var(--border-soft);
+  color: var(--color-ink-secondary);
+}
+.sc__icon {
+  font-size: 26rpx;
+}

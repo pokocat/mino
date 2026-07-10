@@ -45,6 +45,41 @@ export interface ApiError {
   message: string;
 }
 
+// ---------------- 对话（M2）----------------
+
+// 报告 4 类型
+export type ReportType = 'strategy' | 'resume' | 'review' | 'decision';
+
+// suggestions 事件中的单条「接着聊」气泡
+export interface SuggestionItem {
+  text: string;
+  primary?: boolean; // true=深墨底金字主气泡（通常为「写报告」）
+  action?: 'generateReport' | 'chat'; // 点击语义：生成报告 / 作为用户输入直接发送
+  reportType?: ReportType; // action=generateReport 时的建议类型
+}
+
+// 一条会话消息（GET /conversations/:id/messages 返回项）
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+}
+
+// 会话摘要（GET /conversations 返回项，与方案 §6 一致）
+// lastMessageAt：最后一条消息时间；空会话可能为 null
+export interface Conversation {
+  id: string;
+  title: string;
+  lastMessageAt: string | null;
+}
+
+// POST /conversations 返回
+export interface CreateConversationResult {
+  conversationId: string;
+  fastgptChatId: string;
+}
+
 // POST /auth/wx-login {code} → {token, isNewUser}
 export function wxLogin(code: string): Promise<WxLoginResult> {
   return request<WxLoginResult>({
@@ -67,4 +102,22 @@ export function updateProfile(input: ProfileInput): Promise<UserProfile> {
 // GET /me → 用户信息 + streakDays + reportStats
 export function getMe(): Promise<UserProfile> {
   return request<UserProfile>({ url: '/me', method: 'GET' });
+}
+
+// POST /conversations → {conversationId, fastgptChatId}（新建一段会话）
+export function createConversation(): Promise<CreateConversationResult> {
+  return request<CreateConversationResult>({ url: '/conversations', method: 'POST' });
+}
+
+// GET /conversations?limit= → 最近会话列表
+export function listConversations(limit = 10): Promise<Conversation[]> {
+  return request<Conversation[]>({ url: `/conversations?limit=${limit}`, method: 'GET' });
+}
+
+// GET /conversations/:id/messages → 历史消息（含军师开场白）
+export function getMessages(conversationId: string): Promise<ChatMessage[]> {
+  return request<ChatMessage[]>({
+    url: `/conversations/${conversationId}/messages`,
+    method: 'GET',
+  });
 }

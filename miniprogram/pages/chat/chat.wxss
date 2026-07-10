@@ -1,54 +1,97 @@
-.greeting {
+/* 军师对话页布局：nav-bar / 可滚动内容区 / 输入条（纵向 flex）*/
+
+/* 可滚动内容区：占满剩余高度并内部滚动 */
+.chat__scroll {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0 var(--space-xl);
-  gap: var(--space-lg);
-}
-.greeting__title {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: 38rpx;
-  letter-spacing: 4rpx;
-  color: var(--color-ink);
-}
-.greeting__sub {
-  font-size: 24rpx;
-  color: var(--color-ink-tertiary);
-  text-align: center;
-  line-height: var(--lh-ui);
+  min-height: 0;
+  padding: 12rpx 35rpx 0; /* 6px 18px */
+  box-sizing: border-box;
 }
 
-/* 禁用输入条：固定在 tabBar 之上 */
-.inputbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+/* 问候区：印章 + 标题 + 报告数副文 */
+.greet {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
+  gap: 20rpx;
+  padding: 16rpx 0 20rpx;
+}
+.greet__title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 38rpx; /* 19px */
+  color: var(--color-ink);
+}
+.greet__sub {
+  font-size: 23rpx; /* 11.5px */
+  color: var(--color-ink-tertiary);
+  margin-top: 8rpx;
+}
+.greet__hl {
+  color: var(--color-gold);
+}
+
+/* 消息流 */
+.chat__list {
+  padding-top: 24rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+/* reportOffer 系统提示行（浅色小字，居中）*/
+.sysnote {
+  text-align: center;
+  font-size: 21rpx; /* 10.5px */
+  color: var(--color-ink-faint);
+  background: var(--color-ink-05);
+  border-radius: 20rpx;
+  padding: 8rpx 20rpx;
+  margin: 4rpx auto 26rpx;
+  align-self: center;
+  max-width: 560rpx;
+}
+
+/* 错误重发提示 */
+.retry {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--color-vermilion);
+  padding: 8rpx 0 16rpx;
+}
+.retry--hover {
+  opacity: 0.7;
+}
+
+/* 底部锚点（scrollIntoView 目标）*/
+.chat__anchor {
+  height: 2rpx;
+}
+
+/* 底部输入条 */
+.inputbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 20rpx;
+  padding: 20rpx 28rpx 16rpx; /* 10px 14px 8px */
   background: var(--color-surface-tab);
   border-top: 1px solid var(--border-hairline);
 }
-.inputbar--disabled {
-  opacity: 0.75;
-}
 .inputbar__field {
   flex: 1;
-  padding: var(--space-sm) var(--space-md);
+  min-height: 40rpx;
+  max-height: 156rpx; /* 约 3 行（auto-height 增高上限）*/
+  padding: 18rpx 28rpx; /* 10px 14px */
   background: var(--color-card);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-chip);
-  font-size: 26rpx;
-  color: var(--color-ink-faint);
+  border-radius: 36rpx; /* 18px */
+  font-size: 27rpx; /* 13.5px */
+  line-height: 1.5;
+  color: var(--color-ink);
 }
 .inputbar__send {
-  width: 72rpx;
-  height: 72rpx;
+  flex-shrink: 0;
+  width: 76rpx;
+  height: 76rpx; /* 38px */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,4 +99,12 @@
   background: var(--color-vermilion);
   color: var(--color-paper-start);
   font-size: 34rpx;
+  box-shadow: 0 8rpx 24rpx rgba(178, 58, 46, 0.3);
+}
+/* 无输入 / 发送中：发送钮弱化并禁用观感 */
+.inputbar__send--off {
+  opacity: 0.4;
+}
+.inputbar__send--hover {
+  opacity: 0.85;
 }

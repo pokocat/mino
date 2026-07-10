@@ -3,16 +3,74 @@
     <streak-chip slot="action" days="{{streakDays}}"></streak-chip>
   </nav-bar>
 
-  <!-- 空态：印章头像 + 问候 -->
-  <view class="greeting">
-    <seal-avatar variant="marshal" size="120" text="势"></seal-avatar>
-    <text class="greeting__title">兄弟，坐下聊。</text>
-    <text class="greeting__sub">聊几句，我慢慢懂你。对话产出报告，报告喂养对话。</text>
-  </view>
+  <scroll-view
+    class="chat__scroll"
+    scroll-y
+    scroll-into-view="{{scrollToId}}"
+    scroll-with-animation
+    enable-flex
+  >
+    <!-- 问候区：印章「势」+ 标题 + 报告数副文 -->
+    <view class="greet">
+      <seal-avatar variant="marshal" size="100" text="势"></seal-avatar>
+      <view class="greet__text">
+        <view class="greet__title">兄弟，坐下聊。</view>
+        <view class="greet__sub"
+          >已为你写下 <text class="greet__hl">{{reportTotal}} 份报告</text> · 越聊我越懂你</view
+        >
+      </view>
+    </view>
 
-  <!-- 禁用输入条（视觉占位，M2 接入流式后启用）-->
-  <view class="inputbar inputbar--disabled">
-    <view class="inputbar__field">说说你的想法……</view>
-    <view class="inputbar__send">↑</view>
+    <!-- 今日一问·深墨卡（本期静态占位，默认隐藏；M5 接任务数据后打开）-->
+    <daily-question-card show="{{false}}" bind:start="onDailyStart"></daily-question-card>
+
+    <!-- 消息流 -->
+    <view class="chat__list">
+      <block wx:for="{{messages}}" wx:key="id">
+        <!-- reportOffer 占位：军师系统提示样式（浅色小字）-->
+        <view wx:if="{{item.role === 'system'}}" class="sysnote">{{item.content}}</view>
+        <message-bubble wx:else role="{{item.role}}" content="{{item.content}}"></message-bubble>
+      </block>
+
+      <!-- 正在生成的军师气泡：typing=首 token 前三点；streaming=逐 token 追加（独立 data 路径）-->
+      <message-bubble wx:if="{{typing}}" role="assistant" loading="{{true}}"></message-bubble>
+      <message-bubble
+        wx:elif="{{streaming.active}}"
+        role="assistant"
+        content="{{streaming.text}}"
+      ></message-bubble>
+
+      <!-- 回复完成后的「接着聊」建议气泡 -->
+      <suggestion-chips items="{{suggestions}}" bind:select="onSuggestionSelect"></suggestion-chips>
+
+      <!-- 错误重发 -->
+      <view wx:if="{{canRetry}}" class="retry" hover-class="retry--hover" bindtap="onRetry"
+        >· 点此重发 ·</view
+      >
+    </view>
+
+    <view id="bottomAnchor" class="chat__anchor"></view>
+  </scroll-view>
+
+  <!-- 底部输入条 -->
+  <view class="inputbar">
+    <textarea
+      class="inputbar__field"
+      value="{{input}}"
+      placeholder="说说你的想法……"
+      auto-height
+      maxlength="-1"
+      cursor-spacing="20"
+      adjust-position
+      show-confirm-bar="{{false}}"
+      disabled="{{sending}}"
+      bindinput="onInput"
+    ></textarea>
+    <view
+      class="inputbar__send {{(input && !sending) ? '' : 'inputbar__send--off'}}"
+      hover-class="inputbar__send--hover"
+      bindtap="onSend"
+      >↑</view
+    >
   </view>
 </paper-page>

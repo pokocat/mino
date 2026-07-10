@@ -1,0 +1,81 @@
+/* 消息气泡：role 切换配色 / 圆角 / 对齐（对照 V3 主设计稿 01 屏）*/
+.mb {
+  display: flex;
+  align-items: flex-start;
+  gap: 18rpx; /* 9px */
+  margin-bottom: 30rpx; /* 15px */
+}
+/* 用户侧右对齐（row-reverse 使气泡贴右）*/
+.mb--user {
+  flex-direction: row-reverse;
+}
+
+.mb__avatar {
+  flex-shrink: 0;
+}
+
+.mb__bubble {
+  padding: 22rpx 26rpx; /* 11px 13px */
+  font-size: 26rpx; /* 13px */
+  line-height: 1.7;
+  max-width: 500rpx; /* ~250px */
+  word-break: break-word;
+}
+
+/* 军师=纸面左侧，非对称圆角 4/13 → 8/25rpx */
+.mb__bubble--assistant {
+  background: var(--color-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-bubble-a) var(--radius-bubble-b) var(--radius-bubble-b)
+    var(--radius-bubble-b);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-bubble);
+}
+
+/* 用户=朱砂右侧白字，非对称圆角 13/4 */
+.mb__bubble--user {
+  background: var(--color-vermilion);
+  border-radius: var(--radius-bubble-b) var(--radius-bubble-a) var(--radius-bubble-b)
+    var(--radius-bubble-b);
+  color: var(--color-paper-start);
+  box-shadow: var(--shadow-bubble-user);
+  max-width: 460rpx; /* ~230px */
+}
+
+.mb__text {
+  white-space: pre-wrap; /* 保留换行与空格，支持流式追加 */
+}
+
+/* 三点跳动 loading（mn-dot 动画）*/
+.mb__dots {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 6rpx 4rpx;
+}
+.mb__dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: var(--radius-round);
+  background: var(--color-gold);
+  animation: mn-dot 1.2s infinite;
+}
+.mb__dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.mb__dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes mn-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-6rpx);
+  }
+}

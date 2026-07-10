@@ -1,0 +1,9 @@
+<!-- 今日一问·深墨卡（本期静态占位；show 默认 false，M5 接任务数据后打开）-->
+<view wx:if="{{show}}" class="dq">
+  <!-- 右上角脉冲红点（未读提示）-->
+  <view wx:if="{{unread}}" class="dq__pulse"></view>
+  <view class="dq__tag">今日一问 · 军师推送</view>
+  <view class="dq__question">{{question}}</view>
+  <view class="dq__hint">{{hint}}</view>
+  <view class="dq__cta" hover-class="dq__cta--hover" bindtap="onStart">开始聊 →</view>
+</view>

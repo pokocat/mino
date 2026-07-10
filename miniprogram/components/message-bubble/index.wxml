@@ -1,0 +1,17 @@
+<view class="mb mb--{{role}}">
+  <!-- 军师侧：32px 印章「师」头像（墨底金字）-->
+  <view wx:if="{{role === 'assistant'}}" class="mb__avatar">
+    <seal-avatar variant="ink" size="64" text="师"></seal-avatar>
+  </view>
+
+  <view class="mb__bubble mb__bubble--{{role}}">
+    <!-- 打字中：三点跳动 loading 气泡 -->
+    <view wx:if="{{loading}}" class="mb__dots">
+      <view class="mb__dot"></view>
+      <view class="mb__dot"></view>
+      <view class="mb__dot"></view>
+    </view>
+    <!-- 内容：white-space pre-wrap，支持流式追加 -->
+    <text wx:else class="mb__text" user-select>{{content}}</text>
+  </view>
+</view>

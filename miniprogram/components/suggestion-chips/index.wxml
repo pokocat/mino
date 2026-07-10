@@ -1,0 +1,16 @@
+<view wx:if="{{items.length > 0}}" class="sc">
+  <view class="sc__title">接着聊 ·</view>
+  <view class="sc__list">
+    <view
+      wx:for="{{items}}"
+      wx:key="index"
+      class="sc__chip {{item.primary ? 'sc__chip--primary' : 'sc__chip--plain'}}"
+      hover-class="sc__chip--hover"
+      data-index="{{index}}"
+      bindtap="onTap"
+    >
+      <text wx:if="{{item.primary}}" class="sc__icon">✍</text>
+      <text class="sc__label">{{item.text}}</text>
+    </view>
+  </view>
+</view>
