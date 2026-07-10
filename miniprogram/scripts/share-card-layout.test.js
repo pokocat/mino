@@ -106,4 +106,35 @@ function makeData(paragraphs, opts) {
   ok('宽度恒为 750', small.width === 750);
 })();
 
+// ---------- 用例 4：自传体（resume）无 heading 段落流 ----------
+(function testNarrative() {
+  console.log('用例 4 · 自传体 resume（纯 text 段落 + 批注，无 heading）');
+  const measure = makeMeasure();
+  const size = 28;
+  const paras = [
+    { kind: 'text', text: '二〇一七年冬天，牧之在国企干到第七个年头，日子像一潭静水。' },
+    // 无标点长段，必然触发折行
+    { kind: 'text', text: '他辞职那天没跟任何人商量攒了太久的一口气想验证离开体系的庇护自己那点本事还值不值钱' },
+    { kind: 'text', text: '真正让客户留下来的从来不是价格是那种交给他放心的踏实感。' },
+  ];
+  const plan = planCard(
+    makeData(paras, {
+      title: '起势：我为什么下海',
+      annotation: '「下海不是冲动，是时势到了。」',
+    }),
+    measure
+  );
+  ok('无 heading 块（自传体段落流）', plan.blocks.every((b) => b.kind !== 'heading'));
+  const textBlocks = plan.blocks.filter((b) => b.kind === 'text');
+  ok('三段正文全部保留', textBlocks.length === 3);
+  ok('长段落触发多行折行', textBlocks[1].lines.length > 1);
+  ok(
+    '每行不超过正文可用宽',
+    textBlocks.every((b) => b.lines.every((ln) => measure(ln, size) <= CONTENT_W))
+  );
+  // 无 heading 但有批注：高度大于「单句无批注」
+  const oneLine = planCard(makeData([{ kind: 'text', text: '一句话。' }], { annotation: '' }), measure);
+  ok('多段自传体（含批注）高度大于单句无批注', plan.height > oneLine.height);
+})();
+
 console.log('\n全部通过：' + passed + ' 条断言');

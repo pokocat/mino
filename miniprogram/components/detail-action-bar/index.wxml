@@ -2,7 +2,13 @@
   <view class="dab__primary" hover-class="dab__primary--hover" bindtap="onPrimary"
     >{{primaryText}}</view
   >
-  <view class="dab__secondary" hover-class="dab__secondary--hover" bindtap="onSecondary"
-    >{{iconChar}}</view
+  <view
+    wx:for="{{secondaries}}"
+    wx:key="icon"
+    class="dab__secondary"
+    hover-class="dab__secondary--hover"
+    data-icon="{{item.icon}}"
+    bindtap="onSecondary"
+    >{{item.char}}</view
   >
 </view>

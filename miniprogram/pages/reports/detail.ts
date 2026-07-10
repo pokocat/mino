@@ -30,7 +30,7 @@ Page({
     originLabel: '',
     dateLabel: '',
     primaryText: '跟军师聊这份报告',
-    secondaryIcon: 'export',
+    secondaryIcons: ['export'] as string[], // 副按钮图标序列（resume 双按钮：✎ + ↧）
     exporting: false, // 分享图导出中（防抖）
   },
 
@@ -57,7 +57,8 @@ Page({
           originLabel: ORIGIN_LABEL[r.origin] || '军师执笔',
           dateLabel: formatDate(r.createdAt),
           primaryText: narrative ? '跟军师补充这一篇' : '跟军师聊这份报告',
-          secondaryIcon: narrative ? 'edit' : 'export',
+          // resume 并列 ✎ 补充 + ↧ 导出；其余三类仅 ↧ 导出
+          secondaryIcons: narrative ? ['edit', 'export'] : ['export'],
         });
         // 未读 → 标记已读（消除报告库「军师刚写好」描边）
         if (r.status === 'ready' && !r.isRead) {
@@ -110,12 +111,12 @@ Page({
       });
   },
 
-  // 副按钮：↧ 导出分享图 / ✎ 补充（补充与主按钮同流程）
-  onSecondary() {
-    if (this.data.secondaryIcon === 'export') {
-      this._exportShare();
-    } else {
+  // 副按钮：✎ 补充（与主按钮同流程）/ ↧ 导出分享图；按 e.detail.icon 区分
+  onSecondary(e: WechatMiniprogram.CustomEvent<{ icon: string }>) {
+    if (e.detail && e.detail.icon === 'edit') {
       this.onPrimary();
+    } else {
+      this._exportShare();
     }
   },
 

@@ -50,7 +50,7 @@
     <!-- 底部操作条 -->
     <detail-action-bar
       primary-text="{{primaryText}}"
-      icon="{{secondaryIcon}}"
+      icons="{{secondaryIcons}}"
       bind:primary="onPrimary"
       bind:secondary="onSecondary"
     ></detail-action-bar>
