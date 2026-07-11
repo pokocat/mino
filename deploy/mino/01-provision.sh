@@ -58,6 +58,24 @@ sudo -u postgres psql -c "ALTER ROLE \$PG_USER WITH PASSWORD '\$DB_PASS'"
 sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='\$PG_DB'" | grep -q 1 || \
   sudo -u postgres psql -c "CREATE DATABASE \$PG_DB OWNER \$PG_USER ENCODING 'UTF8' TEMPLATE template0"
 
+echo ">> pgvector 扩展（per-user 记忆链路依赖；由 postgres 超级用户建，app 用户迁移里的 CREATE EXTENSION IF NOT EXISTS 随后为幂等 no-op）"
+PG_MAJOR="\$(sudo -u postgres psql -tAc "SELECT current_setting('server_version_num')::int/10000")"
+echo "   共享 PostgreSQL 大版本：\$PG_MAJOR"
+if ! sudo -u postgres psql -d "\$PG_DB" -tAc "SELECT 1 FROM pg_available_extensions WHERE name='vector'" | grep -q 1; then
+  echo "   pgvector 未就绪，尝试 dnf 安装 pgvector_\$PG_MAJOR ..."
+  # PGDG 包名形如 pgvector_16；退化尝试无版本后缀；都失败则给出源码编译提示并中止
+  sudo dnf install -y "pgvector_\$PG_MAJOR" || sudo dnf install -y pgvector || {
+    echo "   !! 无法通过 dnf 安装 pgvector（可能未启用 PGDG 源或包名不同）。"
+    echo "      请手动安装后重跑本脚本，例如源码编译："
+    echo "        sudo dnf install -y git make gcc redhat-rpm-config postgresql\${PG_MAJOR}-devel"
+    echo "        git clone --branch v0.8.0 https://github.com/pgvector/pgvector.git"
+    echo "        cd pgvector && make && sudo make install"
+    exit 1
+  }
+fi
+sudo -u postgres psql -d "\$PG_DB" -c 'CREATE EXTENSION IF NOT EXISTS vector'
+sudo -u postgres psql -d "\$PG_DB" -tAc "SELECT 'pgvector_ok ' || extversion FROM pg_extension WHERE extname='vector'"
+
 echo ">> redis 专属容器 \$REDIS_CONTAINER（127.0.0.1:\$REDIS_PORT）"
 if ! docker ps -a --format '{{.Names}}' | grep -qx "\$REDIS_CONTAINER"; then
   docker run -d --name "\$REDIS_CONTAINER" --restart always \

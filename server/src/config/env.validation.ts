@@ -53,6 +53,15 @@ export const envValidationSchema = Joi.object({
   LLM_BASE_URL: Joi.string().uri().allow('').default(''),
   LLM_API_KEY: Joi.string().allow('').default(''),
   LLM_MODEL: Joi.string().allow('').default(''),
+
+  // 每用户记忆 embedding（OpenAI 兼容 /embeddings；默认 SiliconFlow bge-large-zh-v1.5 · 1024 维）。
+  // EMBEDDING_API_KEY 为空时，openai 模式下记忆降级为进程内存 mock（启动告警一次）。
+  EMBEDDING_BASE_URL: Joi.string()
+    .uri()
+    .default('https://api.siliconflow.cn/v1'),
+  EMBEDDING_API_KEY: Joi.string().allow('').default(''),
+  EMBEDDING_MODEL: Joi.string().allow('').default('BAAI/bge-large-zh-v1.5'),
+  EMBEDDING_DIM: Joi.number().integer().positive().default(1024),
 })
   // 测试环境放宽：允许仅提供部分变量
   .options({ allowUnknown: true, abortEarly: false });

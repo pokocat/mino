@@ -3,12 +3,17 @@
 // 评分表 / milestones / rank_events）一律不建。派生统计（报告计数等）走接口聚合，不落表。
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // postgresqlExtensions：把 pgvector 扩展纳入 schema 声明式管理，
+  // 让 `migrate diff` 的漂移校验把「扩展是否启用」也算进期望状态（否则迁移建了扩展会被判为漂移）。
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // per-user 记忆链路（@mastra/pg 的 PgVector）依赖 pgvector；扩展本体由迁移 CREATE EXTENSION。
+  extensions = [vector]
 }
 
 // ============ 枚举 ============
@@ -33,7 +38,7 @@ enum ReportStatus {
 
 enum ReportOrigin {
   user // 用户点生成
-  agent // 军师主动写
+  agent // 米诺主动写
 }
 
 enum TaskType {
@@ -83,12 +88,12 @@ model Conversation {
   lastMessageAt DateTime? @map("last_message_at")
   createdAt     DateTime  @default(now()) @map("created_at")
 
-  // 「跟军师聊这份报告」新建会话时记录源报告 id：首轮对话额外把该报告全文拼入上下文
+  // 「跟米诺聊这份报告」新建会话时记录源报告 id：首轮对话额外把该报告全文拼入上下文
   // （附加 system 机制，与 M3 知识库检索注入同源；不落 messages 表、不下发端上）
   seedReportId String? @map("seed_report_id")
 
-  // 「跟军师补充」续写会话记录目标报告 id：非空时该会话 suggestions 的 primary 换成
-  // appendCommit（把这段织进报告），且不触发军师主动建 origin=agent 报告。commit 后
+  // 「跟米诺补充」续写会话记录目标报告 id：非空时该会话 suggestions 的 primary 换成
+  // appendCommit（把这段织进报告），且不触发米诺主动建 origin=agent 报告。commit 后
   // 把本会话织入目标报告并追加 report_source。无需 FK 关系（软引用），不建索引。
   appendReportId String? @map("append_report_id")
 
@@ -124,12 +129,12 @@ model Report {
 
   title      String
   bodyMd     String  @map("body_md") @db.Text // 正文（唯一事实源）
-  annotation String? @db.Text // 军师批注（独立字段，不混入 body_md）
+  annotation String? @db.Text // 米诺批注（独立字段，不混入 body_md）
 
   origin    ReportOrigin
   wordCount Int          @default(0) @map("word_count")
 
-  isRead Boolean   @default(false) @map("is_read") // 「军师刚写好」未读态
+  isRead Boolean   @default(false) @map("is_read") // 「米诺刚写好」未读态
   readAt DateTime? @map("read_at")
 
   sequenceNo Int? @map("sequence_no") // 创业履历「第一篇」编号（type=resume）
@@ -159,7 +164,7 @@ model ReportSource {
   @@map("report_sources")
 }
 
-// 键值配置表：后端可运行期读写的软配置（军师 system prompt、写报告建议阈值等）。
+// 键值配置表：后端可运行期读写的软配置（米诺 system prompt、写报告建议阈值等）。
 // 由 SettingsService 在启动时按代码内置默认补种缺失键，未来管理后台 UI 直接编辑本表。
 model Setting {
   key       String   @id

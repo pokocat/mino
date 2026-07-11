@@ -44,7 +44,7 @@ export default () => ({
     baseUrl: process.env.FASTGPT_BASE_URL,
     appKey: process.env.FASTGPT_APP_KEY,
     openApiKey: process.env.FASTGPT_OPENAPI_KEY,
-    // Mock 模式：FASTGPT_MOCK=true 时不调外部 FastGPT，按固定军师风格吐假流（供联调/测试）
+    // Mock 模式：FASTGPT_MOCK=true 时不调外部 FastGPT，按固定米诺风格吐假流（供联调/测试）
     mock: process.env.FASTGPT_MOCK === 'true',
     // 每用户知识库建库所需模型名（须与产品方 FastGPT config.json 中登记的模型一致）
     kbVectorModel:
@@ -57,5 +57,14 @@ export default () => ({
     baseUrl: process.env.LLM_BASE_URL ?? '',
     apiKey: process.env.LLM_API_KEY ?? '',
     model: process.env.LLM_MODEL ?? '',
+  },
+  // 每用户记忆向量化（Phase 1：pgvector + OpenAI 兼容 embeddings）。
+  // provider=openai 且 EMBEDDING_API_KEY 已配置时，记忆走 MemoryKbService（真实 pgvector 持久化）；
+  // 未配置则降级进程内存 mock（启动时告警一次）。连接串复用 DATABASE_URL。
+  embedding: {
+    baseUrl: process.env.EMBEDDING_BASE_URL ?? 'https://api.siliconflow.cn/v1',
+    apiKey: process.env.EMBEDDING_API_KEY ?? '',
+    model: process.env.EMBEDDING_MODEL ?? 'BAAI/bge-large-zh-v1.5',
+    dim: parseInt(process.env.EMBEDDING_DIM ?? '1024', 10),
   },
 });

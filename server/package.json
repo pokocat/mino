@@ -21,6 +21,7 @@
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
+    "@mastra/pg": "^1.15.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",

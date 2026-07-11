@@ -13,7 +13,9 @@
 services:
   # ---------------- 应用业务库 ----------------
   postgres:
-    image: postgres:16
+    # pgvector/pgvector:pg16 = 官方 postgres:16 + 预装 pgvector 扩展（per-user 记忆链路需要）。
+    # 卷/端口/凭据不变，仅镜像换基座；CREATE EXTENSION vector 由 Prisma 迁移执行。
+    image: pgvector/pgvector:pg16
     container_name: mino-postgres
     restart: always
     environment:

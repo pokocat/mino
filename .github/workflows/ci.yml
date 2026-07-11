@@ -17,8 +17,9 @@ jobs:
       DATABASE_URL: postgresql://mino:mino@localhost:5432/mino?schema=public
     services:
       # 仅供 prisma migrate diff 回放迁移用的 shadow database（drift 校验，见下）
+      # pgvector 基座：迁移里的 CREATE EXTENSION vector 需要该扩展在回放库中可用。
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: mino
           POSTGRES_PASSWORD: mino

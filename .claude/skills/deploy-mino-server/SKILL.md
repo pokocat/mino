@@ -34,7 +34,8 @@ nginx 只**新增**一个 `location /api_mino/`（转发时剥掉前缀），绝
 ```bash
 cd <repo-root>
 
-# 1) 一次性基础设施（幂等）：系统用户 / 目录 / PG 库角色 / redis 容器 / 机密 / .env / systemd 单元
+# 1) 一次性基础设施（幂等）：系统用户 / 目录 / PG 库角色 / pgvector 扩展 / redis 容器 / 机密 / .env / systemd 单元
+#    （pgvector：dnf 装 pgvector_<PGMAJOR> 并 CREATE EXTENSION；装不到会打印源码编译提示并中止）
 ./deploy/mino/01-provision.sh
 
 # 2) 应用部署（可重复）：rsync 源码 → npm ci → prisma migrate deploy → build → 重启 → 本机健康检查
@@ -71,7 +72,7 @@ ssh -i ~/dev/aliyun/aiartist.pem ecs-user@8.136.36.175 'systemctl is-active juns
 **LLM 已接入（直连 OpenAI 兼容端点）**：当前 `LLM_PROVIDER=openai` + `FASTGPT_MOCK=false`，走 `LLM_BASE_URL=https://api.qnaigc.com/v1`、`LLM_MODEL=dj-claude-4.6-opus`。
 后端支持两种供应商：`openai`（直连，body 带 `model`，请求 `{LLM_BASE_URL}/chat/completions`）与 `fastgpt`（默认，走自托管 FastGPT 应用，`{FASTGPT_BASE_URL}/api/v1/chat/completions`）。切换只改 `LLM_PROVIDER` 并重启。
 > 端点/模型对应关系（同一个 AK）：`dj-claude-4.6-opus` 用 `https://api.qnaigc.com/v1`；`claude-4.6-opus`（无 dj- 前缀）用 `https://openai.sufy.com/v1`。两者混用会 502。换端点/模型改 `LLM_BASE_URL`+`LLM_MODEL` 即可。
-> 直连 openai 模式下没有 FastGPT，每用户知识库（记忆）退化为进程内存实现（重启即失，属旁路不影响对话）；要真正的向量记忆需部署 FastGPT 并切回 `LLM_PROVIDER=fastgpt`。
+> 直连 openai 模式下没有 FastGPT，每用户记忆走 **Phase 1 pgvector 持久化**（`MemoryKbService`，`@mastra/pg` + OpenAI 兼容 embedding）：只要 `.env` 配了 `EMBEDDING_API_KEY` 即启用真实向量记忆（重启不丢）；未配则退化为进程内存（重启即失，属旁路不影响对话）。前置：`01-provision.sh` 已在共享 PostgreSQL 上装好 pgvector 扩展（`CREATE EXTENSION vector`）。要改回 FastGPT 向量记忆则切 `LLM_PROVIDER=fastgpt`。
 
 仍待产品方配置：
 
@@ -80,6 +81,7 @@ ssh -i ~/dev/aliyun/aiartist.pem ecs-user@8.136.36.175 'systemctl is-active juns
 | `WX_MOCK` | `true`（不校验微信） | 填 `WX_APPID`/`WX_SECRET`，改 `false`（★真实登录必做） |
 | `WX_TMPL_*` | 空 | 微信后台申请订阅消息模板后填 |
 | `LLM_MODEL` | `claude-4.6-opus` | 如需换模型/换供应商在此调整 |
+| `EMBEDDING_API_KEY` | 空 | openai 模式想要**持久化记忆**必填（默认 SiliconFlow bge-large-zh-v1.5，1024 维）；留空则记忆走进程内存、重启丢失 |
 
 改法（在服务器上）：
 ```bash

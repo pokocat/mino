@@ -1,12 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MemoryKbService } from '../memory/memory-kb.service';
 
 /**
  * FastGPT 每用户知识库服务（M3「越来越懂你」）。
  *
- * 三个能力：建库(ensureUserKb) / 写入(pushText) / 检索(search)，全部走 FastGPT OpenAPI。
- * FASTGPT_MOCK=true 时三方法改走进程内存 Map，无真实 FastGPT 也能把记忆全链路跑通与测试。
+ * 四个能力：建库(ensureUserKb) / 写入(pushText) / 检索(search) / 删除(deleteKb)。
+ * 后端按 mode() 三路选择（见该方法）：
+ *  - FASTGPT_MOCK=true → 进程内存 Map（测试/联调）；
+ *  - provider=fastgpt   → FastGPT OpenAPI（本文件下方实现）；
+ *  - provider=openai 等 → 委托 MemoryKbService（真实 pgvector 持久化，Phase 1），
+ *    未配 EMBEDDING_API_KEY 时回退内存 Map 并告警一次。
  *
  * OpenAPI 端点依据 FastGPT v4.9.x（自托管，见 docker-compose 固定 tag v4.9.11）：
  *  - 建库：POST {baseUrl}/api/core/dataset/create              → data 为 datasetId 字符串
@@ -22,19 +27,44 @@ export class FastgptKbService {
   // Mock 内存态：kbId → 该库的文本片段列表
   private readonly mockStore = new Map<string, string[]>();
 
+  // openai 模式缺 EMBEDDING_API_KEY 而降级 mock 时，只告警一次（避免刷屏）。
+  private warnedNoEmbedding = false;
+
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
+    // openai 模式下委托的真实 pgvector 记忆实现。@Optional 使单测可只传前两参构造。
+    @Optional() private readonly memoryKb?: MemoryKbService,
   ) {}
 
-  /** 是否 mock 模式。 */
+  /**
+   * 记忆后端选路：
+   *  - 'mock'    : FASTGPT_MOCK=true（测试/联调）→ 进程内存 Map。
+   *  - 'fastgpt' : provider=fastgpt → 走原 FastGPT OpenAPI。
+   *  - 'memory'  : provider≠fastgpt（如 openai）且 EMBEDDING_API_KEY 已配置 → 真实 pgvector。
+   *    provider≠fastgpt 但未配 embedding key → 回退 'mock'（首次告警一次）。
+   */
+  private mode(): 'mock' | 'fastgpt' | 'memory' {
+    if (this.config.get<boolean>('fastgpt.mock') === true) return 'mock';
+    if ((this.config.get<string>('llm.provider') ?? 'fastgpt') === 'fastgpt') {
+      return 'fastgpt';
+    }
+    const hasEmbedding =
+      !!this.memoryKb &&
+      (this.config.get<string>('embedding.apiKey') ?? '').trim().length > 0;
+    if (hasEmbedding) return 'memory';
+    if (!this.warnedNoEmbedding) {
+      this.warnedNoEmbedding = true;
+      this.logger.warn(
+        'provider≠fastgpt 但未配置 EMBEDDING_API_KEY：每用户记忆降级为进程内存 mock（重启丢失）。配置 EMBEDDING_API_KEY 以启用 pgvector 持久化记忆。',
+      );
+    }
+    return 'mock';
+  }
+
+  /** 是否 mock 模式（内存 Map）。 */
   private get mock(): boolean {
-    // provider≠fastgpt（如 openai 直连）时没有可用的 FastGPT 知识库，退化为进程内存实现，
-    // 保证记忆链路不对不存在的 FastGPT 发请求（检索/写入失败本就是旁路，但退化后更干净）。
-    return (
-      this.config.get<boolean>('fastgpt.mock') === true ||
-      (this.config.get<string>('llm.provider') ?? 'fastgpt') !== 'fastgpt'
-    );
+    return this.mode() === 'mock';
   }
 
   /** baseUrl（去尾斜杠）。 */
@@ -55,6 +85,8 @@ export class FastgptKbService {
    * users.kbId 为空时创建并回填；已有则直接返回。
    */
   async ensureUserKb(userId: string): Promise<string> {
+    if (this.mode() === 'memory') return this.memoryKb!.ensureUserKb(userId);
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { kbId: true },
@@ -84,6 +116,10 @@ export class FastgptKbService {
    * @param text  要点正文
    */
   async pushText(kbId: string, title: string, text: string): Promise<void> {
+    if (this.mode() === 'memory') {
+      return this.memoryKb!.pushText(kbId, title, text);
+    }
+
     const body = text.trim();
     if (!body) return;
 
@@ -119,6 +155,10 @@ export class FastgptKbService {
    * @param query 检索词（通常为用户本条消息）
    */
   async search(kbId: string, query: string, limit: number): Promise<string[]> {
+    if (this.mode() === 'memory') {
+      return this.memoryKb!.search(kbId, query, limit);
+    }
+
     const q = query.trim();
     if (!q) return [];
 
@@ -154,6 +194,8 @@ export class FastgptKbService {
    */
   async deleteKb(kbId: string): Promise<void> {
     if (!kbId) return;
+
+    if (this.mode() === 'memory') return this.memoryKb!.deleteKb(kbId);
 
     if (this.mock) {
       this.mockStore.delete(kbId);

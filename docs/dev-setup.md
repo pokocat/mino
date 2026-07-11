@@ -15,9 +15,9 @@
 
 | 服务 | 镜像（固定 tag） | 用途 | 端口 |
 |---|---|---|---|
-| `postgres` | `postgres:16` | 应用业务库（Prisma 迁移目标） | 5432 |
+| `postgres` | `pgvector/pgvector:pg16` | 应用业务库（Prisma 迁移目标）+ per-user 记忆向量库（pgvector） | 5432 |
 | `redis` | `redis:7` | 缓存 / BullMQ 队列 / streak | 6379 |
-| `fastgpt` | `ghcr.io/labring/fastgpt:v4.9.11` | LLM 引擎（军师应用 / 知识库 / 报告工作流） | 3001→3000 |
+| `fastgpt` | `ghcr.io/labring/fastgpt:v4.9.11` | LLM 引擎（米诺应用 / 知识库 / 报告工作流） | 3001→3000 |
 | `fastgpt-mongo` | `mongo:5.0.18` | FastGPT 文档库 | 内网 |
 | `fastgpt-pg` | `pgvector/pgvector:0.8.0-pg15` | FastGPT 向量库 | 内网 |
 | `fastgpt-sandbox` | `ghcr.io/labring/fastgpt-sandbox:v4.9.11` | FastGPT 代码沙箱 | 内网 |
@@ -128,8 +128,8 @@ curl -s http://localhost:3000/me -H "Authorization: Bearer <token>"
 
 ### 记忆（M3：知识库 + kb.ingest 队列）
 
-M3 让军师「越来越懂你」：每轮对话结束后异步把要点写入该用户的 FastGPT 知识库，
-下一轮用本条消息检索知识库、把命中片段作为附加上下文喂给军师（不落 `messages` 表、不下发端上）。
+M3 让米诺「越来越懂你」：每轮对话结束后异步把要点写入该用户的 FastGPT 知识库，
+下一轮用本条消息检索知识库、把命中片段作为附加上下文喂给米诺（不落 `messages` 表、不下发端上）。
 
 - **队列（BullMQ + ioredis）**：要点写入是后台 job（`kb-ingest` 队列）。本地起 Redis：
 
@@ -149,13 +149,30 @@ M3 让军师「越来越懂你」：每轮对话结束后异步把要点写入�
   真实模式下建库/检索所需模型名由 `FASTGPT_KB_VECTOR_MODEL` / `FASTGPT_KB_AGENT_MODEL` 指定，
   须与产品方 FastGPT `config.json` 登记的模型一致。
 
+- **记忆后端三路选择（`FastgptKbService.mode()`）**：
+  - `FASTGPT_MOCK=true` → 进程内存 Map（上面那条，测试/联调）。
+  - `LLM_PROVIDER=fastgpt`（默认）→ 走自托管 FastGPT 知识库 OpenAPI。
+  - `LLM_PROVIDER=openai` 等非 fastgpt → **Phase 1 真实 pgvector 持久化记忆**（`MemoryKbService`）：
+    配了 `EMBEDDING_API_KEY` 即启用；未配则降级进程内存 Map（重启丢记忆，启动 `logger.warn` 告警一次）。
+
+- **真实 pgvector 记忆（Phase 1）**：`@mastra/pg` 的 `PgVector` 做向量存储（连接串复用 `DATABASE_URL`），
+  embedding 走 OpenAI 兼容 `/embeddings`（默认 SiliconFlow `BAAI/bge-large-zh-v1.5`，1024 维）。
+  - 本地库镜像已从 `postgres:16` 换成 **`pgvector/pgvector:pg16`**（卷/端口/凭据不变）；
+    Prisma 迁移 `20260711010000_add_pgvector_extension` 执行 `CREATE EXTENSION IF NOT EXISTS vector`。
+  - `kbId` 约定 `pgv_<userId>`（写回 `users.kbId`）；所有用户共用一张向量表 `mino_memory`（public schema，
+    由 PgVector 运行时自建，**不进 Prisma schema**），按 `metadata.userId` 分区，检索/删除按 userId 过滤。
+  - 该表由 PgVector 自建，`prisma migrate dev` 本地会把它当额外表报漂移（可忽略/或先删表）；
+    CI 的 `migrate diff` 漂移校验用独立 shadow DB、只比对 migrations↔schema，不受该表影响。
+  - 本地验证真实向量记忆：`.env` 设 `LLM_PROVIDER=openai` + `EMBEDDING_API_KEY=...`，
+    `docker compose up -d postgres` 起 pgvector 库即可（无需 FastGPT）。
+
 ### 回访（M5：今日一问 + 订阅消息 + streak）
 
 M5 收尾回访闭环：每日 cron 派发「今日一问」，微信订阅消息送达，连续天数 streak 结算。
 
 - **今日一问**：`GET /tasks/today` 返回当日一问 `{id, question, hint, estMinutes, status}`
   或 `null`；**当日无任务时惰性生成**（新用户当天即可拿到，不必等 cron）。
-  `POST /tasks/:id/start` 新建会话（开场 assistant 消息 = 军师今日一问），返回 `{conversationId}`，幂等。
+  `POST /tasks/:id/start` 新建会话（开场 assistant 消息 = 米诺今日一问），返回 `{conversationId}`，幂等。
   `FASTGPT_MOCK=true` 时问题固定为设计稿那条「你最值钱的一张牌是什么？」。
 
 - **cron（每日 08:30 Asia/Shanghai）**：为活跃用户（近 14 天有消息或 `streakDays>0`）生成
@@ -181,7 +198,7 @@ npx tsc --noEmit              # 类型检查
 用微信开发者工具「导入项目」，目录选 `miniprogram/`，AppID 使用占位 `touristappid`
 （无需真实 AppID 即可预览；正式联调时替换为真实 AppID）。
 
-- 底部为自定义 3 tab（军师 / 报告库 / 我），见 `custom-tab-bar/`。
+- 底部为自定义 3 tab（米诺 / 报告库 / 我），见 `custom-tab-bar/`。
 - 设计 token 统一在 `styles/tokens.wxss`，`app.wxss` 引入并铺纸底背景。
 
 ## 5. 提前并行事项（方案 §10）
