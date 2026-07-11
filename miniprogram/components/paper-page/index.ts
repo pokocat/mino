@@ -8,5 +8,6 @@ Component({
   },
   properties: {
     tabbar: { type: Boolean, value: false },
+    fill: { type: Boolean, value: false },
   },
 });

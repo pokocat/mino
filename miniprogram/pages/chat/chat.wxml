@@ -1,4 +1,4 @@
-<paper-page tabbar="{{true}}">
+<paper-page tabbar="{{true}}" fill="{{true}}">
   <nav-bar title="米诺战略参谋部">
     <streak-chip wx:if="{{streakDays > 0}}" slot="action" days="{{streakDays}}"></streak-chip>
   </nav-bar>

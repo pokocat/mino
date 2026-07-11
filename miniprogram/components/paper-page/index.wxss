@@ -23,3 +23,9 @@
 .paper-page--tabbar {
   padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
 }
+
+/* 定高视口列：用于含内部 scroll-view 的页面（如对话页），
+   让 flex:1 滚动区正确收敛、底部输入条稳定压在 tabBar 之上，不被覆盖。 */
+.paper-page--fill {
+  height: 100vh;
+}

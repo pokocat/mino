@@ -1,3 +1,3 @@
-<view class="paper-page {{tabbar ? 'paper-page--tabbar' : ''}}">
+<view class="paper-page {{tabbar ? 'paper-page--tabbar' : ''}} {{fill ? 'paper-page--fill' : ''}}">
   <slot></slot>
 </view>

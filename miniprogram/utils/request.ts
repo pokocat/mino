@@ -19,6 +19,29 @@ export function clearToken(): void {
   wx.removeStorageSync(STORAGE_KEYS.token);
 }
 
+// 登录跳转去重：多个并发 401 或登出后的残余请求只触发一次友好跳转，避免请求/跳转风暴。
+let redirectingToLogin = false;
+function goLoginOnce(message = '登录已失效，请重新登录'): void {
+  if (redirectingToLogin) return;
+  // 已经在登录页就不再跳，避免自跳循环
+  const pages = getCurrentPages();
+  const top = pages[pages.length - 1];
+  if (top && (top.route || '').indexOf('pages/onboarding/onboarding') !== -1) {
+    return;
+  }
+  redirectingToLogin = true;
+  wx.showToast({ title: message, icon: 'none' });
+  wx.reLaunch({
+    url: '/pages/onboarding/onboarding',
+    complete: () => {
+      // 切换完成后稍延迟解锁，避免切换途中的残余请求立刻再次触发跳转
+      setTimeout(() => {
+        redirectingToLogin = false;
+      }, 800);
+    },
+  });
+}
+
 export interface RequestOptions {
   url: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -32,6 +55,12 @@ export function request<T>(opts: RequestOptions): Promise<T> {
   // 开发无后端：直接返回 mock
   if (MOCK_API) {
     return resolveMock<T>(method, url, data);
+  }
+
+  // 需要鉴权但无 token：直接短路，不打网络、不制造 401 风暴，友好跳登录。
+  if (auth && !getToken()) {
+    goLoginOnce('请先登录');
+    return Promise.reject({ code: 'UNAUTHORIZED', message: '请先登录' } as ApiError);
   }
 
   return new Promise<T>((resolve, reject) => {
@@ -54,7 +83,7 @@ export function request<T>(opts: RequestOptions): Promise<T> {
         // 401：登录态失效 → 清 token 回登录页
         if (status === 401) {
           clearToken();
-          wx.reLaunch({ url: '/pages/onboarding/onboarding' });
+          goLoginOnce();
           reject({ code: 'UNAUTHORIZED', message: '登录已过期，请重新登录' } as ApiError);
           return;
         }
