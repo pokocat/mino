@@ -41,6 +41,53 @@ export class FastgptChatService {
 
   constructor(private readonly config: ConfigService) {}
 
+  /** 当前 LLM 供应商（fastgpt 默认 | openai 直连）。 */
+  private get provider(): string {
+    return this.config.get<string>('llm.provider') ?? 'fastgpt';
+  }
+
+  /**
+   * 构造上游请求（供应商感知）。
+   * - openai：POST {LLM_BASE_URL}/chat/completions，body 带 model，无 chatId/detail；
+   * - fastgpt（默认）：POST {FASTGPT_BASE_URL}/api/v1/chat/completions，body 带 chatId/detail。
+   * 两者响应均为 OpenAI 兼容（choices[].delta.content / choices[].message.content），下游解析共用。
+   */
+  private buildUpstream(
+    chatId: string,
+    messages: ChatMessage[],
+    stream: boolean,
+  ): { url: string; headers: Record<string, string>; body: string } {
+    if (this.provider === 'openai') {
+      const baseUrl = (this.config.get<string>('llm.baseUrl') ?? '').replace(
+        /\/+$/,
+        '',
+      );
+      const apiKey = this.config.get<string>('llm.apiKey') ?? '';
+      const model = this.config.get<string>('llm.model') ?? '';
+      return {
+        url: `${baseUrl}/chat/completions`,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ model, stream, messages }),
+      };
+    }
+    const baseUrl = (this.config.get<string>('fastgpt.baseUrl') ?? '').replace(
+      /\/+$/,
+      '',
+    );
+    const appKey = this.config.get<string>('fastgpt.appKey') ?? '';
+    return {
+      url: `${baseUrl}/api/v1/chat/completions`,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${appKey}`,
+      },
+      body: JSON.stringify({ chatId, stream, detail: false, messages }),
+    };
+  }
+
   /** 返回增量文本流（AsyncIterable<string>），上游 SSE 已解析、[DONE] 已处理。 */
   streamChat(params: StreamChatParams): AsyncIterable<string> {
     const messages = this.normalizeMessages(params);
@@ -68,23 +115,11 @@ export class FastgptChatService {
       return MOCK_EXTRACTION;
     }
 
-    const baseUrl = (this.config.get<string>('fastgpt.baseUrl') ?? '').replace(
-      /\/+$/,
-      '',
-    );
-    const appKey = this.config.get<string>('fastgpt.appKey') ?? '';
-    const res = await fetch(`${baseUrl}/api/v1/chat/completions`, {
+    const upstream = this.buildUpstream(params.chatId, messages, false);
+    const res = await fetch(upstream.url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${appKey}`,
-      },
-      body: JSON.stringify({
-        chatId: params.chatId,
-        stream: false,
-        detail: false,
-        messages,
-      }),
+      headers: upstream.headers,
+      body: upstream.body,
     });
     if (!res.ok) {
       this.logger.error(`FastGPT complete 异常：HTTP ${res.status}`);
@@ -109,25 +144,11 @@ export class FastgptChatService {
     chatId: string,
     messages: ChatMessage[],
   ): AsyncIterable<string> {
-    const baseUrl = (this.config.get<string>('fastgpt.baseUrl') ?? '').replace(
-      /\/+$/,
-      '',
-    );
-    const appKey = this.config.get<string>('fastgpt.appKey') ?? '';
-    const url = `${baseUrl}/api/v1/chat/completions`;
-
-    const res = await fetch(url, {
+    const upstream = this.buildUpstream(chatId, messages, true);
+    const res = await fetch(upstream.url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${appKey}`,
-      },
-      body: JSON.stringify({
-        chatId, // FastGPT 侧据此维护会话上下文
-        stream: true,
-        detail: false,
-        messages,
-      }),
+      headers: upstream.headers,
+      body: upstream.body,
     });
 
     if (!res.ok || !res.body) {

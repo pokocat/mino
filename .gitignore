@@ -16,6 +16,8 @@ server/generated/
 .env
 .env.*
 !.env.example
+# 部署模板（仅占位符，无真实机密）需入库
+!deploy/mino/.env.production.example
 
 # 微信开发者工具私有产物
 miniprogram/project.private.config.json

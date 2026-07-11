@@ -44,6 +44,11 @@ export const envValidationSchema = Joi.object({
     .allow('')
     .default('text-embedding-3-small'),
   FASTGPT_KB_AGENT_MODEL: Joi.string().allow('').default('gpt-4o-mini'),
+  // LLM 供应商切换：openai 时直连 OpenAI 兼容端点（LLM_BASE_URL 形如 https://host/v1）
+  LLM_PROVIDER: Joi.string().valid('fastgpt', 'openai').default('fastgpt'),
+  LLM_BASE_URL: Joi.string().uri().allow('').default(''),
+  LLM_API_KEY: Joi.string().allow('').default(''),
+  LLM_MODEL: Joi.string().allow('').default(''),
 })
   // 测试环境放宽：允许仅提供部分变量
   .options({ allowUnknown: true, abortEarly: false });

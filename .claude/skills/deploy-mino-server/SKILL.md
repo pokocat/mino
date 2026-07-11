@@ -66,13 +66,20 @@ ssh -i ~/dev/aliyun/aiartist.pem ecs-user@8.136.36.175 'systemctl is-active juns
 
 ## 上线前手动配置（产品方后续填）
 
-服务器机密与配置都在 `/opt/mino/server/.env`（`600`，属主 `mino`）。当前为可跑通联调的占位/mock 值：
+服务器机密与配置都在 `/opt/mino/server/.env`（`600`，属主 `mino`）。
+
+**LLM 已接入（直连 OpenAI 兼容端点）**：当前 `LLM_PROVIDER=openai` + `FASTGPT_MOCK=false`，走 `LLM_BASE_URL=https://openai.sufy.com/v1`、`LLM_MODEL=claude-4.6-opus`。
+后端支持两种供应商：`openai`（直连，body 带 `model`，请求 `{LLM_BASE_URL}/chat/completions`）与 `fastgpt`（默认，走自托管 FastGPT 应用，`{FASTGPT_BASE_URL}/api/v1/chat/completions`）。切换只改 `LLM_PROVIDER` 并重启。
+> 注意：模型名用 `claude-4.6-opus`（该端点上 `dj-claude-4.6-opus` 会 502）。换模型改 `LLM_MODEL` 即可。
+> 直连 openai 模式下没有 FastGPT，每用户知识库（记忆）退化为进程内存实现（重启即失，属旁路不影响对话）；要真正的向量记忆需部署 FastGPT 并切回 `LLM_PROVIDER=fastgpt`。
+
+仍待产品方配置：
 
 | 变量 | 当前 | 上线要做 |
 |---|---|---|
-| `FASTGPT_MOCK` | `true`（吐假军师流） | 填 `FASTGPT_BASE_URL`/`FASTGPT_APP_KEY`/`FASTGPT_OPENAPI_KEY`（LLM 端点与 AK），改 `false` |
-| `WX_MOCK` | `true`（不校验微信） | 填 `WX_APPID`/`WX_SECRET`，改 `false` |
+| `WX_MOCK` | `true`（不校验微信） | 填 `WX_APPID`/`WX_SECRET`，改 `false`（★真实登录必做） |
 | `WX_TMPL_*` | 空 | 微信后台申请订阅消息模板后填 |
+| `LLM_MODEL` | `claude-4.6-opus` | 如需换模型/换供应商在此调整 |
 
 改法（在服务器上）：
 ```bash

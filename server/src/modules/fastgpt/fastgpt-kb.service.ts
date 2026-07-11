@@ -29,7 +29,12 @@ export class FastgptKbService {
 
   /** 是否 mock 模式。 */
   private get mock(): boolean {
-    return this.config.get<boolean>('fastgpt.mock') === true;
+    // provider≠fastgpt（如 openai 直连）时没有可用的 FastGPT 知识库，退化为进程内存实现，
+    // 保证记忆链路不对不存在的 FastGPT 发请求（检索/写入失败本就是旁路，但退化后更干净）。
+    return (
+      this.config.get<boolean>('fastgpt.mock') === true ||
+      (this.config.get<string>('llm.provider') ?? 'fastgpt') !== 'fastgpt'
+    );
   }
 
   /** baseUrl（去尾斜杠）。 */

@@ -46,4 +46,11 @@ export default () => ({
       process.env.FASTGPT_KB_VECTOR_MODEL ?? 'text-embedding-3-small',
     kbAgentModel: process.env.FASTGPT_KB_AGENT_MODEL ?? 'gpt-4o-mini',
   },
+  llm: {
+    // 供应商：fastgpt（默认，走自托管 FastGPT 应用）| openai（直连 OpenAI 兼容端点）
+    provider: process.env.LLM_PROVIDER ?? 'fastgpt',
+    baseUrl: process.env.LLM_BASE_URL ?? '',
+    apiKey: process.env.LLM_API_KEY ?? '',
+    model: process.env.LLM_MODEL ?? '',
+  },
 });
