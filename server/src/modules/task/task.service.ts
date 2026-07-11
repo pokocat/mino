@@ -71,7 +71,7 @@ export class TaskService {
     // 参考知识库近期关切（best-effort：无 kb / 异常 → 空）
     const kbFragments = await this.retrieveConcerns(user.kbId, user.bizNote);
 
-    // 调军师出题（FASTGPT_MOCK 返回设计稿那条「你最值钱的一张牌是什么？」）
+    // 调米诺出题（FASTGPT_MOCK 返回设计稿那条「你最值钱的一张牌是什么？」）
     let parsed = FALLBACK_QUESTION;
     try {
       const raw = await this.fastgpt.complete({
@@ -117,7 +117,7 @@ export class TaskService {
   // ============ 开始聊（复用报告回流同款机制） ============
 
   /**
-   * POST /tasks/:id/start：新建 conversation（开场 assistant 消息 = promptSeed 包装的军师提问），
+   * POST /tasks/:id/start：新建 conversation（开场 assistant 消息 = promptSeed 包装的米诺提问），
    * task 置 started + conversationId，返回 {conversationId}。
    * 幂等：任务已 started 且有 conversationId → 直接返回既有 conversationId。归属校验失败 → 403。
    */
@@ -142,7 +142,7 @@ export class TaskService {
       return { conversationId: task.conversationId };
     }
 
-    // 新建会话：开场白 = promptSeed（军师今日一问）
+    // 新建会话：开场白 = promptSeed（米诺今日一问）
     const conv = await this.prisma.conversation.create({
       data: {
         userId,
@@ -225,7 +225,7 @@ function toView(t: TaskRow): TodayTaskView {
   };
 }
 
-/** 把问题包装成对话开场（军师口吻，进对话即见）。 */
+/** 把问题包装成对话开场（米诺口吻，进对话即见）。 */
 function buildPromptSeed(question: string, hint: string | null): string {
   const tail = hint ? `\n\n${hint}` : '';
   return `兄弟，今天先想通这一件事——\n\n${question}${tail}\n\n慢慢说，我陪你捋。`;

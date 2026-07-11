@@ -4,7 +4,7 @@
     <view class="login__hero">
       <seal-avatar variant="marshal" size="160" text="势"></seal-avatar>
       <text class="brand">米诺战略参谋部</text>
-      <text class="slogan">对话产出报告，报告喂养对话。军师随时在。</text>
+      <text class="slogan">对话产出报告，报告喂养对话。米诺随时在。</text>
     </view>
 
     <view class="login__foot">
@@ -30,7 +30,7 @@
     <view class="entry__head">
       <seal-avatar variant="ink" size="96" text="师"></seal-avatar>
       <text class="entry__title">先认识一下</text>
-      <text class="entry__sub">三句话，军师就能开始懂你。</text>
+      <text class="entry__sub">三句话，米诺就能开始懂你。</text>
     </view>
 
     <view class="field">
@@ -72,7 +72,7 @@
     </view>
 
     <view class="submit {{submitting ? 'submit--loading' : ''}}" bindtap="onSubmit">
-      <text class="submit__text">{{submitting ? '提交中…' : '进去跟军师聊'}}</text>
+      <text class="submit__text">{{submitting ? '提交中…' : '进去跟米诺聊'}}</text>
     </view>
   </view>
 </paper-page>

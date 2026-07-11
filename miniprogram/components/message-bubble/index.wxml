@@ -1,5 +1,5 @@
 <view class="mb mb--{{role}}">
-  <!-- 军师侧：32px 印章「师」头像（墨底金字）-->
+  <!-- 米诺侧：32px 印章「师」头像（墨底金字）-->
   <view wx:if="{{role === 'assistant'}}" class="mb__avatar">
     <seal-avatar variant="ink" size="64" text="师"></seal-avatar>
   </view>

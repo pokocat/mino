@@ -99,7 +99,7 @@ describe('ReportService', () => {
     });
   });
 
-  describe('createAgentReport（军师主动 · 每日上限）', () => {
+  describe('createAgentReport（米诺主动 · 每日上限）', () => {
     it('未达上限 → 建 origin=agent 报告（meta.topic）并入队', async () => {
       const prisma = {
         report: {
@@ -194,7 +194,7 @@ describe('ReportService', () => {
           id: 'r2',
           type: 'resume',
           status: 'generating',
-          title: '军师正在执笔…',
+          title: '米诺正在执笔…',
           bodyMd: '',
           origin: 'agent',
           isRead: false,
@@ -281,7 +281,7 @@ describe('ReportService', () => {
     });
   });
 
-  describe('append（跟军师补充 · 建续写会话）', () => {
+  describe('append（跟米诺补充 · 建续写会话）', () => {
     it('ready 报告 → 建会话（appendReportId + 引用标题的开场）', async () => {
       const prisma = {
         report: {
@@ -507,7 +507,7 @@ describe('ReportService', () => {
       const svc = svcWith({
         type: 'strategy',
         status: 'generating',
-        title: '军师正在执笔…',
+        title: '米诺正在执笔…',
         bodyMd: '',
         annotation: null,
         origin: 'user',

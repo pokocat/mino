@@ -28,7 +28,7 @@ const TYPE_SPEC: Record<ReportType, { name: string; structure: string }> = {
   decision: {
     name: '决策记录',
     structure:
-      '小节式结构自拟，2-4 个 `## 小节名`（例如 `## 要决的事`、`## 两条路`、`## 军师建议`），把利弊讲清。',
+      '小节式结构自拟，2-4 个 `## 小节名`（例如 `## 要决的事`、`## 两条路`、`## 米诺建议`），把利弊讲清。',
   },
 };
 
@@ -51,11 +51,11 @@ export function buildReportMessages(params: {
 }): ChatMessage[] {
   const spec = TYPE_SPEC[params.type];
   const system =
-    `你是「米诺战略参谋部」的军师，正在把一段对话总结成一份《${spec.name}》报告。\n` +
+    `你是「米诺战略参谋部」的米诺，正在把一段对话总结成一份《${spec.name}》报告。\n` +
     `${LIMITED_MD_RULES}\n` +
     `本类型（${params.type} / ${spec.name}）正文结构要求：${spec.structure}\n` +
     '只输出一个 JSON 对象：{"title","bodyMd","annotation","wordCount"}，不要任何解释文字或代码围栏。' +
-    'annotation 是一句独立的军师点睛话（不混入正文）。语气延续军师人格：势/节奏的比喻叙事，不用「赋能/抓手/底层逻辑」等黑话，不输出任何精确命理或统计数字。';
+    'annotation 是一句独立的米诺点睛话（不混入正文）。语气延续米诺人格：势/节奏的比喻叙事，不用「赋能/抓手/底层逻辑」等黑话，不输出任何精确命理或统计数字。';
 
   const profileLine =
     [
@@ -82,7 +82,7 @@ export function buildReportMessages(params: {
 }
 
 /**
- * 组装「报告续写」（append）的 messages：把原报告全文 + 军师批注 + 本次续写会话对话喂给 complete，
+ * 组装「报告续写」（append）的 messages：把原报告全文 + 米诺批注 + 本次续写会话对话喂给 complete，
  * 要求把新内容**自然织进原文**（而非附加在尾部）、保持同一 type 的正文结构与受限 Markdown 规范，
  * title/type 不变（故只需输出 {bodyMd, annotation, wordCount}，不输出 title）。
  */
@@ -95,13 +95,13 @@ export function buildAppendMessages(params: {
 }): ChatMessage[] {
   const spec = TYPE_SPEC[params.type];
   const system =
-    `你是「米诺战略参谋部」的军师，正在**续写并修订**一份已完成的《${spec.name}》报告——` +
+    `你是「米诺战略参谋部」的米诺，正在**续写并修订**一份已完成的《${spec.name}》报告——` +
     '老板刚补充了新的想法，你要把这些新内容自然地织进原报告，而不是简单附加在末尾。\n' +
     `${LIMITED_MD_RULES}\n` +
     `保持本类型（${params.type} / ${spec.name}）的正文结构：${spec.structure}\n` +
     '标题与报告类型保持不变。只输出一个 JSON 对象：{"bodyMd","annotation","wordCount"}，' +
     '不要 title 字段、不要任何解释文字或代码围栏。bodyMd 是织入新内容后的**完整修订版正文**（含原有内容），' +
-    'annotation 是一句独立的军师点睛话。语气延续军师人格：势/节奏的比喻叙事，' +
+    'annotation 是一句独立的米诺点睛话。语气延续米诺人格：势/节奏的比喻叙事，' +
     '不用「赋能/抓手/底层逻辑」等黑话，不输出任何精确命理或统计数字。';
 
   const annotationLine = params.originalAnnotation

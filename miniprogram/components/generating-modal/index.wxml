@@ -3,7 +3,7 @@
     <!-- 生成中 -->
     <block wx:if="{{phase !== 'success'}}">
       <view class="gm__spin"></view>
-      <view class="gm__title">军师正在为你执笔……</view>
+      <view class="gm__title">米诺正在为你执笔……</view>
       <view class="gm__sub"
         >正在把刚才关于「{{topic}}」的对话，整理成一份《{{typeLabel}}》报告。</view
       >
@@ -20,7 +20,7 @@
     <!-- 成功态 -->
     <block wx:else>
       <view class="gm__check">✓</view>
-      <view class="gm__title">军师写好了</view>
+      <view class="gm__title">米诺写好了</view>
       <view class="gm__sub">《{{typeLabel}}》已存进你的报告库。</view>
       <view class="gm__actions">
         <view class="gm__btn gm__btn--primary" hover-class="gm__btn--hover" catchtap="onView"

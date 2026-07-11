@@ -21,7 +21,7 @@ import type {
   WxLoginResult,
 } from './api';
 
-// MOCK 军师开场白（真实模式由服务端历史消息返回；此处内置以走通首次进入路径）
+// MOCK 米诺开场白（真实模式由服务端历史消息返回；此处内置以走通首次进入路径）
 const MOCK_OPENING =
   '昨天你说想砍掉那条副线。今天先别急——你手里哪张牌最硬？咱们聊透了我记进你的档案，往后越聊我越懂你。';
 
@@ -155,7 +155,7 @@ const REPORT_DETAILS: Record<string, ReportDetail> = {
     createdAt: daysAgo(28),
     sources: [{ conversationId: 'c-price', title: '定价这件事' }],
   },
-  // 生成失败卡（点击弹「让军师重写一份」；带 sources 供重写取源对话）
+  // 生成失败卡（点击弹「让米诺重写一份」；带 sources 供重写取源对话）
   'r-failed': {
     id: 'r-failed',
     type: 'review',
@@ -176,7 +176,7 @@ const REPORT_DETAILS: Record<string, ReportDetail> = {
     id: 'r-generating',
     type: 'strategy',
     status: 'generating',
-    title: '军师正在执笔…',
+    title: '米诺正在执笔…',
     bodyMd: '',
     annotation: '',
     origin: 'agent',
@@ -205,7 +205,7 @@ function toListItem(d: ReportDetail): ReportListItem {
   const summaryMap: Record<string, string> = {
     'r-huchenghe': '主要矛盾 · 定位 · 三步走。基于今天关于「最值钱的牌」的对话。',
     'r-generating': '正在把刚才的对话整理成一份《战略分析》报告。',
-    'r-failed': '这次没生成成功，点一下让军师重写一份。',
+    'r-failed': '这次没生成成功，点一下让米诺重写一份。',
     'r-qishi': '离开体系那年冬天，你赌上的其实是自己早已看清的一张牌。',
     'r-fupan': '砍掉副线之后，主线的战斗力反而回来了。',
     'r-juece': '先把第一家的模型跑透，再谈第二家。',
@@ -319,11 +319,11 @@ export function resolveMock<T>(
   const taskStartMatch = path.match(/^\/tasks\/([^/]+)\/start$/);
 
   if (M === 'POST' && taskStartMatch) {
-    // 开始聊：任务翻 started（幂等），返回今日一问专属会话 id（其历史首条为军师开场提问）
+    // 开始聊：任务翻 started（幂等），返回今日一问专属会话 id（其历史首条为米诺开场提问）
     dailyTaskStatus = 'started';
     payload = { conversationId: DAILY_CONV_ID } as StartTaskResult;
   } else if (M === 'GET' && msgMatch) {
-    // 续写会话：开场引用报告标题；否则给通用军师开场白
+    // 续写会话：开场引用报告标题；否则给通用米诺开场白
     const appendConv = msgMatch[1].match(/^mock-conv-append-(.+)-\d+$/);
     if (appendConv) {
       const rep = REPORT_DETAILS[appendConv[1]];

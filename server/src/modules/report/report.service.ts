@@ -23,10 +23,10 @@ const BRAND = {
   slogan: '对话产出报告，报告喂养对话',
 } as const;
 
-/** 生成中占位标题（端上列表可直接展示「军师正在执笔…」）。 */
-const PLACEHOLDER_TITLE = '军师正在执笔…';
+/** 生成中占位标题（端上列表可直接展示「米诺正在执笔…」）。 */
+const PLACEHOLDER_TITLE = '米诺正在执笔…';
 
-/** 每用户每日 origin=agent（军师主动）报告上限。 */
+/** 每用户每日 origin=agent（米诺主动）报告上限。 */
 const AGENT_DAILY_LIMIT = 1;
 
 /** 列表分页上限。 */
@@ -42,7 +42,7 @@ export class ReportService {
     private readonly processor: ReportGenerateProcessor,
   ) {}
 
-  // ============ 生成（用户主动 / 军师主动） ============
+  // ============ 生成（用户主动 / 米诺主动） ============
 
   /**
    * 用户主动生成：校验会话归属 → 建 reports 行（generating, origin=user）→ 入队；
@@ -66,7 +66,7 @@ export class ReportService {
   }
 
   /**
-   * 军师主动生成（§8.4）：受「每用户每日 origin=agent 上限」约束。
+   * 米诺主动生成（§8.4）：受「每用户每日 origin=agent 上限」约束。
    * 超限返回 null（调用方只发事件不建报告）；否则建行入队（Redis 不可用则就地异步执行，不阻塞 SSE）。
    */
   async createAgentReport(
@@ -78,7 +78,7 @@ export class ReportService {
     const usedToday = await this.countAgentReportsToday(userId);
     if (usedToday >= AGENT_DAILY_LIMIT) {
       this.logger.log(
-        `军师主动报告已达每日上限（${AGENT_DAILY_LIMIT}），用户 ${userId} 本次只发事件不建报告`,
+        `米诺主动报告已达每日上限（${AGENT_DAILY_LIMIT}），用户 ${userId} 本次只发事件不建报告`,
       );
       return null;
     }
@@ -92,11 +92,11 @@ export class ReportService {
     );
     const enqueued = await this.queue.enqueue({ reportId });
     if (!enqueued) {
-      // 降级：军师主动路径不阻塞 SSE，就地异步执行（不 await）
+      // 降级：米诺主动路径不阻塞 SSE，就地异步执行（不 await）
       void this.processor
         .process({ reportId })
         .catch((e) =>
-          this.logger.error(`军师主动报告同步降级异常：${String(e)}`),
+          this.logger.error(`米诺主动报告同步降级异常：${String(e)}`),
         );
     }
     return { reportId };
@@ -305,7 +305,7 @@ export class ReportService {
   }
 
   /**
-   * 「跟军师聊这份报告」：新建会话，注入军师引用该报告标题的一句开场（assistant），
+   * 「跟米诺聊这份报告」：新建会话，注入米诺引用该报告标题的一句开场（assistant），
    * 并把报告全文作为附加上下文——通过 conversation.seedReportId 记录，
    * 首轮对话时由 ChatService 额外把报告全文拼入 system 上下文（不落 messages、不下发端上）。
    */
@@ -333,8 +333,8 @@ export class ReportService {
   // ============ 续写（append） ============
 
   /**
-   * 「跟军师补充」：仅 ready 报告可续。新建一条 appendReportId=报告 id 的会话，
-   * 落一条引用标题的军师开场（assistant），返回 {conversationId}。
+   * 「跟米诺补充」：仅 ready 报告可续。新建一条 appendReportId=报告 id 的会话，
+   * 落一条引用标题的米诺开场（assistant），返回 {conversationId}。
    * 报告不存在/非本人 → 404；报告非 ready → 409（沿用错误体 {code,message} 风格）。
    */
   async append(

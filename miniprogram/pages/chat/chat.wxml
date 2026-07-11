@@ -35,12 +35,12 @@
     <!-- 消息流 -->
     <view class="chat__list">
       <block wx:for="{{messages}}" wx:key="id">
-        <!-- reportOffer 占位：军师系统提示样式（浅色小字）-->
+        <!-- reportOffer 占位：米诺系统提示样式（浅色小字）-->
         <view wx:if="{{item.role === 'system'}}" class="sysnote">{{item.content}}</view>
         <message-bubble wx:else role="{{item.role}}" content="{{item.content}}"></message-bubble>
       </block>
 
-      <!-- 正在生成的军师气泡：typing=首 token 前三点；streaming=逐 token 追加（独立 data 路径）-->
+      <!-- 正在生成的米诺气泡：typing=首 token 前三点；streaming=逐 token 追加（独立 data 路径）-->
       <message-bubble wx:if="{{typing}}" role="assistant" loading="{{true}}"></message-bubble>
       <message-bubble
         wx:elif="{{streaming.active}}"

@@ -392,8 +392,8 @@
 
     // Prompt keys rendered on the 提示词 tab, with labels + textarea sizing.
     const PROMPT_FIELDS = [
-      { key: 'junshi_system_prompt', label: '军师系统提示词 (V6)', rows: 18 },
-      { key: 'junshi_opening', label: '开场白', rows: 6 },
+      { key: 'mino_system_prompt', label: '米诺系统提示词 (V6)', rows: 18 },
+      { key: 'mino_opening', label: '开场白', rows: 6 },
       { key: 'followup_prompt', label: '追问生成提示词', rows: 4 },
     ];
     // Number setting on the 设置 tab.
@@ -621,7 +621,7 @@
       const hgroup = el('div');
       if (which === 'prompts') {
         hgroup.appendChild(el('h2', null, '提示词'));
-        hgroup.appendChild(el('div', 'sub', '军师对话与追问生成的提示词'));
+        hgroup.appendChild(el('div', 'sub', '米诺对话与追问生成的提示词'));
       } else {
         hgroup.appendChild(el('h2', null, '设置'));
         hgroup.appendChild(el('div', 'sub', '运营参数与其他配置'));

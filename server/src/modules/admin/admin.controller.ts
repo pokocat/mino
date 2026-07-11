@@ -62,7 +62,10 @@ export class AdminController {
   @UseGuards(AdminAuthGuard)
   async updateSetting(@Body() dto: UpdateSettingDto): Promise<{ ok: true }> {
     if (!KNOWN_KEYS.has(dto.key)) {
-      throw new BadRequestException({ code: 400, message: `未知设置键：${dto.key}` });
+      throw new BadRequestException({
+        code: 400,
+        message: `未知设置键：${dto.key}`,
+      });
     }
     await this.settings.set(dto.key, dto.value);
     return { ok: true };

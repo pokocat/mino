@@ -1,5 +1,5 @@
 // seal-avatar：印章方形头像。
-// variant='marshal' → 朱砂底 + 「势」（军师）；variant='ink' → 墨底 + 「师」。
+// variant='marshal' → 朱砂底 + 「势」（米诺）；variant='ink' → 墨底 + 「师」。
 // size 为方块边长（rpx）；字号按边长比例自动推算，可用 text 覆盖默认字。
 Component({
   options: { addGlobalClass: true },

@@ -1,5 +1,5 @@
 // 报告详情页（二级页，type 驱动双版式）。对照 03（结构化）/ 04（自传体）屏。
-// 头部 + md-report 正文 + 军师批注 + 溯源标签 + 底部操作条；onShow 未读 → POST /read。
+// 头部 + md-report 正文 + 米诺批注 + 溯源标签 + 底部操作条；onShow 未读 → POST /read。
 import {
   getReport,
   markReportRead,
@@ -18,8 +18,8 @@ const TYPE_LABELS: Record<ReportType, string> = {
   decision: '决策记录',
 };
 const ORIGIN_LABEL: Record<'user' | 'agent', string> = {
-  user: '我请军师写的',
-  agent: '军师执笔',
+  user: '我请米诺写的',
+  agent: '米诺执笔',
 };
 const CN_NUM = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
@@ -35,7 +35,7 @@ Page({
     chipSuffix: '',
     originLabel: '',
     dateLabel: '',
-    primaryText: '跟军师聊这份报告',
+    primaryText: '跟米诺聊这份报告',
     secondaryIcons: ['export'] as string[], // 副按钮图标序列（resume 双按钮：✎ + ↧）
     exporting: false, // 分享图导出中（防抖）
   },
@@ -60,13 +60,13 @@ Page({
           navTitle: TYPE_LABELS[r.type] || '报告',
           narrative,
           chipSuffix: narrative && r.sequenceNo ? `· 第${cn(r.sequenceNo)}篇` : '',
-          originLabel: ORIGIN_LABEL[r.origin] || '军师执笔',
+          originLabel: ORIGIN_LABEL[r.origin] || '米诺执笔',
           dateLabel: formatDate(r.createdAt),
-          primaryText: narrative ? '跟军师补充这一篇' : '跟军师聊这份报告',
+          primaryText: narrative ? '跟米诺补充这一篇' : '跟米诺聊这份报告',
           // resume 并列 ✎ 补充 + ↧ 导出；其余三类仅 ↧ 导出
           secondaryIcons: narrative ? ['edit', 'export'] : ['export'],
         });
-        // 未读 → 标记已读（消除报告库「军师刚写好」描边）
+        // 未读 → 标记已读（消除报告库「米诺刚写好」描边）
         if (r.status === 'ready' && !r.isRead) {
           markReportRead(id).catch(() => {
             /* 静默 */
@@ -98,12 +98,12 @@ Page({
   onShareAppMessage(): WechatMiniprogram.Page.ICustomShareContent {
     const r = this.data.report;
     return {
-      title: r ? r.title : '米诺战略参谋部 · 军师报告',
+      title: r ? r.title : '米诺战略参谋部 · 米诺报告',
       path: `/pages/reports/detail?id=${this.data.id}&type=${r ? r.type : 'strategy'}`,
     };
   },
 
-  // 主按钮：resume（自传体）=「跟军师补充这一篇」走续写动线；其余=常规「跟军师聊这份报告」
+  // 主按钮：resume（自传体）=「跟米诺补充这一篇」走续写动线；其余=常规「跟米诺聊这份报告」
   onPrimary() {
     if (this.data.narrative) {
       this._appendThisReport();
@@ -150,7 +150,7 @@ Page({
     if (this.data.exporting) return;
     const id = this.data.id;
     this.setData({ exporting: true });
-    wx.showLoading({ title: '军师落笔中…', mask: true });
+    wx.showLoading({ title: '米诺落笔中…', mask: true });
     exportReport(id)
       .then((data) => renderShareCard(this, '#shareCanvas', data))
       .then((tempFilePath) => {

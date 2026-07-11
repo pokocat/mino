@@ -5,7 +5,7 @@
   border-radius: var(--radius-seal);
   flex-shrink: 0;
 }
-/* 军师：朱砂底 + 印章投影 */
+/* 米诺：朱砂底 + 印章投影 */
 .seal--marshal {
   background: var(--color-vermilion);
   box-shadow: var(--shadow-seal);

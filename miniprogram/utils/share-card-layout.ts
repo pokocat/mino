@@ -57,8 +57,8 @@ export function ordinal(n: number): string {
 }
 
 const ORIGIN_LABEL: Record<string, string> = {
-  user: '我请军师写的',
-  agent: '军师执笔',
+  user: '我请米诺写的',
+  agent: '米诺执笔',
 };
 
 // 导出图输入（ExportData 的结构子集；ExportData 可直接传入）
@@ -158,7 +158,7 @@ export function planCard(data: CardData, measure: MeasureFn): CardPlan {
   y += titleLines.length * TITLE_LH + TITLE_GAP;
 
   // 元信息
-  const metaText = `${ORIGIN_LABEL[data.origin] || '军师执笔'} · ${formatDate(
+  const metaText = `${ORIGIN_LABEL[data.origin] || '米诺执笔'} · ${formatDate(
     data.createdAt
   )} · 约 ${data.wordCount} 字`;
   blocks.push({ kind: 'meta', y, text: metaText });
@@ -190,7 +190,7 @@ export function planCard(data: CardData, measure: MeasureFn): CardPlan {
     y += TEXT_LH + PARA_GAP;
   }
 
-  // 军师批注块（左描金竖线 + 引号文案）
+  // 米诺批注块（左描金竖线 + 引号文案）
   if (data.annotation) {
     const lines = wrapText(data.annotation, CONTENT_W - ANNO_PAD * 2, (s) =>
       measure(s, ANNO_SIZE, { serif: true })

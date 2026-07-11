@@ -32,8 +32,8 @@ export interface StreamChatParams {
 }
 
 /**
- * 军师对话服务：以 OpenAI 兼容格式调 FastGPT，返回**增量文本**的 AsyncIterable。
- * FASTGPT_MOCK=true 时不触外部，吐固定军师风格假流（含跨 chunk 拆分的 report_ready 标记）。
+ * 米诺对话服务：以 OpenAI 兼容格式调 FastGPT，返回**增量文本**的 AsyncIterable。
+ * FASTGPT_MOCK=true 时不触外部，吐固定米诺风格假流（含跨 chunk 拆分的 report_ready 标记）。
  */
 @Injectable()
 export class FastgptChatService {
@@ -194,7 +194,7 @@ export class FastgptChatService {
   }
 
   /**
-   * Mock 流：按 40–80ms/片段吐固定军师回复。
+   * Mock 流：按 40–80ms/片段吐固定米诺回复。
    * 末尾的 report_ready 标记被**故意拆在两个片段**里，用于联调与拦截器测试。
    */
   private async *mockStream(): AsyncIterable<string> {
@@ -272,7 +272,7 @@ const MOCK_REPORTS: Record<ReportType, string> = {
   decision: JSON.stringify({
     title: '要不要接这单大客户',
     bodyMd:
-      '## 要决的事\n\n一个大客户抛来长期订单，量大、能撑营收，但要你几乎押上全部产能。接，还是不接。\n\n## 两条路\n\n1. **接。**营收立刻上台阶，但你被一家攥住命门，议价权拱手让人。\n2. **不接。**保住盘子的均衡与主动，增长慢一些，睡得踏实。\n\n## 军师建议\n\n若这单让单一客户占比超过四成，**宁可慢，不可险**。先谈一个能退的短约试水，别一次把身家压上去。',
+      '## 要决的事\n\n一个大客户抛来长期订单，量大、能撑营收，但要你几乎押上全部产能。接，还是不接。\n\n## 两条路\n\n1. **接。**营收立刻上台阶，但你被一家攥住命门，议价权拱手让人。\n2. **不接。**保住盘子的均衡与主动，增长慢一些，睡得踏实。\n\n## 米诺建议\n\n若这单让单一客户占比超过四成，**宁可慢，不可险**。先谈一个能退的短约试水，别一次把身家压上去。',
     annotation: '把命门交给别人换来的增长，不是你的势，是你的债。',
     wordCount: 0,
   }),

@@ -1,14 +1,14 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { JUNSHI_SYSTEM_PROMPT } from '../chat/junshi-system-prompt';
-import { JUNSHI_OPENING, FOLLOWUP_PROMPT } from '../chat/junshi-constants';
+import { MINO_SYSTEM_PROMPT } from '../chat/mino-system-prompt';
+import { MINO_OPENING, FOLLOWUP_PROMPT } from '../chat/mino-constants';
 
 /** 设置项键名常量（与 settings 表主键一一对应，未来管理后台按这些键编辑）。 */
 export const SETTING_KEYS = {
-  /** 军师 system prompt（openai 直连模式注入的首条 system 消息）。 */
-  JUNSHI_SYSTEM_PROMPT: 'junshi_system_prompt',
-  /** 军师开场白（建会话时落库的首条 assistant 消息）。 */
-  JUNSHI_OPENING: 'junshi_opening',
+  /** 米诺 system prompt（openai 直连模式注入的首条 system 消息）。 */
+  MINO_SYSTEM_PROMPT: 'mino_system_prompt',
+  /** 米诺开场白（建会话时落库的首条 assistant 消息）。 */
+  MINO_OPENING: 'mino_opening',
   /** 追问 suggestions 生成用的 system 提示词（真实模式）。 */
   FOLLOWUP_PROMPT: 'followup_prompt',
   /** 无 report_ready 标记时，触发「写报告」建议所需的最少用户轮次（回退阈值）。 */
@@ -17,8 +17,8 @@ export const SETTING_KEYS = {
 
 /** 代码内置默认值：DB 缺该键时补种、库不可用时回退。 */
 const DEFAULTS: Record<string, string> = {
-  [SETTING_KEYS.JUNSHI_SYSTEM_PROMPT]: JUNSHI_SYSTEM_PROMPT,
-  [SETTING_KEYS.JUNSHI_OPENING]: JUNSHI_OPENING,
+  [SETTING_KEYS.MINO_SYSTEM_PROMPT]: MINO_SYSTEM_PROMPT,
+  [SETTING_KEYS.MINO_OPENING]: MINO_OPENING,
   [SETTING_KEYS.FOLLOWUP_PROMPT]: FOLLOWUP_PROMPT,
   [SETTING_KEYS.REPORT_SUGGEST_MIN_TURNS]: '3',
 };
@@ -99,9 +99,9 @@ export class SettingsService implements OnModuleInit {
     this.cache.set(key, value);
   }
 
-  /** 军师 system prompt。 */
+  /** 米诺 system prompt。 */
   getSystemPrompt(): string {
-    return this.getString(SETTING_KEYS.JUNSHI_SYSTEM_PROMPT);
+    return this.getString(SETTING_KEYS.MINO_SYSTEM_PROMPT);
   }
 
   /** 写报告建议的回退阈值（用户轮次），默认 3。 */

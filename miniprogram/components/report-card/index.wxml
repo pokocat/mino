@@ -4,14 +4,14 @@
   bindtap="onTap"
 >
   <!-- 未读角标 -->
-  <text wx:if="{{isNew}}" class="rc__badge">军师刚写好</text>
+  <text wx:if="{{isNew}}" class="rc__badge">米诺刚写好</text>
 
   <!-- 头部：类型 chip（生成中转圈 / 失败提示）-->
   <view class="rc__head">
     <type-chip type="{{report.type}}"></type-chip>
     <view wx:if="{{isGenerating}}" class="rc__gen">
       <view class="rc__spin"></view>
-      <text class="rc__gen-text">军师正在执笔…</text>
+      <text class="rc__gen-text">米诺正在执笔…</text>
     </view>
     <text wx:elif="{{isFailed}}" class="rc__failed">生成失败 · 点击重写</text>
     <text wx:elif="{{!isNew}}" class="rc__origin">{{originLabel}}</text>

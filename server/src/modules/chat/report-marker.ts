@@ -23,7 +23,7 @@ const ALLOWED_TYPES: ReportType[] = [
 ];
 
 /**
- * 流式军师回复的标记拦截器。
+ * 流式米诺回复的标记拦截器。
  *
  * 核心难点：`<mino:report_ready .../>` 标记可能被 FastGPT 的 SSE 切分在多个 chunk 里。
  * 策略：内部维护缓冲区，每次 push 先抽走所有**完整**标记，再判断缓冲区尾部是否

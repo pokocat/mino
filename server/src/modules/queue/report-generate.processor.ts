@@ -117,7 +117,7 @@ export class ReportGenerateProcessor {
       // 回喂知识库：标题 + 首段（失败不影响报告 ready）
       await this.syncToKb(report.id, report.userId, parsed);
 
-      // 订阅消息推送「军师刚写好一份…」（R4；WxPushService 内部自消化异常，绝不抛出）
+      // 订阅消息推送「米诺刚写好一份…」（R4；WxPushService 内部自消化异常，绝不抛出）
       await this.push.sendReportReady(
         { wxOpenid: report.user.wxOpenid, nickname: report.user.nickname },
         { id: report.id, title: parsed.title },
@@ -314,7 +314,7 @@ export class ReportGenerateProcessor {
     return null;
   }
 
-  /** 取会话全部消息拼成「老板/军师」对话文本。 */
+  /** 取会话全部消息拼成「老板/米诺」对话文本。 */
   private async loadDialogue(conversationId: string): Promise<string> {
     const msgs = await this.prisma.message.findMany({
       where: { conversationId },
@@ -322,7 +322,7 @@ export class ReportGenerateProcessor {
       select: { role: true, content: true },
     });
     return msgs
-      .map((m) => `${m.role === 'user' ? '老板' : '军师'}：${m.content}`)
+      .map((m) => `${m.role === 'user' ? '老板' : '米诺'}：${m.content}`)
       .join('\n');
   }
 
@@ -382,7 +382,7 @@ export class ReportGenerateProcessor {
   }
 }
 
-/** 从 meta(jsonb) 读 topic（军师主动触发时写入）。 */
+/** 从 meta(jsonb) 读 topic（米诺主动触发时写入）。 */
 function readTopic(meta: unknown): string | null {
   if (meta && typeof meta === 'object' && 'topic' in meta) {
     const t = (meta as Record<string, unknown>).topic;

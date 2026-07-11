@@ -22,7 +22,7 @@
   word-break: break-word;
 }
 
-/* 军师=纸面左侧，非对称圆角 4/13 → 8/25rpx */
+/* 米诺=纸面左侧，非对称圆角 4/13 → 8/25rpx */
 .mb__bubble--assistant {
   background: var(--color-card);
   border: 1px solid var(--border-hairline);

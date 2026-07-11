@@ -21,17 +21,26 @@ export class AdminAuthGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<Request>();
     const token = this.extractToken(req);
     if (!token) {
-      throw new UnauthorizedException({ code: 401, message: '未登录或登录已过期' });
+      throw new UnauthorizedException({
+        code: 401,
+        message: '未登录或登录已过期',
+      });
     }
     try {
       const payload = await this.jwt.verifyAsync<AdminJwtPayload>(token);
       if (payload?.role !== 'admin') {
-        throw new UnauthorizedException({ code: 401, message: '无后台访问权限' });
+        throw new UnauthorizedException({
+          code: 401,
+          message: '无后台访问权限',
+        });
       }
       return true;
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
-      throw new UnauthorizedException({ code: 401, message: '未登录或登录已过期' });
+      throw new UnauthorizedException({
+        code: 401,
+        message: '未登录或登录已过期',
+      });
     }
   }
 

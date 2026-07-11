@@ -12,7 +12,7 @@ const EXTRACTION_SYSTEM =
 /**
  * kb.ingest 的实际处理逻辑（与 BullMQ Worker 解耦，便于单测）。
  *
- * 流程：取该轮 user+assistant 消息 → 军师一次非流式轻量提取 →
+ * 流程：取该轮 user+assistant 消息 → 米诺一次非流式轻量提取 →
  *       NONE/失败则跳过；否则逐条 pushText 写入该用户知识库（title 带日期与会话 id）。
  * 抛出异常 = 交由 Worker 重试（attempts 上限 2）。
  */
@@ -48,7 +48,7 @@ export class KbIngestProcessor {
     }
 
     const dialogue = msgs
-      .map((m) => `${m.role === 'user' ? '老板' : '军师'}：${m.content}`)
+      .map((m) => `${m.role === 'user' ? '老板' : '米诺'}：${m.content}`)
       .join('\n');
 
     // 一次非流式轻量提取

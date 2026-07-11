@@ -1,4 +1,4 @@
-// 军师对话页（tab 根 1）。M2：流式对话 / 历史续聊 / suggestions / reportOffer 占位。
+// 米诺对话页（tab 根 1）。M2：流式对话 / 历史续聊 / suggestions / reportOffer 占位。
 // 性能纪律：流式渲染用独立 data 路径 'streaming.text'（不每 token setData 全量 messages），
 // 60ms 节流合并；完成后再把整段落进 messages。
 import {
@@ -17,8 +17,8 @@ import type { ChatMessage, SuggestionItem, ReportType, ApiError } from '../../ut
 import { ssePost } from '../../utils/sse';
 import type { SseEvent, SseTask } from '../../utils/sse';
 
-// 军师收回消息后的占位文案
-const RETRACT_TEXT = '（这段话军师收回了）';
+// 米诺收回消息后的占位文案
+const RETRACT_TEXT = '（这段话米诺收回了）';
 import { STORAGE_KEYS } from '../../utils/config';
 import { requestSubscribe } from '../../utils/subscribe';
 
@@ -43,7 +43,7 @@ Page({
       started: false, // started 时 CTA 变「继续聊 →」
     },
     messages: [] as UiMessage[],
-    // 正在生成的军师气泡（独立路径更新，避免全量 messages setData）
+    // 正在生成的米诺气泡（独立路径更新，避免全量 messages setData）
     streaming: { active: false, text: '' },
     typing: false, // 首 token 前的三点 loading
     suggestions: [] as SuggestionItem[],
@@ -73,8 +73,8 @@ Page({
   _pollDeadline: 0, // 轮询截止时刻（60s）
   _dailyTaskId: '', // 今日一问任务 id（供「开始聊」调 start）
   _streakTimer: 0, // 发消息后 streak 延迟刷新定时器句柄
-  _lastSent: '', // 最近一次发送内容（军师拒收 400 时恢复输入供修改）
-  _retracted: false, // 当前流式回复是否已被军师收回（收回后停止追加）
+  _lastSent: '', // 最近一次发送内容（米诺拒收 400 时恢复输入供修改）
+  _retracted: false, // 当前流式回复是否已被米诺收回（收回后停止追加）
 
   onShow() {
     // 同步自定义 tabBar 选中态
@@ -88,7 +88,7 @@ Page({
     // 今日一问：每次 onShow 拉一次，按 status 决定卡片显隐/文案
     this._refreshDailyTask();
 
-    // 报告详情「跟军师聊/补充」回流：续该会话
+    // 报告详情「跟米诺聊/补充」回流：续该会话
     const pending = wx.getStorageSync(STORAGE_KEYS.pendingConversationId) as string;
     if (pending) {
       wx.removeStorageSync(STORAGE_KEYS.pendingConversationId);
@@ -159,7 +159,7 @@ Page({
     listConversations(1)
       .then((list) => {
         if (list.length === 0) {
-          // 首次进入：建会话，随后取服务端预置的军师开场白
+          // 首次进入：建会话，随后取服务端预置的米诺开场白
           return createConversation().then((r) => {
             this._conversationId = r.conversationId;
             return getMessages(r.conversationId);
@@ -291,18 +291,18 @@ Page({
     } else if (ev.type === 'reportOffer') {
       this._lastTopic = ev.topic || this._lastTopic;
       if (ev.reportId) {
-        // 军师已主动开写：直接弹层轮询该报告（跳过 generate）
+        // 米诺已主动开写：直接弹层轮询该报告（跳过 generate）
         this._openModalWithId(ev.reportId, ev.reportType, ev.topic);
       } else {
         // 仅提议：待整段回复落定后，插一条系统提示行
-        this._pendingNote = `军师想把「${ev.topic}」整理成一份报告`;
+        this._pendingNote = `米诺想把「${ev.topic}」整理成一份报告`;
       }
     } else if (ev.type === 'retract') {
       this._onRetract(ev.messageId);
     }
   },
 
-  // 军师收回某条消息：已落地按 messageId 替换内容；正在流式的那条停止追加并替换
+  // 米诺收回某条消息：已落地按 messageId 替换内容；正在流式的那条停止追加并替换
   _onRetract(messageId: string) {
     // 1) 已落地的历史消息：按 id 命中替换
     const idx = this.data.messages.findIndex((m) => m.id === messageId);
@@ -371,7 +371,7 @@ Page({
     this._scheduleStreakRefresh();
   },
 
-  // 出错：丢弃半截流内容。区分军师拒收（400）与网络/服务异常。
+  // 出错：丢弃半截流内容。区分米诺拒收（400）与网络/服务异常。
   _onError(err: ApiError) {
     if (this._flushTimer) {
       clearTimeout(this._flushTimer);
@@ -379,11 +379,11 @@ Page({
     }
     this._streamBuf = '';
 
-    // 400「这段话我不能收」：移除刚发出的用户气泡，恢复输入供修改，以军师气泡展示提示
+    // 400「这段话我不能收」：移除刚发出的用户气泡，恢复输入供修改，以米诺气泡展示提示
     if (String(err.code) === '400') {
       const messages = this.data.messages.slice();
       if (messages.length && messages[messages.length - 1].role === 'user') messages.pop();
-      // 军师气泡样式展示拒收提示（role=assistant → 墨底左气泡）
+      // 米诺气泡样式展示拒收提示（role=assistant → 墨底左气泡）
       messages.push({
         id: `a${++this._seq}`,
         role: 'assistant',
@@ -459,7 +459,7 @@ Page({
   },
 
   // ---- 今日一问 CTA（开始聊 / 继续聊）----
-  // POST /tasks/:id/start（幂等）→ 切换到返回会话（拉历史，军师开场提问已在首条）→ 卡片收起。
+  // POST /tasks/:id/start（幂等）→ 切换到返回会话（拉历史，米诺开场提问已在首条）→ 卡片收起。
   onDailyStart() {
     const id = this._dailyTaskId;
     if (!id) return;
@@ -521,7 +521,7 @@ Page({
       .catch(() => this.setData({ modalVisible: false })); // request 层已 toast
   },
 
-  // 军师已开写（offer 带 reportId）：跳过 generate，直接弹层轮询
+  // 米诺已开写（offer 带 reportId）：跳过 generate，直接弹层轮询
   _openModalWithId(reportId: string, type: ReportType, topic: string) {
     this._genReportId = reportId;
     this._genType = type;
@@ -562,7 +562,7 @@ Page({
   _timeoutModal() {
     this._clearPoll();
     this.setData({ modalVisible: false });
-    wx.showToast({ title: '军师还在写，稍后去报告库看', icon: 'none' });
+    wx.showToast({ title: '米诺还在写，稍后去报告库看', icon: 'none' });
   },
   _clearPoll() {
     if (this._pollTimer) {
@@ -588,7 +588,7 @@ Page({
   // 默认转发文案（右上菜单/长按转发）
   onShareAppMessage(): WechatMiniprogram.Page.ICustomShareContent {
     return {
-      title: '我在米诺战略参谋部跟军师聊生意，越聊他越懂我。',
+      title: '我在米诺战略参谋部跟米诺聊生意，越聊他越懂我。',
       path: '/pages/chat/chat',
     };
   },

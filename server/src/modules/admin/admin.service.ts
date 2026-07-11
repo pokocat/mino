@@ -25,7 +25,9 @@ export class AdminService {
     const expectUser = this.config.get<string>('admin.user') ?? '';
     const expectPass = this.config.get<string>('admin.pass') ?? '';
     if (!expectUser || !expectPass) {
-      this.logger.warn('后台管理员未配置（ADMIN_USER/ADMIN_PASS 为空），登录被拒绝');
+      this.logger.warn(
+        '后台管理员未配置（ADMIN_USER/ADMIN_PASS 为空），登录被拒绝',
+      );
       return null;
     }
     if (user !== expectUser || pass !== expectPass) {

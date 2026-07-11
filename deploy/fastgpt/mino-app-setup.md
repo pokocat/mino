@@ -1,14 +1,14 @@
-# 军师应用 · FastGPT 控制台搭建指南
+# 米诺应用 · FastGPT 控制台搭建指南
 
-面向部署/运营：如何在 FastGPT 控制台把「军师」对话应用建起来，产出后端所需的 `FASTGPT_BASE_URL` 与 `FASTGPT_APP_KEY`。
+面向部署/运营：如何在 FastGPT 控制台把「米诺」对话应用建起来，产出后端所需的 `FASTGPT_BASE_URL` 与 `FASTGPT_APP_KEY`。
 后端以 OpenAI 兼容接口 `POST {FASTGPT_BASE_URL}/api/v1/chat/completions`（`stream:true`、`Authorization: Bearer {FASTGPT_APP_KEY}`、body 带 `chatId`）调用本应用，详见 `server/src/modules/fastgpt/`。
 
 ## 1. 新建应用
 1. 控制台 →「工作台」→「新建」→ 选**简单应用**（简易模板即可，复杂编排后置到「报告工作流」）。
-2. 命名「军师 / 天势战略系统」。
+2. 命名「米诺 / 天势战略系统」。
 
 ## 2. 贴系统提示词
-- 打开应用「提示词 / System」字段，把 `deploy/fastgpt/junshi-system-prompt.md` **分隔线以下的正文整段**粘贴进去（含末尾两段后端契约约定，勿删标记语法）。
+- 打开应用「提示词 / System」字段，把 `deploy/fastgpt/mino-system-prompt.md` **分隔线以下的正文整段**粘贴进去（含末尾两段后端契约约定，勿删标记语法）。
 
 ## 3. 选模型与参数建议
 - 模型：选接入的对话大模型（经 OneAPI / AIProxy）。
@@ -23,12 +23,12 @@
 - 隔离即隐私边界：一次对话只挂当前用户的库。
 
 ## 5. 对话建议（suggestions）
-- 可开启 FastGPT 自带「猜你想问」。但 V3 的 suggestions（尤其「让军师写报告」primary 项）由**后端在每轮流结束后统一注入**（见方案 §8.3 与 `chat.service`），控制台侧可不依赖此项。
+- 可开启 FastGPT 自带「猜你想问」。但 V3 的 suggestions（尤其「让米诺写报告」primary 项）由**后端在每轮流结束后统一注入**（见方案 §8.3 与 `chat.service`），控制台侧可不依赖此项。
 
 ## 6. 取接入密钥
 - 应用「发布 / API 访问」→ 新建 API 密钥（`sk-...`）→ 填入后端 `.env` 的 `FASTGPT_APP_KEY`。
 - `FASTGPT_BASE_URL` 填 FastGPT 服务地址（自托管默认 `http://localhost:3001`，见 `docs/dev-setup.md`）。
-- 本地无 FastGPT 时，后端置 `FASTGPT_MOCK=true` 可跳过外部调用、走内置军师风格假流联调。
+- 本地无 FastGPT 时，后端置 `FASTGPT_MOCK=true` 可跳过外部调用、走内置米诺风格假流联调。
 
 ---
 
@@ -46,7 +46,7 @@
 ```
 
 ## 附：5 条快捷指令（后续「今日一问」等会引用其 query 原文）
-| 指令标签 | 发给军师的 query 原文 |
+| 指令标签 | 发给米诺的 query 原文 |
 |---|---|
 | 本周执行策略 | 给我这周的执行策略：结合我的势和当前主要矛盾，列出本周最该做的 3 件事、最佳时间窗口、该攻还是该守。 |
 | 今日天势 | 看看我今天的天势，宜攻还是宜守？给一条今天的行动建议。 |

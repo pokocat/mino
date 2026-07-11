@@ -98,7 +98,7 @@ Page({
     return Math.floor(diff / 86400000) + 1;
   },
 
-  // streak=0 时 CTA「去聊 →」：切到军师对话
+  // streak=0 时 CTA「去聊 →」：切到米诺对话
   onGoChat() {
     wx.switchTab({ url: '/pages/chat/chat' });
   },

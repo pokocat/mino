@@ -10,7 +10,7 @@
           <text class="ident__name">{{nickname || '还没取名'}}</text>
           <text wx:if="{{industry}}" class="ident__chip">{{industry}}</text>
         </view>
-        <text wx:if="{{companionDays >= 0}}" class="ident__days">与军师相伴 {{companionDays}} 天</text>
+        <text wx:if="{{companionDays >= 0}}" class="ident__days">与米诺相伴 {{companionDays}} 天</text>
       </view>
     </view>
 
@@ -18,11 +18,11 @@
     <view class="streak">
       <block wx:if="{{streakDays > 0}}">
         <text class="streak__num">{{streakDays}}</text>
-        <text class="streak__main">连续 {{streakDays}} 天与军师对谈</text>
+        <text class="streak__main">连续 {{streakDays}} 天与米诺对谈</text>
         <text class="streak__sub">兵贵有恒。明天接着聊。</text>
       </block>
       <block wx:else>
-        <text class="streak__main streak__main--idle">今天还没跟军师聊</text>
+        <text class="streak__main streak__main--idle">今天还没跟米诺聊</text>
         <view class="streak__cta" bindtap="onGoChat">
           <text class="streak__cta-text">去聊 →</text>
         </view>
@@ -49,16 +49,16 @@
     <!-- ④ 我的画像卡 -->
     <view class="profile">
       <view class="profile__head">
-        <text class="profile__title">军师所知的你</text>
+        <text class="profile__title">米诺所知的你</text>
         <text class="profile__edit" bindtap="onEditProfile">改一改</text>
       </view>
       <view class="profile__item">
         <text class="profile__k">行业</text>
-        <text class="profile__v {{industry ? '' : 'profile__v--empty'}}">{{industry || '还没告诉军师'}}</text>
+        <text class="profile__v {{industry ? '' : 'profile__v--empty'}}">{{industry || '还没告诉米诺'}}</text>
       </view>
       <view class="profile__item">
         <text class="profile__k">生意背景</text>
-        <text class="profile__v {{bizNote ? '' : 'profile__v--empty'}}">{{bizNote || '还没告诉军师'}}</text>
+        <text class="profile__v {{bizNote ? '' : 'profile__v--empty'}}">{{bizNote || '还没告诉米诺'}}</text>
       </view>
     </view>
 

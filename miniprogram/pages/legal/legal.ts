@@ -16,7 +16,7 @@ const CONTENT: Record<LegalType, { title: string; intro: string; sections: Secti
     sections: [
       {
         heading: '一 · 服务说明',
-        body: '米诺战略参谋部提供基于对话的战略参谋与报告生成服务。军师的回复与报告均由 AI 生成，仅供参考，不构成任何投资、法律或经营决策建议。',
+        body: '米诺战略参谋部提供基于对话的战略参谋与报告生成服务。米诺的回复与报告均由 AI 生成，仅供参考，不构成任何投资、法律或经营决策建议。',
       },
       {
         heading: '二 · 账号与使用',
@@ -24,7 +24,7 @@ const CONTENT: Record<LegalType, { title: string; intro: string; sections: Secti
       },
       {
         heading: '三 · 内容与知识产权',
-        body: '你与军师的对话内容归你所有；报告仅本人可见。你可随时删除自己的报告与对话数据。',
+        body: '你与米诺的对话内容归你所有；报告仅本人可见。你可随时删除自己的报告与对话数据。',
       },
       {
         heading: '四 · 免责与变更',
@@ -39,11 +39,11 @@ const CONTENT: Record<LegalType, { title: string; intro: string; sections: Secti
     sections: [
       {
         heading: '一 · 我们收集的信息',
-        body: '为提供服务，我们收集你的微信登录标识、你填写的昵称/行业/生意背景，以及你与军师的对话与生成的报告。',
+        body: '为提供服务，我们收集你的微信登录标识、你填写的昵称/行业/生意背景，以及你与米诺的对话与生成的报告。',
       },
       {
         heading: '二 · 信息的使用',
-        body: '你的信息仅用于生成更懂你的军师回复与报告。对话要点会写入你的专属知识库，检索仅挂在你本人名下，构成隐私边界。',
+        body: '你的信息仅用于生成更懂你的米诺回复与报告。对话要点会写入你的专属知识库，检索仅挂在你本人名下，构成隐私边界。',
       },
       {
         heading: '三 · 信息的存储与保护',

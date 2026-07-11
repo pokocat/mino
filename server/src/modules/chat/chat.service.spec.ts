@@ -15,7 +15,7 @@ import {
   RETRACT_TEXT,
   SseEvent,
 } from './chat.service';
-import { JUNSHI_OPENING, FOLLOWUP_PROMPT } from './junshi-constants';
+import { MINO_OPENING, FOLLOWUP_PROMPT } from './mino-constants';
 
 /** 内容安全桩：默认全部 pass（可覆写 checkText 模拟命中）。 */
 function stubSafety(): WxSecService & { checkText: jest.Mock } {
@@ -41,17 +41,17 @@ function stubKb(fragments: string[] = []): FastgptKbService {
 
 /**
  * 设置服务桩：getSystemPrompt 返回占位、getReportMinTurns 返回给定阈值（默认 3）；
- * getString 对 junshi_opening / followup_prompt 返回真实默认常量（chat.service 现从设置读取这两项）。
+ * getString 对 mino_opening / followup_prompt 返回真实默认常量（chat.service 现从设置读取这两项）。
  */
 function stubSettings(
   minTurns = 3,
 ): SettingsService & { getReportMinTurns: jest.Mock } {
   const strings: Record<string, string> = {
-    junshi_opening: JUNSHI_OPENING,
+    mino_opening: MINO_OPENING,
     followup_prompt: FOLLOWUP_PROMPT,
   };
   return {
-    getSystemPrompt: jest.fn().mockReturnValue('军师 system prompt'),
+    getSystemPrompt: jest.fn().mockReturnValue('米诺 system prompt'),
     getReportMinTurns: jest.fn().mockReturnValue(minTurns),
     getString: jest.fn((key: string) => strings[key] ?? ''),
     getAll: jest.fn().mockReturnValue(strings),
@@ -68,7 +68,7 @@ function stubQueue(): KbIngestQueue & { enqueue: jest.Mock } {
   } as unknown as KbIngestQueue & { enqueue: jest.Mock };
 }
 
-/** ReportService 桩：默认军师主动建报告成功返回 reportId（可覆写为 null 模拟每日上限）。 */
+/** ReportService 桩：默认米诺主动建报告成功返回 reportId（可覆写为 null 模拟每日上限）。 */
 function stubReports(
   result: { reportId: string } | null = { reportId: 'rpt-agent' },
 ): ReportService & { createAgentReport: jest.Mock } {
@@ -99,7 +99,7 @@ describe('ChatService', () => {
     get: (key: string) => (key === 'fastgpt.mock' ? true : undefined),
   } as unknown as ConfigService;
 
-  describe('createConversation（建会话含军师开场白）', () => {
+  describe('createConversation（建会话含米诺开场白）', () => {
     it('同步落一条 assistant 开场白，并置 lastMessageAt', async () => {
       const prisma = {
         conversation: {
@@ -132,9 +132,9 @@ describe('ChatService', () => {
       // 嵌套创建首条 assistant 消息 = 开场白原文（与 deploy 文档同源常量）
       expect(createArg.data.messages.create).toEqual({
         role: 'assistant',
-        content: JUNSHI_OPENING,
+        content: MINO_OPENING,
       });
-      expect(JUNSHI_OPENING.startsWith('兄弟，坐下聊。')).toBe(true);
+      expect(MINO_OPENING.startsWith('兄弟，坐下聊。')).toBe(true);
     });
   });
 
@@ -206,14 +206,14 @@ describe('ChatService', () => {
       expect(full).not.toContain('mino:report');
       expect(full.startsWith('兄弟')).toBe(true);
 
-      // reportOffer 携带 mock 标记的 type=review，且军师主动建了报告 → 带 reportId
+      // reportOffer 携带 mock 标记的 type=review，且米诺主动建了报告 → 带 reportId
       const offer = events.find((e) => e.event === 'reportOffer');
       expect(offer?.data).toEqual({
         reportType: 'review',
         topic: '留住回头客的复盘',
         reportId: 'rpt-agent',
       });
-      // 军师主动触发：以会话归属信息调 createAgentReport
+      // 米诺主动触发：以会话归属信息调 createAgentReport
       expect(reports.createAgentReport).toHaveBeenCalledWith(
         'user-1',
         'conv-1',
@@ -259,7 +259,7 @@ describe('ChatService', () => {
       expect(updateArg.data.title).toBeUndefined();
     });
 
-    it('军师主动命中每日上限（createAgentReport 返回 null）时 reportOffer 不带 reportId', async () => {
+    it('米诺主动命中每日上限（createAgentReport 返回 null）时 reportOffer 不带 reportId', async () => {
       // 覆写 reports 桩为 null（模拟已达当日 origin=agent 上限）
       reports.createAgentReport.mockResolvedValue(null);
       const conv = buildConversation();
@@ -343,7 +343,7 @@ describe('ChatService', () => {
       expect(events.map((e) => e.event)).toContain('done');
     });
 
-    it('军师输出命中内容安全：撤回落库替换 + 发 retract → done，且跳过 suggestions/reportOffer', async () => {
+    it('米诺输出命中内容安全：撤回落库替换 + 发 retract → done，且跳过 suggestions/reportOffer', async () => {
       // 输出审核判 risky（输入审核走 assertInputSafe，此处不触发）
       safety.checkText.mockResolvedValue({ risky: true, label: 'label:20001' });
       const conv = buildConversation();

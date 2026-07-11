@@ -10,7 +10,7 @@
     >分享</button>
   </nav-bar>
 
-  <view wx:if="{{loading}}" class="detail__loading">军师翻档中……</view>
+  <view wx:if="{{loading}}" class="detail__loading">米诺翻档中……</view>
 
   <!-- 首屏网络错误 -->
   <error-retry wx:elif="{{loadError}}" bind:retry="onRetry"></error-retry>
@@ -34,10 +34,10 @@
       <!-- 正文 -->
       <md-report body-md="{{report.bodyMd}}" type="{{report.type}}"></md-report>
 
-      <!-- 军师批注 -->
+      <!-- 米诺批注 -->
       <annotation-block
         wx:if="{{report.annotation}}"
-        label="{{narrative ? '军师批注' : '军师一句话'}}"
+        label="{{narrative ? '米诺批注' : '米诺一句话'}}"
         text="{{report.annotation}}"
       ></annotation-block>
 

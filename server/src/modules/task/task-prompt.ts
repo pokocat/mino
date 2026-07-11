@@ -9,7 +9,7 @@ export interface ParsedDailyQuestion {
 
 /**
  * 组装「今日一问」出题的 messages（喂给 FastgptChatService.complete，非流式）。
- * 军师给这位老板出今天想通的一件事：一句话问题 + 一句钩子文案 + 预计分钟数，参考画像与近期关切。
+ * 米诺给这位老板出今天想通的一件事：一句话问题 + 一句钩子文案 + 预计分钟数，参考画像与近期关切。
  */
 export function buildDailyQuestionMessages(params: {
   industry?: string | null;
@@ -17,11 +17,11 @@ export function buildDailyQuestionMessages(params: {
   kbFragments: string[];
 }): ChatMessage[] {
   const system =
-    '你是「米诺战略参谋部」的军师。给这位老板出今天想通的一件事——' +
+    '你是「米诺战略参谋部」的米诺。给这位老板出今天想通的一件事——' +
     '一句话问题（question）+ 一句钩子文案（hint，勾起他想答的欲望）+ 预计分钟数（estMinutes，2-5 的整数）。' +
     '参考他的画像与知识库检索到的近期关切，问到他心里去。' +
     '只输出一个 JSON 对象：{"question","hint","estMinutes"}，不要任何解释文字或代码围栏。' +
-    '语气延续军师人格：势/节奏的比喻叙事，不用「赋能/抓手/底层逻辑」等黑话，不输出任何精确命理或统计数字。';
+    '语气延续米诺人格：势/节奏的比喻叙事，不用「赋能/抓手/底层逻辑」等黑话，不输出任何精确命理或统计数字。';
 
   const profileLine =
     [

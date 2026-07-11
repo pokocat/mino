@@ -24,7 +24,7 @@ import { ReportMarker, ReportMarkerStream } from './report-marker';
 export interface Suggestion {
   text: string;
   primary: boolean;
-  // generateReport：让军师写报告；chat：追问气泡；appendCommit：把续写会话织进目标报告
+  // generateReport：让米诺写报告；chat：追问气泡；appendCommit：把续写会话织进目标报告
   action: 'generateReport' | 'chat' | 'appendCommit';
   reportType?: ReportType;
   reportId?: string; // action=appendCommit 时携带目标报告 id
@@ -36,7 +36,7 @@ export type SseEvent =
   | { event: 'suggestions'; data: { items: Suggestion[] } }
   | {
       event: 'reportOffer';
-      // 军师主动建了报告则带 reportId；命中每日上限（只发事件不建报告）则无该字段
+      // 米诺主动建了报告则带 reportId；命中每日上限（只发事件不建报告）则无该字段
       data: { reportType: ReportType; topic: string; reportId?: string };
     }
   // R7 内容安全撤回：流式无法逐 token 审，流结束后对 assistant 全文审核命中风险时下发。
@@ -48,7 +48,7 @@ export type SseEvent =
   | { event: 'error'; data: { code: number; message: string } };
 
 /** assistant 输出被内容安全撤回后的占位文案（落库 + 端上气泡替换共用）。 */
-export const RETRACT_TEXT = '（这段话军师收回了）';
+export const RETRACT_TEXT = '（这段话米诺收回了）';
 
 /** 用户输入命中内容安全时的 400 文案。 */
 export const INPUT_REJECTED_MESSAGE = '这段话我不能收，换个说法';
@@ -87,7 +87,7 @@ export class ChatService {
   }
 
   /**
-   * 新建会话：生成 fastgptChatId（uuid），并同步落一条军师开场白（assistant）——
+   * 新建会话：生成 fastgptChatId（uuid），并同步落一条米诺开场白（assistant）——
    * 端上建会话后立即 GET messages 即可拿到开场白（双端契约）；
    * 该条随会话历史一并作为 assistant 上下文喂给 FastGPT。
    */
@@ -102,7 +102,7 @@ export class ChatService {
         messages: {
           create: {
             role: 'assistant',
-            content: this.settings.getString('junshi_opening'),
+            content: this.settings.getString('mino_opening'),
           },
         },
       },
@@ -148,7 +148,7 @@ export class ChatService {
 
   /**
    * 发消息 → 流式回复的编排（产出结构化 SSE 事件，controller 负责落线）。
-   * 流程：存用户消息 → 组装历史 → 调军师流 → 边收边发 token（拦截 report_ready 标记）
+   * 流程：存用户消息 → 组装历史 → 调米诺流 → 边收边发 token（拦截 report_ready 标记）
    * → 存 assistant 全文（标记已剥离）→ 更新 lastMessageAt/title → suggestions →（若有）reportOffer → done。
    */
   async *streamReply(
@@ -167,11 +167,14 @@ export class ChatService {
     //      settleOnMessage 内部已吞异常，此处 void 不阻塞、失败绝不影响对话。
     void this.streak.settleOnMessage(conv.userId);
 
-    // 2) 组装上下文：openai 直连模式先注入军师 system prompt（fastgpt 模式由 FastGPT 应用内置，注入会重复）
+    // 2) 组装上下文：openai 直连模式先注入米诺 system prompt（fastgpt 模式由 FastGPT 应用内置，注入会重复）
     //    → 本条消息检索用户知识库（战略档案摘录）附加 system → 再接会话历史
     const messages: ChatMessage[] = [];
     if ((this.config.get<string>('llm.provider') ?? 'fastgpt') === 'openai') {
-      messages.push({ role: 'system', content: this.settings.getSystemPrompt() });
+      messages.push({
+        role: 'system',
+        content: this.settings.getSystemPrompt(),
+      });
     }
     const kbContext = await this.retrieveKbContext(conv.userId, content);
     if (kbContext) {
@@ -182,7 +185,7 @@ export class ChatService {
       orderBy: { createdAt: 'asc' },
       select: { role: true, content: true },
     });
-    // 「跟军师聊这份报告」新建的会话：首轮把源报告全文作为附加 system 上下文拼入
+    // 「跟米诺聊这份报告」新建的会话：首轮把源报告全文作为附加 system 上下文拼入
     // （与 kb 检索注入同源；只在首个用户回合注入一次，不落 messages、不下发端上）
     const userTurns = history.filter((m) => m.role === 'user').length;
     if (conv.seedReportId && userTurns <= 1) {
@@ -193,7 +196,7 @@ export class ChatService {
       messages.push({ role: m.role, content: m.content });
     }
 
-    // 3) 调军师流，边收边发；标记拦截器保证 report_ready 不泄漏（含跨 chunk 拆分）
+    // 3) 调米诺流，边收边发；标记拦截器保证 report_ready 不泄漏（含跨 chunk 拆分）
     const markerStream = new ReportMarkerStream();
     const markers: ReportMarker[] = [];
     let fullText = '';
@@ -218,10 +221,10 @@ export class ChatService {
         yield { event: 'token', data: { t: tail.text } };
       }
     } catch (err) {
-      this.logger.error(`军师流式失败：${String(err)}`);
+      this.logger.error(`米诺流式失败：${String(err)}`);
       yield {
         event: 'error',
-        data: { code: 500, message: '军师正在闭关，稍后再试' },
+        data: { code: 500, message: '米诺正在闭关，稍后再试' },
       };
       return;
     }
@@ -244,7 +247,7 @@ export class ChatService {
     const outVerdict = await this.safety.checkText(openid, fullText, 3);
     if (outVerdict.risky) {
       this.logger.warn(
-        `军师输出命中内容安全（label=${outVerdict.label}），撤回消息 ${assistant.id}`,
+        `米诺输出命中内容安全（label=${outVerdict.label}），撤回消息 ${assistant.id}`,
       );
       await this.prisma.message.update({
         where: { id: assistant.id },
@@ -259,7 +262,7 @@ export class ChatService {
     }
 
     // 5) suggestions（done 前必发）：primary 项（写报告 / 续写会话则换 appendCommit）+ 追问两条。
-    //    写报告 primary 受门控：军师本轮发了 report_ready 标记，或对话已达回退轮次阈值，才提供。
+    //    写报告 primary 受门控：米诺本轮发了 report_ready 标记，或对话已达回退轮次阈值，才提供。
     yield {
       event: 'suggestions',
       data: {
@@ -270,7 +273,7 @@ export class ChatService {
       },
     };
 
-    // 6) reportOffer（§8.4 军师主动触发）：拦到标记 → origin=agent 建报告并入队；
+    // 6) reportOffer（§8.4 米诺主动触发）：拦到标记 → origin=agent 建报告并入队；
     //    每用户每日 origin=agent 上限 1 份，超限只发事件不建报告（无 reportId 字段）。
     //    续写会话（appendReportId 非空）标记仍被拦截剥离，但不建 origin=agent 报告、不发 reportOffer。
     if (markers.length > 0 && !conv.appendReportId) {
@@ -285,8 +288,8 @@ export class ChatService {
         );
         reportId = created?.reportId;
       } catch (err) {
-        // 军师主动建报告失败绝不打断对话，仅告警后照常发事件（无 reportId）
-        this.logger.warn(`军师主动建报告失败（已忽略）：${String(err)}`);
+        // 米诺主动建报告失败绝不打断对话，仅告警后照常发事件（无 reportId）
+        this.logger.warn(`米诺主动建报告失败（已忽略）：${String(err)}`);
       }
       yield {
         event: 'reportOffer',
@@ -343,7 +346,7 @@ export class ChatService {
   }
 
   /**
-   * 加载源报告全文，拼成首轮附加 system 上下文（供「跟军师聊这份报告」回流）。
+   * 加载源报告全文，拼成首轮附加 system 上下文（供「跟米诺聊这份报告」回流）。
    * 报告不存在 / 无正文 / 异常 → null（静默跳过）。此上下文不落 messages、不下发端上。
    */
   private async loadSeedReportContext(
@@ -365,8 +368,8 @@ export class ChatService {
   /**
    * suggestions 规则：primary 项（可能没有）+ 两条追问。
    * - 续写会话（appendReportId 非空）：primary 恒为「把这段织进报告」（action=appendCommit，携带目标报告 id）。
-   * - 普通会话：写报告 primary 受门控——军师本轮发了 report_ready 标记（markersFired）
-   *   或对话已达回退轮次阈值（userTurns >= 配置阈值）才提供「让军师写报告」；否则不出 primary，只回追问。
+   * - 普通会话：写报告 primary 受门控——米诺本轮发了 report_ready 标记（markersFired）
+   *   或对话已达回退轮次阈值（userTurns >= 配置阈值）才提供「让米诺写报告」；否则不出 primary，只回追问。
    * - 追问两条：mock 时用固定两条；真实模式调 complete() 生成（4 秒超时/解析失败 → 空数组）。
    */
   private async buildSuggestions(
@@ -399,7 +402,7 @@ export class ChatService {
   }
 
   /**
-   * 追问两条（action=chat）：mock 返回固定两条；真实模式以军师视角调 complete() 生成
+   * 追问两条（action=chat）：mock 返回固定两条；真实模式以米诺视角调 complete() 生成
    * 「老板此刻最想追问的话」。4 秒超时（Promise.race）或解析失败 → 空数组回退，错误只记日志。
    */
   private async buildFollowups(conv: Conversation): Promise<Suggestion[]> {
@@ -446,7 +449,7 @@ export class ChatService {
     return parseFollowups(raw);
   }
 
-  /** 取最近至多 rounds 轮对话（每条截断 200 字），拼成「老板/军师」文本供追问提示词使用。 */
+  /** 取最近至多 rounds 轮对话（每条截断 200 字），拼成「老板/米诺」文本供追问提示词使用。 */
   private async loadRecentDialogue(
     conversationId: string,
     rounds: number,
@@ -461,7 +464,7 @@ export class ChatService {
       .reverse()
       .map(
         (m) =>
-          `${m.role === 'user' ? '老板' : '军师'}：${m.content.slice(0, 200)}`,
+          `${m.role === 'user' ? '老板' : '米诺'}：${m.content.slice(0, 200)}`,
       )
       .join('\n');
   }

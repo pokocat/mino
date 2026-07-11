@@ -11,7 +11,7 @@
 .rc--hover {
   opacity: 0.9;
 }
-/* 军师主动 · 新报告卡（高亮）*/
+/* 米诺主动 · 新报告卡（高亮）*/
 .rc--new {
   border: 3rpx solid var(--border-vermilion); /* 1.5px */
   padding: 28rpx 32rpx 30rpx;

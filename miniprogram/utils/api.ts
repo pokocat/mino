@@ -30,7 +30,7 @@ export interface UserProfile {
   bizNote: string;
   streakDays: number;
   reportStats: ReportStats;
-  createdAt?: string; // 注册时间（ISO）；用于「与军师相伴 N 天」，缺省则隐藏该行
+  createdAt?: string; // 注册时间（ISO）；用于「与米诺相伴 N 天」，缺省则隐藏该行
 }
 
 // POST /me/profile 入参
@@ -122,7 +122,7 @@ export function listConversations(limit = 10): Promise<Conversation[]> {
   return request<Conversation[]>({ url: `/conversations?limit=${limit}`, method: 'GET' });
 }
 
-// GET /conversations/:id/messages → 历史消息（含军师开场白）
+// GET /conversations/:id/messages → 历史消息（含米诺开场白）
 export function getMessages(conversationId: string): Promise<ChatMessage[]> {
   return request<ChatMessage[]>({
     url: `/conversations/${conversationId}/messages`,
@@ -173,7 +173,7 @@ export function getStreak(): Promise<StreakResult> {
 
 // 报告生成态
 export type ReportStatus = 'generating' | 'ready' | 'failed';
-// 报告来源：user=我请军师写的 / agent=军师执笔
+// 报告来源：user=我请米诺写的 / agent=米诺执笔
 export type ReportOrigin = 'user' | 'agent';
 
 // 列表项（GET /reports items[]）
@@ -297,7 +297,7 @@ export function markReportRead(id: string): Promise<{ ok: boolean }> {
   return request<{ ok: boolean }>({ url: `/reports/${id}/read`, method: 'POST' });
 }
 
-// POST /reports/:id/chat → {conversationId}（跟军师聊/补充这份报告，续该会话）
+// POST /reports/:id/chat → {conversationId}（跟米诺聊/补充这份报告，续该会话）
 export function chatFromReport(id: string): Promise<{ conversationId: string }> {
   return request<{ conversationId: string }>({
     url: `/reports/${id}/chat`,

@@ -1,12 +1,12 @@
 // report-card：报告库列表卡。
-// isNew（!isRead && ready）→ 朱砂描边 +「军师刚写好」角标；
-// generating → 转圈 +「军师正在执笔…」，不可点。
+// isNew（!isRead && ready）→ 朱砂描边 +「米诺刚写好」角标；
+// generating → 转圈 +「米诺正在执笔…」，不可点。
 // 点击（仅 ready）triggerEvent('tap', {id, type})。标识符英文、注释中文。
 import type { ReportListItem, ReportOrigin } from '../../utils/api';
 
 const ORIGIN_LABEL: Record<ReportOrigin, string> = {
-  user: '我请军师写的',
-  agent: '军师执笔',
+  user: '我请米诺写的',
+  agent: '米诺执笔',
 };
 
 Component({
@@ -35,7 +35,7 @@ Component({
         isNew: !r.isRead && r.status === 'ready',
         isGenerating: r.status === 'generating',
         isFailed: r.status === 'failed',
-        originLabel: ORIGIN_LABEL[r.origin] || '军师执笔',
+        originLabel: ORIGIN_LABEL[r.origin] || '米诺执笔',
         dateLabel: formatDate(r.createdAt),
         wordLabel: r.wordCount ? `约 ${r.wordCount} 字` : '',
       });

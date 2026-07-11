@@ -24,7 +24,7 @@ page {
   --color-ink-body: #2a241c; /* 状态栏 / 报告正文段落 */
 
   /* ---------- 颜色 · 强调 ---------- */
-  --color-vermilion: #b23a2e; /* 朱砂：军师 / 印章 / CTA / 激活 / tab 激活 */
+  --color-vermilion: #b23a2e; /* 朱砂：米诺 / 印章 / CTA / 激活 / tab 激活 */
   --color-gold: #9a7b3f; /* 描金：履历 / 批注竖线 / 次强调 */
   --color-gold-text: #e8c77a; /* 金字：深墨块上文字 / 主 suggestion */
   --color-gold-subtext: #e8dcc4; /* 深块副文（弹层底提示）*/
@@ -87,7 +87,7 @@ page {
   --lh-ui: 1.65; /* UI */
   --lh-report: 1.85; /* 报告结构正文 */
   --lh-narrative: 2.05; /* 自传叙事 */
-  --lh-annotation: 1.75; /* 军师批注 */
+  --lh-annotation: 1.75; /* 米诺批注 */
 
   /* ---------- 底部 tab ---------- */
   --tabbar-height: 120rpx; /* 60px（不含安全区）*/

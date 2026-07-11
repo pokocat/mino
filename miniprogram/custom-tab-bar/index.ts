@@ -1,4 +1,4 @@
-// 自定义底部 tabBar：3 tab（军师 / 报告库 / 我）。
+// 自定义底部 tabBar：3 tab（米诺 / 报告库 / 我）。
 // 背景 #EDE5D3、激活 #B23A2E、未激活 #9B9384、高 60px + 安全区。
 // 图标为设计稿「对话 / 文档 / 人形」三枚 SVG（base64 内联，激活/未激活各一色，stroke 1.6~2）。
 
@@ -36,7 +36,7 @@ Component({
       {
         key: 'chat',
         pagePath: '/pages/chat/chat',
-        text: '军师',
+        text: '米诺',
         iconActive: CHAT_ACTIVE,
         iconInactive: CHAT_INACTIVE,
       },

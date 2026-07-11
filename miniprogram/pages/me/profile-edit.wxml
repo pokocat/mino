@@ -1,8 +1,8 @@
 <paper-page>
-  <nav-bar title="军师所知的你" back="{{true}}" bind:back="onBack"></nav-bar>
+  <nav-bar title="米诺所知的你" back="{{true}}" bind:back="onBack"></nav-bar>
 
   <view class="edit" wx:if="{{!loading}}">
-    <text class="edit__hint">改了之后，军师会按新的画像来懂你。</text>
+    <text class="edit__hint">改了之后，米诺会按新的画像来懂你。</text>
 
     <view class="field">
       <text class="field__label">昵称</text>

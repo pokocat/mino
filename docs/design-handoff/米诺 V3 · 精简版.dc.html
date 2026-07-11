@@ -24,7 +24,7 @@ a,a:hover{color:#B23A2E;}
 <div style="position:absolute;left:0px;top:0px;width:1040px;font-family:'Noto Sans SC',sans-serif;">
   <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:3px;color:#8d887f;text-transform:uppercase;margin-bottom:14px;">Mino · 宣纸水墨 · V3 精简版 · 可实现优先</div>
   <div style="font-family:'Noto Serif SC',serif;font-weight:900;font-size:46px;color:#1a1714;line-height:1.05;letter-spacing:1px;">天势小程序 · V3</div>
-  <div style="font-size:15px;color:#55504a;margin-top:16px;max-width:860px;line-height:1.8;">回到本质：把「V6.0 军师提示词」在 Claude Code 里跑的那套——<strong style="color:#1a1714;">对话 → 理解用户 → 产出报告</strong>——原样搬到小程序。<strong style="color:#B23A2E;">只有两大块：军师对话 + 报告库</strong>。对话是唯一引擎，报告是唯一交付物。砍掉排盘引擎、评分公式、解锁/段位等高风险或需用户填结构化数据的设计；任务派发 / 微信推送 / 连续天数用最轻的方式塞进对话页，不单独占位。</div>
+  <div style="font-size:15px;color:#55504a;margin-top:16px;max-width:860px;line-height:1.8;">回到本质：把「V6.0 米诺提示词」在 Claude Code 里跑的那套——<strong style="color:#1a1714;">对话 → 理解用户 → 产出报告</strong>——原样搬到小程序。<strong style="color:#B23A2E;">只有两大块：米诺对话 + 报告库</strong>。对话是唯一引擎，报告是唯一交付物。砍掉排盘引擎、评分公式、解锁/段位等高风险或需用户填结构化数据的设计；任务派发 / 微信推送 / 连续天数用最轻的方式塞进对话页，不单独占位。</div>
   <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
     <span style="font-size:12px;color:#B23A2E;border:1px solid rgba(178,58,46,.35);border-radius:14px;padding:5px 13px;">FastGPT 为唯一引擎</span>
     <span style="font-size:12px;color:#574f44;border:1px solid rgba(40,34,28,.2);border-radius:14px;padding:5px 13px;">对话 + 报告库</span>
@@ -65,7 +65,7 @@ a,a:hover{color:#B23A2E;}
       <!-- FastGPT -->
       <div style="flex:1.1;min-width:250px;background:#1F1B16;border-radius:6px;padding:18px;box-shadow:0 8px 22px rgba(40,34,28,.2);">
         <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#E8C77A;">ENGINE · FastGPT</div>
-        <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:#F6F1E5;margin-top:6px;">军师 = FastGPT 应用</div>
+        <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:#F6F1E5;margin-top:6px;">米诺 = FastGPT 应用</div>
         <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
           <div style="background:rgba(246,241,229,.06);border:1px solid rgba(232,199,122,.22);border-radius:5px;padding:9px 11px;font-size:12px;color:#e8dcc4;">装 V6.0 提示词 (轻量势叙事，不排盘)</div>
           <div style="background:rgba(246,241,229,.06);border:1px solid rgba(232,199,122,.22);border-radius:5px;padding:9px 11px;font-size:12px;color:#e8dcc4;"><b style="color:#E8C77A;">每用户知识库</b> · 对话要点写入</div>
@@ -82,9 +82,9 @@ a,a:hover{color:#B23A2E;}
   </div>
 </div>
 
-<!-- ============ 01 军师对话首页 ============ -->
+<!-- ============ 01 米诺对话首页 ============ -->
 <div style="position:absolute;left:0px;top:720px;width:414px;font-family:'Noto Sans SC',sans-serif;">
-  <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:#8d887f;margin-bottom:12px;">01 · 军师对话首页 · tab 根 · 核心</div>
+  <div data-drags-parent="1" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:#8d887f;margin-bottom:12px;">01 · 米诺对话首页 · tab 根 · 核心</div>
   <div style="width:414px;background:#0b0a08;border-radius:52px;padding:13px;box-shadow:0 30px 70px rgba(40,34,28,.28);">
     <div style="position:relative;width:388px;height:844px;border-radius:40px;overflow:hidden;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(40,34,28,.013) 3px,rgba(40,34,28,.013) 4px),radial-gradient(circle at 50% -5%,#F6F1E5,#E6DCC9);color:#1F1B16;display:flex;flex-direction:column;">
       <div style="height:46px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;color:#2a241c;">
@@ -106,7 +106,7 @@ a,a:hover{color:#B23A2E;}
         <!-- 今日一问（任务派发·轻） -->
         <div style="position:relative;background:#1F1B16;border-radius:6px;padding:15px 17px;overflow:hidden;box-shadow:0 8px 22px rgba(40,34,28,.22);">
           <span style="position:absolute;top:12px;right:14px;width:8px;height:8px;border-radius:50%;background:#B23A2E;animation:mn-pulse 2.4s infinite;"></span>
-          <div style="display:flex;align-items:center;gap:8px;"><span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#E8C77A;">今日一问 · 军师推送</span></div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#E8C77A;">今日一问 · 米诺推送</span></div>
           <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:#F6F1E5;margin-top:9px;line-height:1.5;">今天想通一件事：你最值钱的一张牌是什么？</div>
           <div style="font-size:11.5px;color:#b8b0a2;margin-top:7px;line-height:1.6;">聊透了，我给你写进《战略分析》。约 3 分钟。</div>
           <div style="margin-top:13px;text-align:center;background:#B23A2E;border-radius:6px;padding:10px 0;font-size:13px;color:#F6F1E5;font-weight:500;">开始聊 →</div>
@@ -138,7 +138,7 @@ a,a:hover{color:#B23A2E;}
         <div style="width:38px;height:38px;border-radius:50%;background:#B23A2E;display:flex;align-items:center;justify-content:center;color:#F6F1E5;flex-shrink:0;font-size:17px;box-shadow:0 4px 12px rgba(178,58,46,.3);">↑</div>
       </div>
       <div style="flex-shrink:0;height:60px;padding-bottom:6px;background:#EDE5D3;display:flex;align-items:center;justify-content:space-around;border-top:1px solid rgba(40,34,28,.1);">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#B23A2E;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H9l-4 3v-3H4z" stroke-linejoin="round"/></svg><span style="font-size:10px;">军师</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#B23A2E;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H9l-4 3v-3H4z" stroke-linejoin="round"/></svg><span style="font-size:10px;">米诺</span></div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#9b9384;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l3 3v15H6z" stroke-linejoin="round"/><path d="M9 9h6M9 13h6M9 17h4" stroke-linecap="round"/></svg><span style="font-size:10px;">报告库</span></div>
       </div>
     </div>
@@ -164,25 +164,25 @@ a,a:hover{color:#B23A2E;}
         <span style="flex-shrink:0;font-size:12px;color:#574f44;background:#FBF7EF;border:1px solid rgba(40,34,28,.14);border-radius:16px;padding:6px 13px;">决策记录</span>
       </div>
       <div style="flex:1;min-height:0;overflow-y:auto;padding:0 18px 16px;">
-        <!-- 军师主动产出·新 -->
+        <!-- 米诺主动产出·新 -->
         <div style="background:#FBF7EF;border:1.5px solid rgba(178,58,46,.4);border-radius:8px;padding:15px 16px;box-shadow:0 6px 16px rgba(178,58,46,.1);position:relative;">
-          <span style="position:absolute;top:13px;right:14px;font-size:9px;color:#B23A2E;background:rgba(178,58,46,.1);border-radius:8px;padding:2px 8px;">军师刚写好</span>
+          <span style="position:absolute;top:13px;right:14px;font-size:9px;color:#B23A2E;background:rgba(178,58,46,.1);border-radius:8px;padding:2px 8px;">米诺刚写好</span>
           <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:#B23A2E;background:rgba(178,58,46,.08);border-radius:9px;padding:2px 9px;">战略分析</span></div>
           <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:16px;color:#1F1B16;margin-top:9px;">你的护城河：把信任做成根据地</div>
           <div style="font-size:11.5px;color:#6B6256;margin-top:6px;line-height:1.6;">主要矛盾 · 定位 · 三步走。基于今天关于「最值钱的牌」的对话。</div>
-          <div style="font-size:10.5px;color:#9b9384;margin-top:9px;">今天 14:32 · 军师执笔 · 约 900 字</div>
+          <div style="font-size:10.5px;color:#9b9384;margin-top:9px;">今天 14:32 · 米诺执笔 · 约 900 字</div>
         </div>
         <!-- 列表 -->
         <div style="margin-top:12px;display:flex;flex-direction:column;gap:9px;">
           <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:8px;padding:13px 15px;box-shadow:0 4px 12px rgba(40,34,28,.05);">
-            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:#9A7B3F;background:rgba(154,123,63,.1);border-radius:9px;padding:2px 9px;">创业履历</span><span style="font-size:10px;color:#9b9384;">我请军师写的</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:#9A7B3F;background:rgba(154,123,63,.1);border-radius:9px;padding:2px 9px;">创业履历</span><span style="font-size:10px;color:#9b9384;">我请米诺写的</span></div>
             <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;margin-top:8px;">起势：我为什么下海</div>
             <div style="font-size:10.5px;color:#9b9384;margin-top:6px;">6月20日 · 3 段对话织成 · 约 1200 字</div>
           </div>
           <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:8px;padding:13px 15px;box-shadow:0 4px 12px rgba(40,34,28,.05);">
             <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:#3D6FA0;background:rgba(61,111,160,.1);border-radius:9px;padding:2px 9px;">复盘战报</span></div>
             <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;margin-top:8px;">第 6 周复盘：砍掉副线之后</div>
-            <div style="font-size:10.5px;color:#9b9384;margin-top:6px;">6月18日 · 军师执笔 · 约 700 字</div>
+            <div style="font-size:10.5px;color:#9b9384;margin-top:6px;">6月18日 · 米诺执笔 · 约 700 字</div>
           </div>
           <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.1);border-radius:8px;padding:13px 15px;box-shadow:0 4px 12px rgba(40,34,28,.05);">
             <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:10px;color:#7A5BA0;background:rgba(122,91,160,.1);border-radius:9px;padding:2px 9px;">决策记录</span></div>
@@ -192,7 +192,7 @@ a,a:hover{color:#B23A2E;}
         </div>
       </div>
       <div style="flex-shrink:0;height:60px;padding-bottom:6px;background:#EDE5D3;display:flex;align-items:center;justify-content:space-around;border-top:1px solid rgba(40,34,28,.1);">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#9b9384;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H9l-4 3v-3H4z" stroke-linejoin="round"/></svg><span style="font-size:10px;">军师</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#9b9384;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H9l-4 3v-3H4z" stroke-linejoin="round"/></svg><span style="font-size:10px;">米诺</span></div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#B23A2E;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l3 3v15H6z" stroke-linejoin="round"/><path d="M9 9h6M9 13h6M9 17h4" stroke-linecap="round"/></svg><span style="font-size:10px;">报告库</span></div>
       </div>
     </div>
@@ -213,7 +213,7 @@ a,a:hover{color:#B23A2E;}
         <div style="padding:6px 0 14px;border-bottom:1px solid rgba(40,34,28,.1);">
           <span style="font-size:10px;color:#B23A2E;background:rgba(178,58,46,.08);border-radius:9px;padding:2px 9px;">战略分析</span>
           <div style="font-family:'Noto Serif SC',serif;font-weight:900;font-size:22px;color:#1F1B16;margin-top:10px;line-height:1.4;">你的护城河：把信任做成根据地</div>
-          <div style="font-size:10.5px;color:#9b9384;margin-top:8px;">军师执笔 · 今天 14:32 · 源自「最值钱的牌」对话</div>
+          <div style="font-size:10.5px;color:#9b9384;margin-top:8px;">米诺执笔 · 今天 14:32 · 源自「最值钱的牌」对话</div>
         </div>
         <!-- markdown body -->
         <div style="margin-top:16px;">
@@ -232,14 +232,14 @@ a,a:hover{color:#B23A2E;}
             <div style="display:flex;gap:11px;align-items:flex-start;"><span style="font-family:'Noto Serif SC',serif;font-weight:900;font-size:15px;color:#B23A2E;flex-shrink:0;">叁</span><div style="font-size:12.5px;color:#574f44;line-height:1.65;"><b style="color:#1F1B16;">扩。</b>手册跑通后再开第二家，让信任可迁移，而非从零再来。</div></div>
           </div>
         </div>
-        <!-- 军师批注 -->
+        <!-- 米诺批注 -->
         <div style="margin-top:18px;background:#FBF7EF;border-left:3px solid #9A7B3F;border-radius:0 6px 6px 0;padding:12px 15px;box-shadow:0 4px 12px rgba(40,34,28,.05);">
-          <div style="font-size:10px;color:#9A7B3F;letter-spacing:1px;margin-bottom:6px;">军师一句话</div>
+          <div style="font-size:10px;color:#9A7B3F;letter-spacing:1px;margin-bottom:6px;">米诺一句话</div>
           <div style="font-family:'Noto Serif SC',serif;font-size:13px;color:#1F1B16;line-height:1.75;">「别急着摊大。风来了先把帆张稳，扩张是水到渠成的事。」</div>
         </div>
       </div>
       <div style="flex-shrink:0;padding:10px 18px 18px;background:linear-gradient(180deg,rgba(238,230,214,0),#EDE5D3 40%);display:flex;gap:10px;">
-        <div style="flex:1;text-align:center;background:#1F1B16;border-radius:8px;padding:12px 0;font-size:13.5px;color:#E8C77A;font-weight:500;">跟军师聊这份报告</div>
+        <div style="flex:1;text-align:center;background:#1F1B16;border-radius:8px;padding:12px 0;font-size:13.5px;color:#E8C77A;font-weight:500;">跟米诺聊这份报告</div>
         <div style="width:46px;text-align:center;background:#FBF7EF;border:1px solid rgba(40,34,28,.16);border-radius:8px;padding:12px 0;font-size:16px;color:#B23A2E;">↧</div>
       </div>
     </div>
@@ -266,7 +266,7 @@ a,a:hover{color:#B23A2E;}
           <span style="float:left;font-size:44px;line-height:.85;font-weight:900;color:#B23A2E;margin:4px 10px 0 0;">二</span>〇一七年冬天，牧之在一家国企干到第七个年头，忽然觉得日子像一潭静水。<br><br>他辞职那天没跟任何人商量。不是冲动——是攒了太久的一口气。他想验证一件事：离开体系的庇护，自己那点本事还值不值钱。<br><br>头半年很苦。可他发现，真正让客户留下来的，从来不是价格，是那种「交给他放心」的踏实感。这后来成了他整盘生意的底色。
         </div>
         <div style="margin-top:18px;background:#FBF7EF;border-left:3px solid #9A7B3F;border-radius:0 6px 6px 0;padding:12px 15px;box-shadow:0 4px 12px rgba(40,34,28,.05);">
-          <div style="font-size:10px;color:#9A7B3F;letter-spacing:1px;margin-bottom:6px;">军师批注</div>
+          <div style="font-size:10px;color:#9A7B3F;letter-spacing:1px;margin-bottom:6px;">米诺批注</div>
           <div style="font-family:'Noto Serif SC',serif;font-size:13px;color:#1F1B16;line-height:1.75;">「你说是赌一口气，其实是你早就看清了自己的牌。下海不是冲动，是时势到了。」</div>
         </div>
         <div style="margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -276,7 +276,7 @@ a,a:hover{color:#B23A2E;}
         </div>
       </div>
       <div style="flex-shrink:0;padding:10px 18px 18px;background:linear-gradient(180deg,rgba(238,230,214,0),#EDE5D3 40%);display:flex;gap:10px;">
-        <div style="flex:1;text-align:center;background:#1F1B16;border-radius:8px;padding:12px 0;font-size:13.5px;color:#E8C77A;font-weight:500;">跟军师补充这一篇</div>
+        <div style="flex:1;text-align:center;background:#1F1B16;border-radius:8px;padding:12px 0;font-size:13.5px;color:#E8C77A;font-weight:500;">跟米诺补充这一篇</div>
         <div style="width:46px;text-align:center;background:#FBF7EF;border:1px solid rgba(40,34,28,.16);border-radius:8px;padding:12px 0;font-size:16px;color:#B23A2E;">✎</div>
       </div>
     </div>
@@ -292,7 +292,7 @@ a,a:hover{color:#B23A2E;}
       <div style="position:absolute;left:22px;right:22px;top:210px;background:#F6F1E5;border-radius:12px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);">
         <div style="padding:30px 24px 26px;text-align:center;">
           <div style="width:56px;height:56px;border-radius:50%;border:2px solid rgba(178,58,46,.2);border-top-color:#B23A2E;margin:0 auto;animation:mn-spin 1s linear infinite;"></div>
-          <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:18px;color:#1F1B16;margin-top:20px;">军师正在为你执笔……</div>
+          <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:18px;color:#1F1B16;margin-top:20px;">米诺正在为你执笔……</div>
           <div style="font-size:12px;color:#6B6256;margin-top:10px;line-height:1.7;">正在把刚才关于「最值钱的牌」的对话，<br>整理成一份《战略分析》报告。</div>
           <div style="margin-top:16px;display:flex;flex-direction:column;gap:7px;text-align:left;">
             <div style="display:flex;align-items:center;gap:9px;font-size:12px;color:#6F8C5A;"><span>✓</span>读取本次对话要点</div>
@@ -312,12 +312,12 @@ a,a:hover{color:#B23A2E;}
   <div style="background:#FBF7EF;border:1px solid rgba(40,34,28,.12);border-radius:8px;padding:24px 26px;box-shadow:0 8px 24px rgba(40,34,28,.07);height:844px;overflow-y:auto;">
     <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:18px;color:#1F1B16;">最小可行 · 底部 2 tab</div>
     <div style="margin-top:14px;display:flex;flex-direction:column;gap:12px;">
-      <div style="border-left:3px solid #B23A2E;padding:2px 0 2px 12px;"><div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">军师 <span style="font-size:11px;color:#9b9384;font-weight:400;">· 对话（引擎）</span></div><div style="font-size:12px;color:#6B6256;line-height:1.65;margin-top:3px;">直连 FastGPT 应用。顶部「今日一问」= 任务派发的最轻形态；右上「连续 47」= streak；对话后 suggestions 引导深入、并随手「让军师写份报告」。</div></div>
-      <div style="border-left:3px solid #9A7B3F;padding:2px 0 2px 12px;"><div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">报告库 <span style="font-size:11px;color:#9b9384;font-weight:400;">· 交付物 = 知识库</span></div><div style="font-size:12px;color:#6B6256;line-height:1.65;margin-top:3px;">4 类：战略分析 / 创业履历 / 复盘战报 / 决策记录。每份都是 Markdown 文档，可读、可分享、可导出。既给用户看，也回喂 FastGPT 知识库让军师更懂你。</div></div>
+      <div style="border-left:3px solid #B23A2E;padding:2px 0 2px 12px;"><div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">米诺 <span style="font-size:11px;color:#9b9384;font-weight:400;">· 对话（引擎）</span></div><div style="font-size:12px;color:#6B6256;line-height:1.65;margin-top:3px;">直连 FastGPT 应用。顶部「今日一问」= 任务派发的最轻形态；右上「连续 47」= streak；对话后 suggestions 引导深入、并随手「让米诺写份报告」。</div></div>
+      <div style="border-left:3px solid #9A7B3F;padding:2px 0 2px 12px;"><div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">报告库 <span style="font-size:11px;color:#9b9384;font-weight:400;">· 交付物 = 知识库</span></div><div style="font-size:12px;color:#6B6256;line-height:1.65;margin-top:3px;">4 类：战略分析 / 创业履历 / 复盘战报 / 决策记录。每份都是 Markdown 文档，可读、可分享、可导出。既给用户看，也回喂 FastGPT 知识库让米诺更懂你。</div></div>
     </div>
     <div style="margin-top:20px;padding-top:16px;border-top:1px dashed rgba(40,34,28,.14);">
       <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#6F8C5A;">保留（低风险）</div>
-      <div style="font-size:12px;color:#574f44;line-height:1.8;margin-top:8px;">· 对话（FastGPT 应用 + V6.0 提示词，轻量势叙事）<br>· 每用户知识库（FastGPT 自带，= 越来越懂你）<br>· 报告生成与展示（Markdown，两种触发：用户点「生成」/ 军师主动产出并推送）<br>· 任务派发 + 微信订阅消息推送 + 连续天数（都用最轻形态，塞进对话页，不占 tab）</div>
+      <div style="font-size:12px;color:#574f44;line-height:1.8;margin-top:8px;">· 对话（FastGPT 应用 + V6.0 提示词，轻量势叙事）<br>· 每用户知识库（FastGPT 自带，= 越来越懂你）<br>· 报告生成与展示（Markdown，两种触发：用户点「生成」/ 米诺主动产出并推送）<br>· 任务派发 + 微信订阅消息推送 + 连续天数（都用最轻形态，塞进对话页，不占 tab）</div>
     </div>
     <div style="margin-top:18px;">
       <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#B23A2E;">砍掉（相比 V2）</div>
@@ -325,7 +325,7 @@ a,a:hover{color:#B23A2E;}
     </div>
     <div style="margin-top:18px;padding-top:16px;border-top:1px dashed rgba(40,34,28,.14);">
       <div style="font-family:'Noto Serif SC',serif;font-weight:700;font-size:15px;color:#1F1B16;">动线（就这一条）</div>
-      <div style="font-size:12.5px;color:#574f44;line-height:1.9;margin-top:8px;">收到「今日一问」推送 → 跟军师聊透 → 点「让军师写份报告」或军师主动写 → 报告进库 + 微信通知 → 回来接着聊，下次军师更懂你。<span style="color:#B23A2E;">对话产出报告，报告喂养对话，闭环只有两步。</span></div>
+      <div style="font-size:12.5px;color:#574f44;line-height:1.9;margin-top:8px;">收到「今日一问」推送 → 跟米诺聊透 → 点「让米诺写份报告」或米诺主动写 → 报告进库 + 微信通知 → 回来接着聊，下次米诺更懂你。<span style="color:#B23A2E;">对话产出报告，报告喂养对话，闭环只有两步。</span></div>
     </div>
   </div>
 </div>

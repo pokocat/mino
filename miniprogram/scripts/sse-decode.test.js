@@ -91,7 +91,7 @@ function bytes(str) {
   ok('缺省事件名为 message', f2.event === 'message');
 })();
 
-// ---------- 附加：retract 事件帧切分与解析（M6 军师收回）----------
+// ---------- 附加：retract 事件帧切分与解析（M6 米诺收回）----------
 (function testRetractFrame() {
   console.log('附加 · retract 事件');
   const sp = new SseFrameSplitter();

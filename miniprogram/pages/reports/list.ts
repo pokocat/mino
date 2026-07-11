@@ -76,13 +76,13 @@ Page({
     this._reload();
   },
 
-  // 失败卡：确认后请军师重写（取源对话，同 type 重新 generate）
+  // 失败卡：确认后请米诺重写（取源对话，同 type 重新 generate）
   onCardRetry(e: WechatMiniprogram.CustomEvent<{ id: string; type: ReportType }>) {
     const { id, type } = e.detail;
     wx.showModal({
       title: '重写这份报告',
-      content: '让军师重新写一份？',
-      confirmText: '让军师重写',
+      content: '让米诺重新写一份？',
+      confirmText: '让米诺重写',
       success: (m) => {
         if (!m.confirm) return;
         // 取源对话（失败报告的 sources[0]），同会话同 type 重新生成
@@ -93,7 +93,7 @@ Page({
             return generateReport(convId, type);
           })
           .then(() => {
-            wx.showToast({ title: '军师重新执笔了', icon: 'none' });
+            wx.showToast({ title: '米诺重新执笔了', icon: 'none' });
             this._reload();
           })
           .catch(() => {
@@ -134,7 +134,7 @@ Page({
   // 默认转发文案
   onShareAppMessage(): WechatMiniprogram.Page.ICustomShareContent {
     return {
-      title: '我的军师报告库——对话产出报告，报告喂养对话。',
+      title: '我的米诺报告库——对话产出报告，报告喂养对话。',
       path: '/pages/reports/list',
     };
   },

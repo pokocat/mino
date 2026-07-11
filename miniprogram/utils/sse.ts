@@ -1,6 +1,6 @@
 // SSE 流式请求封装（R1 核心）。
 // 真实模式：wx.request enableChunked + onChunkReceived + UTF-8 增量解码 + `\n\n` 切帧。
-// MOCK 模式：不发请求，用 setTimeout 按片段吐固定军师回复 + suggestions + done。
+// MOCK 模式：不发请求，用 setTimeout 按片段吐固定米诺回复 + suggestions + done。
 // 底层纯逻辑见 utils/sse-decode.ts（可在 Node 单测）。标识符英文、注释中文。
 
 import { MOCK_API, config } from './config';
@@ -12,9 +12,9 @@ import type { ApiError, SuggestionItem, ReportType } from './api';
 export type SseEvent =
   | { type: 'token'; text: string }
   | { type: 'suggestions'; items: SuggestionItem[] }
-  // reportOffer：军师提议写报告；有 reportId 表示军师已主动开写（前端跳过 generate）
+  // reportOffer：米诺提议写报告；有 reportId 表示米诺已主动开写（前端跳过 generate）
   | { type: 'reportOffer'; reportType: ReportType; topic: string; reportId?: string }
-  // retract：军师收回某条已发消息；messageId 指向要替换内容的 assistant 气泡
+  // retract：米诺收回某条已发消息；messageId 指向要替换内容的 assistant 气泡
   | { type: 'retract'; messageId: string };
 
 export interface SseDone {
@@ -113,7 +113,7 @@ function dispatch(frame: SseFrame, opts: SsePostOptions): void {
         type: 'reportOffer',
         reportType: (payload.reportType as ReportType) || 'strategy',
         topic: String(payload.topic ?? ''),
-        // reportId 可缺省（军师仅提议、未开写）
+        // reportId 可缺省（米诺仅提议、未开写）
         reportId: payload.reportId ? String(payload.reportId) : undefined,
       });
       break;
@@ -129,7 +129,7 @@ function dispatch(frame: SseFrame, opts: SsePostOptions): void {
     case 'error':
       opts.onError?.({
         code: String(payload.code ?? 500),
-        message: String(payload.message ?? '军师正在闭关'),
+        message: String(payload.message ?? '米诺正在闭关'),
       });
       break;
     default:
@@ -138,7 +138,7 @@ function dispatch(frame: SseFrame, opts: SsePostOptions): void {
 }
 
 // ---------------------------------------------------------------------------
-// MOCK 实现：按片段吐一段固定军师回复，事件结构与真实协议一致
+// MOCK 实现：按片段吐一段固定米诺回复，事件结构与真实协议一致
 // ---------------------------------------------------------------------------
 function mockSsePost(opts: SsePostOptions): SseTask {
   // 续写会话（会话 id 编码原报告 id）：走织入分支，suggestions 主气泡为 appendCommit
@@ -168,7 +168,7 @@ function mockSsePost(opts: SsePostOptions): SseTask {
 
   const after = step * (chunks.length + 1);
 
-  // reportOffer（军师主动提议写报告，前端插系统提示行）
+  // reportOffer（米诺主动提议写报告，前端插系统提示行）
   timers.push(
     setTimeout(() => {
       if (aborted) return;
@@ -220,7 +220,7 @@ function mockSsePost(opts: SsePostOptions): SseTask {
 }
 
 // ---------------------------------------------------------------------------
-// MOCK 续写分支：军师接住这一笔，suggestions 主气泡换成 appendCommit（携带 reportId），
+// MOCK 续写分支：米诺接住这一笔，suggestions 主气泡换成 appendCommit（携带 reportId），
 // 无 reportOffer / 无 generateReport；点击后由页面走 commitAppend 织入。
 // ---------------------------------------------------------------------------
 function mockAppendSsePost(opts: SsePostOptions, reportId: string): SseTask {

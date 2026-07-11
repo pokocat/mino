@@ -40,7 +40,7 @@ Page({
   async onSubmit() {
     const { nickname, industry, bizNote } = this.data.form;
     if (!nickname.trim() || !industry.trim() || !bizNote.trim()) {
-      wx.showToast({ title: '三项都填一下，军师才好认识你', icon: 'none' });
+      wx.showToast({ title: '三项都填一下，米诺才好认识你', icon: 'none' });
       return;
     }
     if (this.data.submitting) return;

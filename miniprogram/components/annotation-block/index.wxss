@@ -1,4 +1,4 @@
-/* 军师批注块：左描金竖线，纸面卡。 */
+/* 米诺批注块：左描金竖线，纸面卡。 */
 .ab {
   margin-top: 34rpx; /* 18px */
   background: var(--color-card);

@@ -2,7 +2,7 @@
 <view wx:if="{{show}}" class="dq">
   <!-- 右上角脉冲红点（未读提示，仅 pending 显示）-->
   <view wx:if="{{unread}}" class="dq__pulse"></view>
-  <view class="dq__tag">今日一问 · 军师推送</view>
+  <view class="dq__tag">今日一问 · 米诺推送</view>
   <view class="dq__question">{{question}}</view>
   <!-- 副文行：hint 后并入「约 N 分钟」（estMinutes>0 时）-->
   <view class="dq__hint">{{hint}}<text wx:if="{{estMinutes}}"> 约 {{estMinutes}} 分钟</text></view>

@@ -31,6 +31,6 @@
   <view wx:elif="{{inited && !loading}}" class="empty">
     <seal-avatar variant="ink" size="160" text="档"></seal-avatar>
     <text class="empty__title">还没有报告</text>
-    <text class="empty__sub">先去跟军师聊聊，聊透了他给你写一份。</text>
+    <text class="empty__sub">先去跟米诺聊聊，聊透了他给你写一份。</text>
   </view>
 </paper-page>
