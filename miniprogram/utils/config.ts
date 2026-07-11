@@ -1,13 +1,21 @@
 // 运行时配置（单一来源）：后端地址 / 字体 / 开发开关
-// 生产构建时可由脚本注入覆盖；此处为 dev 默认值。
+// 生产构建时可由脚本注入覆盖；此处为接入端点默认值。
+//
+// ★ 后端接入端点（单一配置来源，迁移时只改这一处）：
+//   线上：https://wxapi.aibuzz.cn/api_mino  （当前临时复用 junshi 所在服务器，
+//         nginx 把 /api_mino/ 前缀剥离后转发到 mino 后端 127.0.0.1:4100）
+//   本地：http://localhost:3000            （npm run start:dev 时用）
+// 注意：真机/体验版需在微信公众平台「开发管理→服务器域名」把 request 与
+//       上传下载域名加入 https://wxapi.aibuzz.cn（该域名已被 junshi 使用，多数情况已在白名单）。
 
 // MOCK_API 开关：为 true 时 request 不发真实请求，返回内置 mock 数据，
 // 保证无后端也能在开发者工具走通「登录→入局→chat 空态」全流程（M1 验收用）。
-export const MOCK_API = true;
+// 接入真实后端联调时置 false。
+export const MOCK_API = false;
 
 export const config = {
-  // dev 后端地址（NestJS 代理）。真机需替换为 request 合法域名。
-  baseUrl: 'http://localhost:3000',
+  // 后端接入端点。切回本地开发改成 'http://localhost:3000'。
+  baseUrl: 'https://wxapi.aibuzz.cn/api_mino',
   // 子集化衬线字体 CDN 占位（R3 第一步）：留空则直接降级系统衬线栈，不加载。
   serifFontUrl: '',
   // 与 tokens.wxss --font-serif 首选族名保持一致。

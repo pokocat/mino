@@ -1,0 +1,27 @@
+# /etc/systemd/system/mino-api.service
+# 米诺 V3 后端（NestJS）。与既有 junshi-api.service 同构、互相独立。
+# 占位 __DEPLOY_DIR__ / __SERVICE_USER__ / __UPSTREAM_PORT__ 由 provision 脚本替换后安装。
+[Unit]
+Description=Mino V3 API (NestJS + Prisma)
+After=network.target postgresql.service docker.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=__SERVICE_USER__
+WorkingDirectory=__DEPLOY_DIR__
+# @nestjs/config 会从 WorkingDirectory 读取 .env
+ExecStart=/usr/bin/node dist/main
+Restart=always
+RestartSec=3
+# 环境变量走 .env；此处仅兜底端口
+Environment=PORT=__UPSTREAM_PORT__
+Environment=NODE_ENV=production
+# 基本加固
+NoNewPrivileges=true
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mino-api
+
+[Install]
+WantedBy=multi-user.target
