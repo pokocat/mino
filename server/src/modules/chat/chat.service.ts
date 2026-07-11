@@ -18,7 +18,6 @@ import { ReportService } from '../report/report.service';
 import { WxSecService } from '../safety/wx-sec.service';
 import { StreakService } from '../streak/streak.service';
 import { SettingsService } from '../settings/settings.service';
-import { JUNSHI_OPENING } from './junshi-constants';
 import { ReportMarker, ReportMarkerStream } from './report-marker';
 
 /** 一条 suggestions 气泡。 */
@@ -101,7 +100,10 @@ export class ChatService {
         fastgptChatId: randomUUID(),
         lastMessageAt: new Date(),
         messages: {
-          create: { role: 'assistant', content: JUNSHI_OPENING },
+          create: {
+            role: 'assistant',
+            content: this.settings.getString('junshi_opening'),
+          },
         },
       },
     });
@@ -437,7 +439,7 @@ export class ChatService {
       chatId: conv.fastgptChatId,
       userId: conv.userId,
       messages: [
-        { role: 'system', content: FOLLOWUP_PROMPT },
+        { role: 'system', content: this.settings.getString('followup_prompt') },
         { role: 'user', content: dialogue },
       ],
     });
@@ -467,11 +469,6 @@ export class ChatService {
 
 /** 追问 suggestions 生成的 4 秒超时。 */
 const FOLLOWUP_TIMEOUT_MS = 4000;
-
-/** 追问 suggestions 的 system 提示词（真实模式）。 */
-const FOLLOWUP_PROMPT =
-  '以军师视角，为老板生成 2 条他此刻最想追问的话（每条不超过 14 字，口语，不用序号），' +
-  '只输出 JSON：{"questions":["…","…"]}，不要任何解释文字或代码围栏。';
 
 /** 解析 complete() 返回的追问 JSON：取 questions 数组中至多 2 条非空字符串；失败返回空数组。 */
 function parseFollowups(raw: string): string[] {

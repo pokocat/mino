@@ -18,6 +18,10 @@ export const envValidationSchema = Joi.object({
   JWT_SECRET: Joi.string().min(1),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
 
+  // 后台管理员账号（单账号，走环境变量）；任一为空 → 后台登录被禁用（不可绕过）。
+  ADMIN_USER: Joi.string().allow('').default(''),
+  ADMIN_PASS: Joi.string().allow('').default(''),
+
   WX_APPID: Joi.string().allow('').default(''),
   WX_SECRET: Joi.string().allow('').default(''),
   // Mock 登录开关（本地/联调无真实 appid 时置 true）

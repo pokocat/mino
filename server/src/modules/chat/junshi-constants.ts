@@ -10,3 +10,11 @@ export const JUNSHI_OPENING = `兄弟，坐下聊。
 先说说你自己：你是做什么的？现在生意大概什么样？最让你睡不着觉的那件事，是什么？
 
 （想让我连你的天势一起看，把生辰八字、性别、出生地发我也行。）`;
+
+/**
+ * 追问 suggestions 的 system 提示词（真实模式）。
+ * 作为 SettingsService `followup_prompt` 键的代码内置默认；运行期实际取值走设置表（管理后台可编辑）。
+ */
+export const FOLLOWUP_PROMPT =
+  '以军师视角，为老板生成 2 条他此刻最想追问的话（每条不超过 14 字，口语，不用序号），' +
+  '只输出 JSON：{"questions":["…","…"]}，不要任何解释文字或代码围栏。';

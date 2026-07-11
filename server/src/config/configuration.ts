@@ -19,6 +19,11 @@ export default () => ({
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   },
+  // 后台管理员单账号（env 注入）；任一为空即视为未配置，禁用后台登录。
+  admin: {
+    user: process.env.ADMIN_USER ?? '',
+    pass: process.env.ADMIN_PASS ?? '',
+  },
   wx: {
     appId: process.env.WX_APPID,
     secret: process.env.WX_SECRET,

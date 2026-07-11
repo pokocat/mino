@@ -26,12 +26,14 @@
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-card);
   font-size: 28rpx;
+  line-height: 1.4;
   color: var(--color-ink);
 }
 .field__textarea {
   min-height: 120rpx;
 }
 .field__ph {
+  line-height: 1.4;
   color: var(--color-ink-faint);
 }
 

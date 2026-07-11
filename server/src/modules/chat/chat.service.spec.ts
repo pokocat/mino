@@ -15,7 +15,7 @@ import {
   RETRACT_TEXT,
   SseEvent,
 } from './chat.service';
-import { JUNSHI_OPENING } from './junshi-constants';
+import { JUNSHI_OPENING, FOLLOWUP_PROMPT } from './junshi-constants';
 
 /** 内容安全桩：默认全部 pass（可覆写 checkText 模拟命中）。 */
 function stubSafety(): WxSecService & { checkText: jest.Mock } {
@@ -39,14 +39,22 @@ function stubKb(fragments: string[] = []): FastgptKbService {
   } as unknown as FastgptKbService;
 }
 
-/** 设置服务桩：getSystemPrompt 返回占位、getReportMinTurns 返回给定阈值（默认 3）。 */
+/**
+ * 设置服务桩：getSystemPrompt 返回占位、getReportMinTurns 返回给定阈值（默认 3）；
+ * getString 对 junshi_opening / followup_prompt 返回真实默认常量（chat.service 现从设置读取这两项）。
+ */
 function stubSettings(
   minTurns = 3,
 ): SettingsService & { getReportMinTurns: jest.Mock } {
+  const strings: Record<string, string> = {
+    junshi_opening: JUNSHI_OPENING,
+    followup_prompt: FOLLOWUP_PROMPT,
+  };
   return {
     getSystemPrompt: jest.fn().mockReturnValue('军师 system prompt'),
     getReportMinTurns: jest.fn().mockReturnValue(minTurns),
-    getString: jest.fn().mockReturnValue(''),
+    getString: jest.fn((key: string) => strings[key] ?? ''),
+    getAll: jest.fn().mockReturnValue(strings),
     getNumber: jest.fn().mockReturnValue(minTurns),
     set: jest.fn().mockResolvedValue(undefined),
     reload: jest.fn().mockResolvedValue(undefined),

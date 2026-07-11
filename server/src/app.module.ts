@@ -13,6 +13,7 @@ import { StreakModule } from './modules/streak/streak.module';
 import { SafetyModule } from './modules/safety/safety.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { SettingsModule } from './modules/settings/settings.module';
     TaskModule,
     StreakModule,
     SafetyModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })

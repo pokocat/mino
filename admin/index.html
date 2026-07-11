@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>米诺 · 运营后台</title>
+  <style>
+    :root {
+      --paper: #F6F1E5;
+      --paper-2: #EDE5D3;
+      --card: #FBF8F0;
+      --ink: #28221C;
+      --ink-soft: #6B6156;
+      --line: #DBD0BA;
+      --vermilion: #B23A2E;
+      --vermilion-dark: #8F2C22;
+      --gold: #B58A3C;
+      --ok: #3C7A4E;
+      --err: #B23A2E;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(40, 34, 28, 0.08), 0 4px 16px rgba(40, 34, 28, 0.05);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    button {
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .btn {
+      background: var(--vermilion);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+    .btn:hover:not(:disabled) { background: var(--vermilion-dark); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--ink-soft);
+      border: 1px solid var(--line);
+    }
+    .btn-ghost:hover:not(:disabled) { background: var(--paper-2); color: var(--ink); }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+    input, textarea {
+      font-family: inherit;
+      color: var(--ink);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      width: 100%;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(181, 138, 60, 0.15);
+    }
+    textarea {
+      resize: vertical;
+      line-height: 1.55;
+      font-family: "SFMono-Regular", ui-monospace, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
+      font-size: 13px;
+    }
+    .hidden { display: none !important; }
+
+    /* ---------- Login ---------- */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      width: 100%;
+      max-width: 360px;
+      padding: 36px 32px;
+    }
+    .login-brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .login-brand .mark {
+      display: inline-block;
+      width: 44px;
+      height: 44px;
+      line-height: 44px;
+      border-radius: 10px;
+      background: var(--vermilion);
+      color: #fff;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .login-brand h1 {
+      font-size: 19px;
+      margin: 0;
+      letter-spacing: 1px;
+    }
+    .login-brand p {
+      margin: 4px 0 0;
+      color: var(--ink-soft);
+      font-size: 13px;
+    }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-bottom: 6px;
+    }
+    .login-card .btn { width: 100%; padding: 11px; margin-top: 6px; }
+    .login-err {
+      color: var(--err);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 14px;
+      min-height: 18px;
+    }
+
+    /* ---------- App shell ---------- */
+    #app-screen { min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 56px;
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .topbar .title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .topbar .title .mark {
+      width: 26px; height: 26px; line-height: 26px; text-align: center;
+      border-radius: 7px; background: var(--vermilion); color: #fff;
+      font-size: 15px; font-weight: 700;
+    }
+    .nav {
+      display: flex;
+      gap: 4px;
+      padding: 10px 20px 0;
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 56px;
+      z-index: 9;
+    }
+    .nav button {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--ink-soft);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 14px 12px;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .nav button:hover { color: var(--ink); }
+    .nav button.active {
+      color: var(--vermilion);
+      border-bottom-color: var(--vermilion);
+    }
+    .content {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+    }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+    }
+    .section-head h2 {
+      font-size: 18px;
+      margin: 0;
+      font-weight: 700;
+    }
+    .section-head .sub { color: var(--ink-soft); font-size: 13px; }
+
+    /* ---------- Dashboard ---------- */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .stat-card .label { color: var(--ink-soft); font-size: 13px; }
+    .stat-card .value {
+      font-size: 30px;
+      font-weight: 700;
+      margin-top: 4px;
+      color: var(--ink);
+      letter-spacing: 0.5px;
+    }
+    .stat-card.accent .value { color: var(--vermilion); }
+    .breakdown {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .breakdown h3 {
+      font-size: 14px;
+      margin: 0 0 14px;
+      color: var(--ink-soft);
+      font-weight: 600;
+    }
+    .breakdown-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 12px;
+    }
+    .bd-item {
+      text-align: center;
+      padding: 12px 8px;
+      background: var(--paper);
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+    .bd-item .n { font-size: 22px; font-weight: 700; color: var(--gold); }
+    .bd-item .t { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+    /* ---------- Prompt / settings fields ---------- */
+    .edit-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
+    }
+    .edit-card .head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .edit-card .head .lbl { font-size: 15px; font-weight: 700; }
+    .edit-card .head .key {
+      font-size: 12px;
+      color: var(--ink-soft);
+      font-family: ui-monospace, Menlo, monospace;
+    }
+    .edit-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .edit-actions .status {
+      font-size: 13px;
+      min-height: 18px;
+    }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--err); }
+    .reset-link {
+      background: none;
+      border: none;
+      color: var(--ink-soft);
+      font-size: 13px;
+      text-decoration: underline;
+      padding: 0;
+    }
+    .reset-link:hover { color: var(--ink); }
+    .num-field input { max-width: 160px; }
+    .loading, .empty {
+      color: var(--ink-soft);
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    /* ---------- Toast ---------- */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 100;
+      max-width: 90vw;
+    }
+    #toast.show { opacity: 1; }
+    #toast.err { background: var(--vermilion-dark); }
+
+    @media (max-width: 560px) {
+      .content { padding: 20px 14px 50px; }
+      .stat-card .value { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ============ LOGIN ============ -->
+  <div id="login-screen">
+    <form class="login-card" id="login-form" autocomplete="on">
+      <div class="login-brand">
+        <div class="mark">米</div>
+        <h1>米诺 · 运营后台</h1>
+        <p>战略参谋部 · 内部管理</p>
+      </div>
+      <div class="field">
+        <label for="login-user">用户名</label>
+        <input id="login-user" type="text" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="login-pass">密码</label>
+        <input id="login-pass" type="password" autocomplete="current-password" required />
+      </div>
+      <button class="btn" type="submit" id="login-btn">登录</button>
+      <div class="login-err" id="login-err"></div>
+    </form>
+  </div>
+
+  <!-- ============ APP ============ -->
+  <div id="app-screen" class="hidden">
+    <div class="topbar">
+      <div class="title"><span class="mark">米</span>米诺 · 运营后台</div>
+      <button class="btn btn-ghost btn-sm" id="logout-btn">退出</button>
+    </div>
+    <nav class="nav">
+      <button data-tab="dashboard" class="active">看板</button>
+      <button data-tab="prompts">提示词</button>
+      <button data-tab="settings">设置</button>
+    </nav>
+    <div class="content">
+      <section id="tab-dashboard"></section>
+      <section id="tab-prompts" class="hidden"></section>
+      <section id="tab-settings" class="hidden"></section>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    'use strict';
+
+    // ============ Config ============
+    const API_BASE = '/api_mino/admin';
+    const TOKEN_KEY = 'mino_admin_token';
+
+    // Prompt keys rendered on the 提示词 tab, with labels + textarea sizing.
+    const PROMPT_FIELDS = [
+      { key: 'junshi_system_prompt', label: '军师系统提示词 (V6)', rows: 18 },
+      { key: 'junshi_opening', label: '开场白', rows: 6 },
+      { key: 'followup_prompt', label: '追问生成提示词', rows: 4 },
+    ];
+    // Number setting on the 设置 tab.
+    const NUM_SETTING = {
+      key: 'report_suggest_min_turns',
+      label: '写报告建议·保底轮数',
+    };
+    // Keys already rendered elsewhere (excluded from the generic settings list).
+    const RESERVED_KEYS = new Set([
+      ...PROMPT_FIELDS.map((f) => f.key),
+      NUM_SETTING.key,
+    ]);
+
+    // ============ Token helpers ============
+    function getToken() { return localStorage.getItem(TOKEN_KEY); }
+    function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+    function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+    // ============ Toast ============
+    let toastTimer = null;
+    function toast(msg, isErr) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.toggle('err', !!isErr);
+      el.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+    }
+
+    // ============ Auth error ============
+    class AuthError extends Error {}
+
+    // ============ API ============
+    async function api(method, path, body, authed) {
+      const headers = {};
+      if (body !== undefined) headers['Content-Type'] = 'application/json';
+      if (authed) {
+        const t = getToken();
+        if (t) headers['Authorization'] = 'Bearer ' + t;
+      }
+      let res;
+      try {
+        res = await fetch(API_BASE + path, {
+          method,
+          headers,
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+        });
+      } catch (e) {
+        throw new Error('网络错误，请检查连接');
+      }
+      if (res.status === 401 && authed) {
+        handleAuthFailure();
+        throw new AuthError('登录已过期');
+      }
+      let data = null;
+      const text = await res.text();
+      if (text) {
+        try { data = JSON.parse(text); } catch (e) { data = null; }
+      }
+      if (!res.ok) {
+        const msg = (data && (data.message || data.error)) || ('请求失败 (' + res.status + ')');
+        const err = new Error(Array.isArray(msg) ? msg.join('，') : msg);
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    }
+
+    function handleAuthFailure() {
+      clearToken();
+      showLogin();
+      toast('登录已过期，请重新登录', true);
+    }
+
+    // ============ Screen switching ============
+    function showLogin() {
+      document.getElementById('app-screen').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-err').textContent = '';
+    }
+    function showApp() {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app-screen').classList.remove('hidden');
+      switchTab('dashboard');
+    }
+
+    // ============ Login ============
+    const loginForm = document.getElementById('login-form');
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errEl = document.getElementById('login-err');
+      const user = document.getElementById('login-user').value.trim();
+      const pass = document.getElementById('login-pass').value;
+      errEl.textContent = '';
+      btn.disabled = true;
+      btn.textContent = '登录中…';
+      try {
+        const data = await api('POST', '/login', { user, pass }, false);
+        if (!data || !data.token) throw new Error('登录响应异常');
+        setToken(data.token);
+        showApp();
+      } catch (err) {
+        if (err.status === 401) {
+          errEl.textContent = '用户名或密码错误';
+        } else {
+          errEl.textContent = err.message || '登录失败';
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '登录';
+      }
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      clearToken();
+      showLogin();
+    });
+
+    // ============ Nav / tabs ============
+    const TABS = ['dashboard', 'prompts', 'settings'];
+    let settingsCache = null; // last-loaded /settings payload
+
+    function switchTab(name) {
+      document.querySelectorAll('.nav button').forEach((b) => {
+        b.classList.toggle('active', b.dataset.tab === name);
+      });
+      TABS.forEach((t) => {
+        document.getElementById('tab-' + t).classList.toggle('hidden', t !== name);
+      });
+      if (name === 'dashboard') loadDashboard();
+      else if (name === 'prompts') loadSettings('prompts');
+      else if (name === 'settings') loadSettings('settings');
+    }
+    document.querySelectorAll('.nav button').forEach((b) => {
+      b.addEventListener('click', () => switchTab(b.dataset.tab));
+    });
+
+    // ============ Small DOM helpers ============
+    function el(tag, cls, text) {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text !== undefined) n.textContent = text;
+      return n;
+    }
+
+    // ============ Dashboard ============
+    async function loadDashboard() {
+      const root = document.getElementById('tab-dashboard');
+      root.replaceChildren();
+      const head = el('div', 'section-head');
+      const hgroup = el('div');
+      hgroup.appendChild(el('h2', null, '看板'));
+      hgroup.appendChild(el('div', 'sub', '核心运营数据总览'));
+      head.appendChild(hgroup);
+      const refreshBtn = el('button', 'btn btn-ghost btn-sm', '刷新');
+      refreshBtn.addEventListener('click', loadDashboard);
+      head.appendChild(refreshBtn);
+      root.appendChild(head);
+
+      const body = el('div');
+      body.appendChild(el('div', 'loading', '加载中…'));
+      root.appendChild(body);
+
+      let stats;
+      try {
+        stats = await api('GET', '/stats', undefined, true);
+      } catch (err) {
+        if (err instanceof AuthError) return;
+        body.replaceChildren(el('div', 'empty', err.message || '加载失败'));
+        toast(err.message || '加载失败', true);
+        return;
+      }
+
+      body.replaceChildren();
+      const cards = [
+        { label: '用户数', value: stats.users, accent: false },
+        { label: '对话数', value: stats.conversations, accent: false },
+        { label: '消息数', value: stats.messages, accent: false },
+        { label: '报告数', value: stats.reports, accent: false },
+        { label: '近7天活跃', value: stats.activeUsers7d, accent: true },
+      ];
+      const grid = el('div', 'stat-grid');
+      cards.forEach((c) => {
+        const card = el('div', 'stat-card' + (c.accent ? ' accent' : ''));
+        card.appendChild(el('div', 'label', c.label));
+        card.appendChild(el('div', 'value', fmtNum(c.value)));
+        grid.appendChild(card);
+      });
+      body.appendChild(grid);
+
+      const rbt = stats.reportsByType || {};
+      const bd = el('div', 'breakdown');
+      bd.appendChild(el('h3', null, '报告类型分布'));
+      const row = el('div', 'breakdown-row');
+      const types = [
+        { t: '战略', k: 'strategy' },
+        { t: '履历', k: 'resume' },
+        { t: '复盘', k: 'review' },
+        { t: '决策', k: 'decision' },
+      ];
+      types.forEach((x) => {
+        const item = el('div', 'bd-item');
+        item.appendChild(el('div', 'n', fmtNum(rbt[x.k] || 0)));
+        item.appendChild(el('div', 't', x.t));
+        row.appendChild(item);
+      });
+      bd.appendChild(row);
+      body.appendChild(bd);
+    }
+
+    function fmtNum(n) {
+      if (typeof n !== 'number' || isNaN(n)) return '—';
+      return n.toLocaleString('en-US');
+    }
+
+    // ============ Settings (shared load for prompts + settings tabs) ============
+    async function loadSettings(which) {
+      const root = document.getElementById('tab-' + which);
+      root.replaceChildren();
+
+      // Header
+      const head = el('div', 'section-head');
+      const hgroup = el('div');
+      if (which === 'prompts') {
+        hgroup.appendChild(el('h2', null, '提示词'));
+        hgroup.appendChild(el('div', 'sub', '军师对话与追问生成的提示词'));
+      } else {
+        hgroup.appendChild(el('h2', null, '设置'));
+        hgroup.appendChild(el('div', 'sub', '运营参数与其他配置'));
+      }
+      head.appendChild(hgroup);
+      const refreshBtn = el('button', 'btn btn-ghost btn-sm', '重新加载');
+      refreshBtn.addEventListener('click', () => loadSettings(which));
+      head.appendChild(refreshBtn);
+      root.appendChild(head);
+
+      const body = el('div');
+      body.appendChild(el('div', 'loading', '加载中…'));
+      root.appendChild(body);
+
+      let data;
+      try {
+        data = await api('GET', '/settings', undefined, true);
+      } catch (err) {
+        if (err instanceof AuthError) return;
+        body.replaceChildren(el('div', 'empty', err.message || '加载失败'));
+        toast(err.message || '加载失败', true);
+        return;
+      }
+      settingsCache = (data && data.settings) || {};
+      body.replaceChildren();
+
+      if (which === 'prompts') {
+        renderPrompts(body, settingsCache);
+      } else {
+        renderSettings(body, settingsCache);
+      }
+    }
+
+    function renderPrompts(body, settings) {
+      PROMPT_FIELDS.forEach((f) => {
+        const value = settings[f.key] != null ? String(settings[f.key]) : '';
+        body.appendChild(buildTextField(f.key, f.label, value, f.rows));
+      });
+    }
+
+    function renderSettings(body, settings) {
+      // Number setting
+      if (Object.prototype.hasOwnProperty.call(settings, NUM_SETTING.key)) {
+        body.appendChild(
+          buildNumberField(NUM_SETTING.key, NUM_SETTING.label,
+            String(settings[NUM_SETTING.key] ?? ''))
+        );
+      }
+      // Any other keys not already rendered -> generic textareas (forward-compat)
+      const others = Object.keys(settings).filter((k) => !RESERVED_KEYS.has(k)).sort();
+      others.forEach((k) => {
+        body.appendChild(
+          buildTextField(k, k, String(settings[k] ?? ''), 3)
+        );
+      });
+      if (!body.children.length) {
+        body.appendChild(el('div', 'empty', '暂无可编辑的设置项'));
+      }
+    }
+
+    // Build an editable textarea field card with per-field save + reset + status.
+    function buildTextField(key, label, initial, rows) {
+      const card = el('div', 'edit-card');
+      const head = el('div', 'head');
+      head.appendChild(el('div', 'lbl', label));
+      head.appendChild(el('div', 'key', key));
+      card.appendChild(head);
+
+      const ta = document.createElement('textarea');
+      ta.rows = rows || 4;
+      ta.value = initial;
+      ta.spellcheck = false;
+      card.appendChild(ta);
+
+      const actions = el('div', 'edit-actions');
+      const saveBtn = el('button', 'btn btn-sm', '保存');
+      const resetLink = el('button', 'reset-link', '重置');
+      resetLink.type = 'button';
+      const status = el('div', 'status');
+      actions.appendChild(saveBtn);
+      actions.appendChild(resetLink);
+      actions.appendChild(status);
+      card.appendChild(actions);
+
+      resetLink.addEventListener('click', () => {
+        const cur = settingsCache ? settingsCache[key] : undefined;
+        ta.value = cur != null ? String(cur) : initial;
+        status.textContent = '';
+        status.className = 'status';
+      });
+
+      saveBtn.addEventListener('click', () =>
+        saveKey(key, ta.value, saveBtn, status)
+      );
+      return card;
+    }
+
+    // Build a number input field card.
+    function buildNumberField(key, label, initial) {
+      const card = el('div', 'edit-card num-field');
+      const head = el('div', 'head');
+      head.appendChild(el('div', 'lbl', label));
+      head.appendChild(el('div', 'key', key));
+      card.appendChild(head);
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '0';
+      input.step = '1';
+      input.value = initial;
+      card.appendChild(input);
+
+      const actions = el('div', 'edit-actions');
+      const saveBtn = el('button', 'btn btn-sm', '保存');
+      const status = el('div', 'status');
+      actions.appendChild(saveBtn);
+      actions.appendChild(status);
+      card.appendChild(actions);
+
+      saveBtn.addEventListener('click', () =>
+        saveKey(key, input.value.trim(), saveBtn, status)
+      );
+      return card;
+    }
+
+    // Shared per-field save: PUT {key,value}, show transient status.
+    async function saveKey(key, value, btn, status) {
+      btn.disabled = true;
+      const orig = btn.textContent;
+      btn.textContent = '保存中…';
+      status.textContent = '';
+      status.className = 'status';
+      try {
+        await api('PUT', '/settings', { key, value }, true);
+        if (settingsCache) settingsCache[key] = value;
+        status.textContent = '已保存 ✓';
+        status.className = 'status ok';
+        setTimeout(() => {
+          if (status.classList.contains('ok')) {
+            status.textContent = '';
+            status.className = 'status';
+          }
+        }, 2600);
+      } catch (err) {
+        if (err instanceof AuthError) return;
+        status.textContent = err.message || '保存失败';
+        status.className = 'status err';
+        toast(err.message || '保存失败', true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    }
+
+    // ============ Boot ============
+    if (getToken()) {
+      showApp();
+    } else {
+      showLogin();
+    }
+  </script>
+</body>
+</html>

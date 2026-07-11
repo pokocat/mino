@@ -1,6 +1,6 @@
 {
   "description": "米诺战略参谋部 · 天势小程序 V3（原生 TypeScript）",
-  "appid": "touristappid",
+  "appid": "wx12ec2c2e0dd7767f",
   "projectname": "mino-v3",
   "compileType": "miniprogram",
   "libVersion": "3.5.0",
@@ -10,8 +10,33 @@
     "enhance": true,
     "postcss": true,
     "minified": true,
-    "useCompilerPlugins": ["typescript"],
-    "ignoreDevUnusedFiles": false
+    "useCompilerPlugins": [
+      "typescript"
+    ],
+    "ignoreDevUnusedFiles": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
-  "condition": {}
+  "condition": {},
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

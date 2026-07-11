@@ -1,11 +1,16 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JUNSHI_SYSTEM_PROMPT } from '../chat/junshi-system-prompt';
+import { JUNSHI_OPENING, FOLLOWUP_PROMPT } from '../chat/junshi-constants';
 
 /** 设置项键名常量（与 settings 表主键一一对应，未来管理后台按这些键编辑）。 */
 export const SETTING_KEYS = {
   /** 军师 system prompt（openai 直连模式注入的首条 system 消息）。 */
   JUNSHI_SYSTEM_PROMPT: 'junshi_system_prompt',
+  /** 军师开场白（建会话时落库的首条 assistant 消息）。 */
+  JUNSHI_OPENING: 'junshi_opening',
+  /** 追问 suggestions 生成用的 system 提示词（真实模式）。 */
+  FOLLOWUP_PROMPT: 'followup_prompt',
   /** 无 report_ready 标记时，触发「写报告」建议所需的最少用户轮次（回退阈值）。 */
   REPORT_SUGGEST_MIN_TURNS: 'report_suggest_min_turns',
 } as const;
@@ -13,6 +18,8 @@ export const SETTING_KEYS = {
 /** 代码内置默认值：DB 缺该键时补种、库不可用时回退。 */
 const DEFAULTS: Record<string, string> = {
   [SETTING_KEYS.JUNSHI_SYSTEM_PROMPT]: JUNSHI_SYSTEM_PROMPT,
+  [SETTING_KEYS.JUNSHI_OPENING]: JUNSHI_OPENING,
+  [SETTING_KEYS.FOLLOWUP_PROMPT]: FOLLOWUP_PROMPT,
   [SETTING_KEYS.REPORT_SUGGEST_MIN_TURNS]: '3',
 };
 
@@ -64,6 +71,15 @@ export class SettingsService implements OnModuleInit {
   /** 读字符串：缓存优先，缺失回退到代码默认，再无则空串。 */
   getString(key: string): string {
     return this.cache.get(key) ?? DEFAULTS[key] ?? '';
+  }
+
+  /** 全量读取：返回每个已知键的当前值（缓存优先，缺失回退代码默认）。供管理后台展示/编辑。 */
+  getAll(): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const key of Object.keys(DEFAULTS)) {
+      result[key] = this.getString(key);
+    }
+    return result;
   }
 
   /** 读数字：解析失败回退到给定 fallback。 */
