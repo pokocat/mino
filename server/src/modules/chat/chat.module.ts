@@ -4,6 +4,7 @@ import { QueueModule } from '../queue/queue.module';
 import { ReportModule } from '../report/report.module';
 import { SafetyModule } from '../safety/safety.module';
 import { StreakModule } from '../streak/streak.module';
+import { SettingsModule } from '../settings/settings.module';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 
@@ -21,6 +22,7 @@ import { ChatService } from './chat.service';
     ReportModule,
     StreakModule,
     SafetyModule,
+    SettingsModule,
   ],
   controllers: [ChatController],
   providers: [ChatService],

@@ -68,9 +68,9 @@ ssh -i ~/dev/aliyun/aiartist.pem ecs-user@8.136.36.175 'systemctl is-active juns
 
 服务器机密与配置都在 `/opt/mino/server/.env`（`600`，属主 `mino`）。
 
-**LLM 已接入（直连 OpenAI 兼容端点）**：当前 `LLM_PROVIDER=openai` + `FASTGPT_MOCK=false`，走 `LLM_BASE_URL=https://openai.sufy.com/v1`、`LLM_MODEL=claude-4.6-opus`。
+**LLM 已接入（直连 OpenAI 兼容端点）**：当前 `LLM_PROVIDER=openai` + `FASTGPT_MOCK=false`，走 `LLM_BASE_URL=https://api.qnaigc.com/v1`、`LLM_MODEL=dj-claude-4.6-opus`。
 后端支持两种供应商：`openai`（直连，body 带 `model`，请求 `{LLM_BASE_URL}/chat/completions`）与 `fastgpt`（默认，走自托管 FastGPT 应用，`{FASTGPT_BASE_URL}/api/v1/chat/completions`）。切换只改 `LLM_PROVIDER` 并重启。
-> 注意：模型名用 `claude-4.6-opus`（该端点上 `dj-claude-4.6-opus` 会 502）。换模型改 `LLM_MODEL` 即可。
+> 端点/模型对应关系（同一个 AK）：`dj-claude-4.6-opus` 用 `https://api.qnaigc.com/v1`；`claude-4.6-opus`（无 dj- 前缀）用 `https://openai.sufy.com/v1`。两者混用会 502。换端点/模型改 `LLM_BASE_URL`+`LLM_MODEL` 即可。
 > 直连 openai 模式下没有 FastGPT，每用户知识库（记忆）退化为进程内存实现（重启即失，属旁路不影响对话）；要真正的向量记忆需部署 FastGPT 并切回 `LLM_PROVIDER=fastgpt`。
 
 仍待产品方配置：

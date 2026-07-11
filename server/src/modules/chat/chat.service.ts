@@ -17,6 +17,7 @@ import { KbIngestQueue } from '../queue/kb-ingest.queue';
 import { ReportService } from '../report/report.service';
 import { WxSecService } from '../safety/wx-sec.service';
 import { StreakService } from '../streak/streak.service';
+import { SettingsService } from '../settings/settings.service';
 import { JUNSHI_OPENING } from './junshi-constants';
 import { ReportMarker, ReportMarkerStream } from './report-marker';
 
@@ -66,6 +67,7 @@ export class ChatService {
     private readonly reports: ReportService,
     private readonly streak: StreakService,
     private readonly safety: WxSecService,
+    private readonly settings: SettingsService,
   ) {}
 
   /**
@@ -163,8 +165,12 @@ export class ChatService {
     //      settleOnMessage 内部已吞异常，此处 void 不阻塞、失败绝不影响对话。
     void this.streak.settleOnMessage(conv.userId);
 
-    // 2) 组装上下文：本条消息检索用户知识库（战略档案摘录）→ 附加 system；再接会话历史
+    // 2) 组装上下文：openai 直连模式先注入军师 system prompt（fastgpt 模式由 FastGPT 应用内置，注入会重复）
+    //    → 本条消息检索用户知识库（战略档案摘录）附加 system → 再接会话历史
     const messages: ChatMessage[] = [];
+    if ((this.config.get<string>('llm.provider') ?? 'fastgpt') === 'openai') {
+      messages.push({ role: 'system', content: this.settings.getSystemPrompt() });
+    }
     const kbContext = await this.retrieveKbContext(conv.userId, content);
     if (kbContext) {
       messages.push({ role: 'system', content: kbContext });
@@ -251,9 +257,15 @@ export class ChatService {
     }
 
     // 5) suggestions（done 前必发）：primary 项（写报告 / 续写会话则换 appendCommit）+ 追问两条。
+    //    写报告 primary 受门控：军师本轮发了 report_ready 标记，或对话已达回退轮次阈值，才提供。
     yield {
       event: 'suggestions',
-      data: { items: await this.buildSuggestions(conv, content) },
+      data: {
+        items: await this.buildSuggestions(conv, content, {
+          markersFired: markers.length > 0,
+          userTurns,
+        }),
+      },
     };
 
     // 6) reportOffer（§8.4 军师主动触发）：拦到标记 → origin=agent 建报告并入队；
@@ -349,29 +361,38 @@ export class ChatService {
   }
 
   /**
-   * suggestions 规则：primary 项 + 两条追问。
-   * - primary：普通会话为「让军师写报告」（reportType 走启发式）；续写会话（appendReportId 非空）
-   *   换成「把这段织进报告」（action=appendCommit，携带目标报告 id），不再出现写报告项。
+   * suggestions 规则：primary 项（可能没有）+ 两条追问。
+   * - 续写会话（appendReportId 非空）：primary 恒为「把这段织进报告」（action=appendCommit，携带目标报告 id）。
+   * - 普通会话：写报告 primary 受门控——军师本轮发了 report_ready 标记（markersFired）
+   *   或对话已达回退轮次阈值（userTurns >= 配置阈值）才提供「让军师写报告」；否则不出 primary，只回追问。
    * - 追问两条：mock 时用固定两条；真实模式调 complete() 生成（4 秒超时/解析失败 → 空数组）。
    */
   private async buildSuggestions(
     conv: Conversation,
     content: string,
+    opts: { markersFired: boolean; userTurns: number },
   ): Promise<Suggestion[]> {
-    const primary: Suggestion = conv.appendReportId
-      ? {
-          text: '好，把这段织进报告',
-          primary: true,
-          action: 'appendCommit',
-          reportId: conv.appendReportId,
-        }
-      : {
-          text: '好，帮我写一份《…》报告',
-          primary: true,
-          action: 'generateReport',
-          reportType: inferReportType(content),
-        };
     const followups = await this.buildFollowups(conv);
+    if (conv.appendReportId) {
+      const primary: Suggestion = {
+        text: '好，把这段织进报告',
+        primary: true,
+        action: 'appendCommit',
+        reportId: conv.appendReportId,
+      };
+      return [primary, ...followups];
+    }
+    const reportReady =
+      opts.markersFired || opts.userTurns >= this.settings.getReportMinTurns();
+    if (!reportReady) {
+      return followups;
+    }
+    const primary: Suggestion = {
+      text: '好，帮我写一份《…》报告',
+      primary: true,
+      action: 'generateReport',
+      reportType: inferReportType(content),
+    };
     return [primary, ...followups];
   }
 

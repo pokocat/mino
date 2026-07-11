@@ -159,6 +159,16 @@ model ReportSource {
   @@map("report_sources")
 }
 
+// 键值配置表：后端可运行期读写的软配置（军师 system prompt、写报告建议阈值等）。
+// 由 SettingsService 在启动时按代码内置默认补种缺失键，未来管理后台 UI 直接编辑本表。
+model Setting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
 model Task {
   id     String     @id @default(uuid())
   userId String     @map("user_id")

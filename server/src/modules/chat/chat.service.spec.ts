@@ -8,6 +8,7 @@ import { KbIngestQueue } from '../queue/kb-ingest.queue';
 import { ReportService } from '../report/report.service';
 import { WxSecService } from '../safety/wx-sec.service';
 import { StreakService } from '../streak/streak.service';
+import { SettingsService } from '../settings/settings.service';
 import {
   ChatService,
   inferReportType,
@@ -36,6 +37,20 @@ function stubKb(fragments: string[] = []): FastgptKbService {
   return {
     search: jest.fn().mockResolvedValue(fragments),
   } as unknown as FastgptKbService;
+}
+
+/** 设置服务桩：getSystemPrompt 返回占位、getReportMinTurns 返回给定阈值（默认 3）。 */
+function stubSettings(
+  minTurns = 3,
+): SettingsService & { getReportMinTurns: jest.Mock } {
+  return {
+    getSystemPrompt: jest.fn().mockReturnValue('军师 system prompt'),
+    getReportMinTurns: jest.fn().mockReturnValue(minTurns),
+    getString: jest.fn().mockReturnValue(''),
+    getNumber: jest.fn().mockReturnValue(minTurns),
+    set: jest.fn().mockResolvedValue(undefined),
+    reload: jest.fn().mockResolvedValue(undefined),
+  } as unknown as SettingsService & { getReportMinTurns: jest.Mock };
 }
 
 /** 入队桩。 */
@@ -95,6 +110,7 @@ describe('ChatService', () => {
         stubReports(),
         stubStreak(),
         stubSafety(),
+        stubSettings(),
       );
 
       const result = await service.createConversation('user-1');
@@ -153,6 +169,7 @@ describe('ChatService', () => {
         reports,
         stubStreak(),
         safety,
+        stubSettings(),
       );
     });
 
@@ -274,6 +291,7 @@ describe('ChatService', () => {
         reports,
         stubStreak(),
         stubSafety(),
+        stubSettings(),
       );
 
       const conv = buildConversation();
@@ -394,6 +412,8 @@ describe('ChatService', () => {
         stubReports(),
         stubStreak(),
         stubSafety(),
+        // 真实模式追问用例仅验证追问，把回退阈值设为 1 让写报告 primary 恒在（userTurns=1）
+        stubSettings(1),
       );
       return { service, complete };
     }
@@ -492,6 +512,7 @@ describe('ChatService', () => {
         reports,
         stubStreak(),
         stubSafety(),
+        stubSettings(),
       );
       const conv = buildConversation({ appendReportId: 'rpt-x' });
       const events: SseEvent[] = [];
@@ -519,6 +540,79 @@ describe('ChatService', () => {
     });
   });
 
+  describe('写报告建议门控（marker + 回退轮次 · #5）', () => {
+    // 真实模式（无内置 mock 标记），streamChat 吐一段无标记文本，followups 回退空 → suggestions 只看 primary
+    const realConfig = {
+      get: (key: string) => (key === 'fastgpt.mock' ? false : undefined),
+    } as unknown as ConfigService;
+
+    /** 造门控用 ChatService：history 由 userMessages 条数决定 userTurns；settings 阈值 minTurns。 */
+    function build(userMessages: number, minTurns: number) {
+      const history = Array.from({ length: userMessages }, () => ({
+        role: 'user' as const,
+        content: '一句话',
+      }));
+      const prisma = {
+        message: {
+          create: jest
+            .fn()
+            .mockImplementation(({ data }) =>
+              Promise.resolve({ id: `msg-${data.role}`, ...data }),
+            ),
+          findMany: jest.fn().mockResolvedValue(history),
+          update: jest.fn().mockResolvedValue({}),
+        },
+        conversation: { update: jest.fn().mockResolvedValue({}) },
+        user: { findUnique: jest.fn().mockResolvedValue({ kbId: null }) },
+      };
+      const fastgpt = {
+        streamChat: jest.fn(
+          () =>
+            (async function* () {
+              yield '兄弟，我听明白了。';
+            })() as AsyncIterable<string>,
+        ),
+        // followups 走 complete；返回空串 → 解析空 → 追问回退空，隔离出 primary 门控
+        complete: jest.fn().mockResolvedValue(''),
+      } as unknown as FastgptChatService;
+      return new ChatService(
+        prisma as unknown as PrismaService,
+        fastgpt,
+        realConfig,
+        stubKb(),
+        stubQueue(),
+        stubReports(),
+        stubStreak(),
+        stubSafety(),
+        stubSettings(minTurns),
+      );
+    }
+
+    async function suggestItems(service: ChatService) {
+      const events: SseEvent[] = [];
+      for await (const evt of service.streamReply(
+        buildConversation(),
+        '随便聊聊',
+      )) {
+        events.push(evt);
+      }
+      const sug = events.find((e) => e.event === 'suggestions');
+      return (sug?.data as { items: any[] }).items;
+    }
+
+    it('无标记且未达阈值（userTurns < min）→ 不含写报告 primary', async () => {
+      const items = await suggestItems(build(1, 3));
+      expect(items.some((i) => i.action === 'generateReport')).toBe(false);
+    });
+
+    it('无标记但达阈值（userTurns >= min）→ 含写报告 primary', async () => {
+      const items = await suggestItems(build(3, 3));
+      expect(items[0]).toEqual(
+        expect.objectContaining({ primary: true, action: 'generateReport' }),
+      );
+    });
+  });
+
   describe('assertInputSafe（发消息入口审用户输入 · R7 接线 a）', () => {
     function build(
       safety: WxSecService & { checkText: jest.Mock },
@@ -532,6 +626,7 @@ describe('ChatService', () => {
         stubReports(),
         stubStreak(),
         safety,
+        stubSettings(),
       );
     }
 
@@ -571,6 +666,7 @@ describe('ChatService', () => {
         stubReports(),
         stubStreak(),
         stubSafety(),
+        stubSettings(),
       );
       await expect(
         service.getOwnedConversation('user-x', 'conv-1'),
