@@ -30,44 +30,20 @@
     <view class="entry__head">
       <seal-avatar variant="ink" size="96" text="师"></seal-avatar>
       <text class="entry__title">先认识一下</text>
-      <text class="entry__sub">三句话，米诺就能开始懂你。</text>
+      <text class="entry__sub">给自己取个称呼，就能进去跟米诺聊。</text>
     </view>
 
     <view class="field">
       <text class="field__label">昵称</text>
       <input
         class="field__input"
+        type="nickname"
         placeholder="怎么称呼你"
         placeholder-class="field__ph"
         value="{{form.nickname}}"
         data-field="nickname"
         bindinput="onInput"
-      />
-    </view>
-
-    <view class="field">
-      <text class="field__label">行业</text>
-      <input
-        class="field__input"
-        placeholder="你在哪个行当"
-        placeholder-class="field__ph"
-        value="{{form.industry}}"
-        data-field="industry"
-        bindinput="onInput"
-      />
-    </view>
-
-    <view class="field">
-      <text class="field__label">一句话生意背景</text>
-      <textarea
-        class="field__input field__textarea"
-        placeholder="你的生意，一句话说清"
-        placeholder-class="field__ph"
-        value="{{form.bizNote}}"
-        data-field="bizNote"
-        bindinput="onInput"
-        maxlength="120"
-        auto-height
+        bindblur="onInput"
       />
     </view>
 

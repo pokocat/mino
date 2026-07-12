@@ -33,11 +33,11 @@ export interface UserProfile {
   createdAt?: string; // 注册时间（ISO）；用于「与米诺相伴 N 天」，缺省则隐藏该行
 }
 
-// POST /me/profile 入参
+// POST /me/profile 入参（昵称必填；行业/生意背景可选，后端会后续引导补全）
 export interface ProfileInput {
   nickname: string;
-  industry: string;
-  bizNote: string;
+  industry?: string;
+  bizNote?: string;
 }
 
 // 统一错误结构

@@ -20,9 +20,8 @@ Page({
     loading: false, // 登录中
     submitting: false, // 入局提交中
     form: {
-      nickname: '',
-      industry: '',
-      bizNote: '',
+      // 默认「微信用户」兜底；type="nickname" 输入框会引导用户一键填入微信昵称，也可手改
+      nickname: '微信用户',
     },
   },
 
@@ -72,21 +71,13 @@ Page({
     this.setData({ [`form.${field}`]: e.detail.value });
   },
 
-  // 提交入局
+  // 提交入局（仅昵称，缺省用「微信用户」兜底，行业/生意背景后续引导补全）
   async onSubmit() {
-    const { nickname, industry, bizNote } = this.data.form;
-    if (!nickname.trim() || !industry.trim() || !bizNote.trim()) {
-      wx.showToast({ title: '三项都填一下，米诺才好认识你', icon: 'none' });
-      return;
-    }
+    const nickname = this.data.form.nickname.trim() || '微信用户';
     if (this.data.submitting) return;
     this.setData({ submitting: true });
     try {
-      await updateProfile({
-        nickname: nickname.trim(),
-        industry: industry.trim(),
-        bizNote: bizNote.trim(),
-      });
+      await updateProfile({ nickname });
       wx.switchTab({ url: '/pages/chat/chat' });
     } catch (e) {
       console.error('[onboarding] profile failed', e);
